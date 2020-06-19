@@ -15,8 +15,7 @@
 from __future__ import print_function
 
 import os
-import argparse
-from PIL import Image
+import shutil
 import numpy as np
 import paddle
 import paddle.fluid as fluid
@@ -114,10 +113,15 @@ def train_mnist(num_epochs):
             print("Loss at epoch {} , Test avg_loss is: {}, acc is: {}".format(epoch, test_cost, test_acc))
 
         # save inference model
+        save_dirname = '../assets/models/simple_mnist'
+        # delete old model
+        shutil.rmtree(save_dirname)
+        # os.makedirs(save_dirname, exist_ok=True)
+        # save inference model
         in_np = np.random.random([1, 1, 28, 28]).astype('float32')
         input_var = fluid.dygraph.to_variable(in_np)
         out_dygraph, static_layer = TracedLayer.trace(mnist, inputs=[input_var])
-        save_dirname = '../assets/models/simple_mnist'
+        
         static_layer.save_inference_model(save_dirname, feed=[0], fetch=[0])
         print("Saved inference model to {}".format(save_dirname))
 
