@@ -27,14 +27,19 @@ else
 fi
 
 # target
-target_dir="$PWD/$target_arch"
+target_dir=$PWD
 target_lib=$target_dir"/lib"
 echo "target_dir=$target_dir"
 
 # delete target_arch dir
-if [ -d "$target_dir" ]; then
-  rm -rf "$target_dir"
-  echo "$target_dir is deleted"
+if [ -d "$target_dir/include" ]; then
+  rm -rf "$target_dir/include"
+  echo "$target_dir/include is deleted"
+fi
+
+if [ -d "$target_dir/lib" ]; then
+  rm -rf "$target_dir/lib"
+  echo "$target_dir/lib is deleted"
 fi
 
 # create target_arch/lib dir

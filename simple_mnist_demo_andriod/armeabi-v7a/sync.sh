@@ -8,7 +8,7 @@ base_full_dir=$base_repo_dir"build.lite.npu.android.armv7.gcc.cxx_shared.full_pu
 base_full_lib=$base_full_dir"/cxx/lib"
 base_full_include=$base_full_dir"/cxx/include"
 if [ ! -d "$base_full_lib" ]; then
-  echo "$base_full_lib NOT exist, pleaes build Paddle-Lite FULL inference library first !!!"
+  echo "$base_full_lib NOT exist, build FULL inference library first !!!"
   exit 1
 else
   echo "base_full_dir=$base_full_dir"
@@ -19,21 +19,26 @@ base_tiny_dir=$base_repo_dir"build.lite.npu.android.armv7.gcc.cxx_shared.tiny_pu
 base_tiny_lib=$base_tiny_dir"/cxx/lib"
 base_tiny_include=$base_tiny_dir"/cxx/include"
 if [ ! -d "$base_tiny_lib" ]; then
-  echo "$base_tiny_lib NOT exist, pleaes build Paddle-Lite TINY inference library first !!!"
+  echo "$base_tiny_lib NOT exist, build TINY inference library first !!!"
   exit 1
 else
   echo "base_tiny_dir=$base_tiny_dir"
 fi
 
 # target
-target_dir="$PWD/$target_arch"
+target_dir=$PWD
 target_lib=$target_dir"/lib"
 echo "target_dir=$target_dir"
 
 # delete target_arch dir
-if [ -d "$target_dir" ]; then
-  rm -rf "$target_dir"
-  echo "$target_dir is deleted"
+if [ -d "$target_dir/include" ]; then
+  rm -rf "$target_dir/include"
+  echo "$target_dir/include is deleted"
+fi
+
+if [ -d "$target_dir/lib" ]; then
+  rm -rf "$target_dir/lib"
+  echo "$target_dir/lib is deleted"
 fi
 
 # create target_arch/lib dir
