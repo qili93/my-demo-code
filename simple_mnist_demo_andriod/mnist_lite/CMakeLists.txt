@@ -42,6 +42,7 @@ if(NOT DEFINED USE_FULL_API)
 endif()
 
 if(USE_FULL_API)
+  add_definitions(-DUSE_FULL_API)
   add_library(paddle_api_shared SHARED IMPORTED GLOBAL)
   set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${LITE_DIR}/lib/libpaddle_full_api_shared.so)
 else()

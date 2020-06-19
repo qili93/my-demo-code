@@ -1,7 +1,7 @@
 #!/bin/bash
 # Change it to your NDK path
-ANDROID_NDK=/opt/android-ndk-r17c # For paddlelite docker
-# ANDROID_NDK=/Users/liqi27/Library/android-ndk-r17c # For macOS with ndk-bundle
+# ANDROID_NDK=/opt/android-ndk-r17c # For paddlelite docker
+ANDROID_NDK=/Users/liqi27/Library/android-ndk-r17c # For macOS with ndk-bundle
 USE_FULL_API=TRUE
 
 ANDROID_ABI=arm64-v8a # for armv8
@@ -34,3 +34,8 @@ cmake -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_BUILD_TYPE=Release \
       ..
 make
+
+# list build files
+cd -
+echo "ls -l build"
+ls -l build

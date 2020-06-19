@@ -6,3 +6,5 @@ simple_mnist_demo_x86/x86
 # ignore build
 simple_mnist_demo_andriod/mnist_lite/build
 simple_mnist_demo_x86/mnist_lite/build
+# no saved model
+# assets/models/simple_mnist.nb
