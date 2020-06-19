@@ -73,7 +73,7 @@ def test_mnist(test_reader, mnist_model):
     return avg_loss_val_mean, acc_val_mean
 
 
-def train_mnist(num_epochs, save_path):
+def train_mnist(num_epochs):
     place = fluid.CUDAPlace(0) if fluid.core.is_compiled_with_cuda() else fluid.CPUPlace()
 
     with fluid.dygraph.guard(place):
@@ -113,51 +113,14 @@ def train_mnist(num_epochs, save_path):
             mnist.train()
             print("Loss at epoch {} , Test avg_loss is: {}, acc is: {}".format(epoch, test_cost, test_acc))
 
-        fluid.save_dygraph(mnist.state_dict(), save_path)
-        print("checkpoint saved to {}".format(save_path))
-
         # save inference model
         in_np = np.random.random([1, 1, 28, 28]).astype('float32')
         input_var = fluid.dygraph.to_variable(in_np)
         out_dygraph, static_layer = TracedLayer.trace(mnist, inputs=[input_var])
-        save_dirname = '../model/simple_mnist_2'
+        save_dirname = '../assets/models/simple_mnist'
         static_layer.save_inference_model(save_dirname, feed=[0], fetch=[0])
-
-def infer_mnist(save_path):
-    if save_path is None:
-        return
-
-    place = fluid.CUDAPlace(3) if fluid.core.is_compiled_with_cuda() else fluid.CPUPlace()
-
-    with fluid.dygraph.guard(place):
-        mnist_infer = MNIST()
-
-        model_dict, _ = fluid.load_dygraph(save_path)
-        mnist_infer.set_dict(model_dict)
-        print("checkpoint loaded")
-
-        mnist_infer.eval()
-
-        def load_image(file):
-            im = Image.open(file).convert('L')
-            im = im.resize((28, 28), Image.ANTIALIAS)
-            im = np.array(im).reshape(1, 1, 28, 28).astype(np.float32)
-            im = im / 255.0 * 2.0 - 1.0
-            return im
-
-        cur_dir = os.path.dirname(os.path.realpath(__file__))
-        tensor_img = load_image(cur_dir + '/infer_3.png')
-
-        result = mnist_infer(fluid.dygraph.base.to_variable(tensor_img))
-        lab = np.argsort(result.numpy())
-        print("Inference result of image/infer_3.png is: %d" % lab[0][-1])
-
-def main(num_epochs):
-    save_path = "save_temp"
-    train_mnist(num_epochs=num_epochs, save_path=save_path)
-    infer_mnist(save_path=save_path)
+        print("Saved inference model to {}".format(save_dirname))
 
 if __name__ == '__main__':
     BATCH_SIZE = 64
-    num_epochs = 15
-    main(num_epochs=num_epochs)
+    train_mnist(num_epochs=5)

@@ -1,2 +1,3 @@
-arm64-v8a/
 .DS_Store
+simple_mnist_demo_andriod/arm64-v8a/include
+simple_mnist_demo_andriod/arm64-v8a/lib

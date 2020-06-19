@@ -146,7 +146,7 @@ def infer_mnist(save_path):
             return im
 
         cur_dir = os.path.dirname(os.path.realpath(__file__))
-        tensor_img = load_image(cur_dir + '/infer_3.png')
+        tensor_img = load_image(cur_dir + '../assets/images/infer_3.png')
 
         result = mnist_infer(fluid.dygraph.base.to_variable(tensor_img))
         lab = np.argsort(result.numpy())
