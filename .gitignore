@@ -1,4 +1,8 @@
 .DS_Store
 .vscode
+# ignore lib
 simple_mnist_demo_andriod/arm64-v8a
 simple_mnist_demo_x86/x86
+# ignore build
+simple_mnist_demo_andriod/mnist_lite/build
+simple_mnist_demo_x86/mnist_lite/build

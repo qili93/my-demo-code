@@ -4,6 +4,8 @@
 
 using namespace paddle::lite_api;  // NOLINT
 
+const int CPU_THREAD_NUM = 1;
+
 struct RESULT {
   int class_id;
   float score;
@@ -38,6 +40,8 @@ void RunModel(std::string model_name) {
   // 1. Create MobileConfig
   MobileConfig config;
   config.set_model_from_file(model_name);
+  config.set_threads(CPU_THREAD_NUM);
+  config.set_power_mode(PowerMode::LITE_POWER_HIGH);
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
   std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
@@ -65,11 +69,14 @@ void SaveModel(std::string model_dir) {
     // 1. Create CxxConfig
     CxxConfig config;
     config.set_model_dir(model_dir);
-    config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                             Place{TARGET(kHost), PRECISION(kFloat)}});
+    config.set_threads(CPU_THREAD_NUM);
+    config.set_power_mode(PowerMode::LITE_POWER_HIGH);
+    config.set_valid_places({Place{TARGET(kNPU), PRECISION(kFloat)},
+                             Place{TARGET(kARM), PRECISION(kFloat)}});
     config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
     // 2. Create PaddlePredictor by CxxConfig
     std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<CxxConfig>(config);
+    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
     // 3. Save optimized model
     predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
     std::cout << "Load model from " << model_dir << std::endl;
@@ -81,18 +88,19 @@ int main(int argc, char **argv) {
     std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir [save|predict]\n";
     exit(1);
   }
-  std::string model_dir = argv[1];
+  std::string model_path = argv[1];
   std::string exe_mode = argv[2];
   if (exe_mode == "save") {
 #ifdef USE_FULL_API
-      SaveModel(model_dir);
+      SaveModel(model_path);
 #else
     std::cerr << "[ERROR] model " << argv[2] << " is NOT supported on tiny publish\n";
     exit(1);
 #endif
   }
   if (exe_mode == "predict") {
-    RunModel(model_dir);
+      RunModel(model_path);
   }
   return 0;
 }
+
