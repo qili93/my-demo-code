@@ -1,6 +1,6 @@
 #!/bin/bash
 
-USE_FULL_API=TRUE
+USE_FULL_API=FALSE
 
 function readlinkf() {
     perl -MCwd -e 'print Cwd::abs_path shift' "$1";

@@ -113,7 +113,7 @@ def train_mnist(num_epochs):
             print("Loss at epoch {} , Test avg_loss is: {}, acc is: {}".format(epoch, test_cost, test_acc))
 
         # save inference model
-        save_dirname = '../assets/models/simple_mnist'
+        save_dirname = '../models/simple_mnist'
         # delete old model
         shutil.rmtree(save_dirname)
         # os.makedirs(save_dirname, exist_ok=True)

@@ -35,7 +35,7 @@ def infer_mnist(save_dirname):
         return im
 
     cur_dir = os.path.dirname(os.path.realpath(__file__))
-    img_path = os.path.join(cur_dir, '../assets/images/infer_3.png')
+    img_path = os.path.join(cur_dir, '../images/infer_3.png')
     tensor_img = load_image(img_path)
 
     inference_scope = fluid.core.Scope()
@@ -43,7 +43,7 @@ def infer_mnist(save_dirname):
         [inference_program, feed_target_names, fetch_targets] = fluid.io.load_inference_model(save_dirname, exe)
         results = exe.run(inference_program, feed={feed_target_names[0]: tensor_img}, fetch_list=fetch_targets)
         lab = numpy.argsort(results)
-        print("Inference result of ../assets/images/infer_3.png is: %d" % lab[0][0][-1])
+        print("Inference result of ../images/infer_3.png is: %d" % lab[0][0][-1])
 
 if __name__ == '__main__':
-    infer_mnist(save_dirname='../assets/models/simple_mnist')
+    infer_mnist(save_dirname='../models/simple_mnist')

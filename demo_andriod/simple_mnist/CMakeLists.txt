@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.4.1)
-project(mnist_lite)
+project(simple_mnist)
 
-set(TARGET_EXE mnist_lite)
-set(TARGET_ARCH arm64-v8a)
+set(TARGET_EXE simple_mnist)
 
 # 1. path to Paddle-Lite lib
-set(LITE_DIR "${PROJECT_SOURCE_DIR}/../${TARGET_ARCH}")
+set(LITE_DIR "${PROJECT_SOURCE_DIR}/../${ANDROID_ABI}")
 message(STATUS "LITE_DIR=${LITE_DIR}")
 
 # 2. link Paddle-Lite directory

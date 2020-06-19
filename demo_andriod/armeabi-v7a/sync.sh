@@ -1,26 +1,27 @@
 #!/bin/bash
 
-target_arch="arm64-v8a"
+target_arch="armeabi-v7a"
 
+# paddle repo dir
+base_repo_dir="/workspace/Github-qili93/Paddle-Lite/"
 # paddle full lib
 base_repo_dir="/workspace/Github-qili93/Paddle-Lite/"
-base_full_dir=$base_repo_dir"build.lite.npu.android.armv8.gcc.cxx_shared.full_publish/inference_lite_lib.android.armv8.npu"
+base_full_dir=$base_repo_dir"build.lite.npu.android.armv7.gcc.cxx_shared.full_publish/inference_lite_lib.android.armv7.npu"
 base_full_lib=$base_full_dir"/cxx/lib"
 base_full_include=$base_full_dir"/cxx/include"
 if [ ! -d "$base_full_lib" ]; then
-  echo "$base_full_lib NOT exist, pleaes build Paddle-Lite FULL inference library first !!!"
+  echo "$base_full_lib NOT exist, build FULL inference library first !!!"
   exit 1
 else
   echo "base_full_dir=$base_full_dir"
 fi
 
 # paddle tiny lib
-base_tiny_dir=$base_repo_dir"build.lite.npu.android.armv8.gcc.cxx_shared.tiny_publish/inference_lite_lib.android.armv8.npu"
+base_tiny_dir=$base_repo_dir"build.lite.npu.android.armv7.gcc.cxx_shared.tiny_publish/inference_lite_lib.android.armv7.npu"
 base_tiny_lib=$base_tiny_dir"/cxx/lib"
 base_tiny_include=$base_tiny_dir"/cxx/include"
-echo "base_tiny_dir=$base_tiny_dir"
 if [ ! -d "$base_tiny_lib" ]; then
-  echo "$base_tiny_lib NOT exist, pleaes build Paddle-Lite TINY inference library first !!!"
+  echo "$base_tiny_lib NOT exist, build TINY inference library first !!!"
   exit 1
 else
   echo "base_tiny_dir=$base_tiny_dir"
@@ -47,7 +48,7 @@ mkdir -p "$target_lib"
 echo "$target_lib created"
 
 # hiai
-base_hiai_dir=$base_repo_dir"ai_ddk_lib/lib64/"
+base_hiai_dir=$base_repo_dir"ai_ddk_lib/lib/"
 cp $base_hiai_dir"libhiai.so" $target_lib
 cp $base_hiai_dir"libhiai_ir.so" $target_lib
 cp $base_hiai_dir"libhiai_ir_build.so" $target_lib

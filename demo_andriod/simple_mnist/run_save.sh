@@ -18,16 +18,16 @@ else
 fi
 
 # push to device work space
-adb shell     rm -r ${WORK_SPACE}/*
-adb push    ${LITE_DIR}/lib/.                          ${WORK_SPACE}
-adb push    ${MODEL_DIR}/simple_mnist     ${WORK_SPACE}
-adb push    build/mnist_lite                          ${WORK_SPACE}
-adb shell    chmod +x "${WORK_SPACE}/mnist_lite"
+adb shell   rm -r ${WORK_SPACE}/*
+adb push    ${LITE_DIR}/lib/.      ${WORK_SPACE}
+adb push    ${MODEL_PATH}          ${WORK_SPACE}
+adb push    build/simple_mnist     ${WORK_SPACE}
+adb shell   chmod +x "${WORK_SPACE}/simple_mnist"
 
 # define exe commands
 EXE_SHELL="cd ${WORK_SPACE}; "
 EXE_SHELL+="export GLOG_v=5;"
-EXE_SHELL+="LD_LIBRARY_PATH=. ./mnist_lite ./${MODEL_NAME} save"
+EXE_SHELL+="LD_LIBRARY_PATH=. ./simple_mnist ./${MODEL_NAME} save"
 echo ${EXE_SHELL}
 # run
 adb shell ${EXE_SHELL}
