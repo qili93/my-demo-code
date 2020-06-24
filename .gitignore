@@ -1,13 +1,15 @@
+# ignoree files
 .DS_Store
 .vscode
-# ignore lib
-demo_andriod/arm64-v8a/include
-demo_andriod/arm64-v8a/lib
-demo_andriod/armeabi-v7a/include
-demo_andriod/armeabi-v7a/lib
-demo_x86/x86
-# ignore build
-demo_andriod/simple_mnist/build.arm*
-demo_x86/mnist_lite/build
+# ignore npu lib
+libs/npu/arm64-v8a/include
+libs/npu/arm64-v8a/lib
+libs/npu/armeabi-v7a/include
+libs/npu/armeabi-v7a/lib
+# ignore x86 lib
+libs/x86
+# ignore build dir
+mnist_demo_npu/shell/build
+mnist_demo_x86/shell/build
 # no saved model
-assets/models/simple_mnist.nb
+assets/models/*.nb
