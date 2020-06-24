@@ -38,7 +38,7 @@ base_hiai_dir=$base_repo_dir/ai_ddk_lib/lib
 cp $base_hiai_dir/libhiai.so $target_lib
 cp $base_hiai_dir/libhiai_ir.so $target_lib
 cp $base_hiai_dir/libhiai_ir_build.so $target_lib
-# cp $base_hiai_dir/libhcl.so $target_lib
+cp $base_hiai_dir/libhcl.so $target_lib
 echo "copy form $base_hiai_dir to $target_lib succeed"
 
 # ndk - c++_shared
