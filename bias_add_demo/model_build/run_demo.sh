@@ -11,4 +11,4 @@ export LD_LIBRARY_PATH=${ASCEND_PATH}/acllib/lib64:${ASCEND_ATC_PATH}/lib64:${AS
 export SOC_VERSION=Ascend310
 
 # run demo
-./build/bias_add_demo
+./build/bias_add_build

@@ -20,4 +20,6 @@ line_demo_ascend/shell/build
 long_sentence_prediction_demo/apk
 long_sentence_prediction_demo/assets
 long_sentence_prediction_demo/shell/build
-
+# no dmoe build
+bias_add_demo/model_build/build
+bias_add_demo/model_run/build

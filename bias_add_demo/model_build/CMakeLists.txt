@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.4.1)
 
-project(bias_add_demo)
+project(bias_add_build)
 
-set(TARGET_EXE bias_add_demo)
+set(TARGET_EXE bias_add_build)
 
 # 1. path to Ascend Path
 if(NOT DEFINED ASCEND_PATH)
