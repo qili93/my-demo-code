@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
     }
 
     // 4. Save IR Model
-    status = aclgrphSaveModel("bias_add_model", model_om_buffer);
+    status = aclgrphSaveModel("../assets/bias_add_model", model_om_buffer);
     if (status == GRAPH_SUCCESS) {
         cout << "Save Offline BiasAdd Model SUCCESS!" << endl;
     }

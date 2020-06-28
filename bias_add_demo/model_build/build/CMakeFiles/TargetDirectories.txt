@@ -1,3 +1,0 @@
-/workspace/Github-qili93/my-lite-demo/bias_add_demo/model_build/build/CMakeFiles/rebuild_cache.dir
-/workspace/Github-qili93/my-lite-demo/bias_add_demo/model_build/build/CMakeFiles/edit_cache.dir
-/workspace/Github-qili93/my-lite-demo/bias_add_demo/model_build/build/CMakeFiles/bias_add_demo.dir

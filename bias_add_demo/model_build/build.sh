@@ -10,6 +10,7 @@ cmake -DASCEND_PATH=/workspace/Ascend310 \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_CXX_COMPILER=g++ \
       ..
 make
 

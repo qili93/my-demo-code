@@ -14,9 +14,8 @@ endif()
 message(STATUS "ASCEND_PATH: ${ASCEND_PATH}")
 
 # require C++11
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_compile_options(-std=c++11)
+set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
 
 # 2.add executable output
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
