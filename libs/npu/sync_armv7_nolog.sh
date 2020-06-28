@@ -3,22 +3,40 @@
 target_arch=armeabi-v7a
 
 # paddle repo dir
-base_repo_dir=/workspace/Github-qili93/Paddle-Lite
+# base_repo_dir=/workspace/Github-qili93/Paddle-Lite
+base_repo_dir=/workspace/tempcode/Paddle-Lite
+
+cd $base_repo_dir
+# build full
+./lite/tools/build.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared \
+                      --build_npu=ON --npu_ddk_root=./ai_ddk_lib \
+                      --build_extra=ON --with_log=OFF \
+                      full_publish
+mv build.lite.android.armv7.gcc/ build.lite.android.armv7.gcc_full_nolog/
+
+# build tiny
+./lite/tools/build.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared \
+                      --build_npu=ON --npu_ddk_root=./ai_ddk_lib \
+                      --build_extra=ON --with_log=OFF \
+                      tiny_publish
+mv build.lite.android.armv7.gcc/ build.lite.android.armv7.gcc_tiny_nolog/
+cd -
+
 # paddle full lib
-base_full_dir=$base_repo_dir/build.lite.npu.android.armv7.gcc.cxx_shared.full_publish/inference_lite_lib.android.armv7.npu
+base_full_dir=$base_repo_dir/build.lite.android.armv7.gcc_full_nolog/inference_lite_lib.android.armv7.npu
 base_full_lib=$base_full_dir/cxx/lib
 base_full_include=$base_full_dir/cxx/include
 echo "base_full_dir=$base_full_dir"
 
 # paddle tiny lib
-base_tiny_dir=$base_repo_dir/build.lite.npu.android.armv7.gcc.cxx_shared.tiny_publish/inference_lite_lib.android.armv7.npu
+base_tiny_dir=$base_repo_dir/build.lite.android.armv7.gcc_tiny_nolog/inference_lite_lib.android.armv7.npu
 base_tiny_lib=$base_tiny_dir/cxx/lib
 base_tiny_include=$base_tiny_dir/cxx/include
 echo "base_tiny_dir=$base_tiny_dir"
 
 # target
 cur_dir=$(pwd)
-target_dir=$cur_dir/$target_arch
+target_dir=$cur_dir/$target_arch-nolog
 target_lib=$target_dir/lib
 target_inc=$target_dir/include
 echo "target_dir=$target_dir"
@@ -64,4 +82,4 @@ ls -l $target_inc
 
 # list lib files
 echo "ls -l $target_lib"
-ls -l $target_lib
+ls -lh $target_lib
