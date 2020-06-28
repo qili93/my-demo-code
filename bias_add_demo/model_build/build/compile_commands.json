@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/workspace/Github-qili93/my-lite-demo/bias_add_demo/model_build/build",
+  "command": "/usr/bin/c++   -I/workspace/Ascend310/opp/op_proto/built-in/inc -I/workspace/Ascend310/atc/include -I/workspace/Ascend310/atc/include/graph -I/workspace/Ascend310/atc/include/ge -I/workspace/Ascend310/atc/include/register  -O3 -DNDEBUG   -std=c++11 -o CMakeFiles/bias_add_demo.dir/bias_add_demo.cc.o -c /workspace/Github-qili93/my-lite-demo/bias_add_demo/model_build/bias_add_demo.cc",
+  "file": "/workspace/Github-qili93/my-lite-demo/bias_add_demo/model_build/bias_add_demo.cc"
+}
+]
