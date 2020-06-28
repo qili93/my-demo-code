@@ -18,3 +18,4 @@ mnist_demo_x86/shell/build
 # no long sentense demo
 long_sentence_prediction_demo/apk
 long_sentence_prediction_demo/assets
+long_sentence_prediction_demo/shell/build
