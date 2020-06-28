@@ -22,10 +22,6 @@ find_library(log-lib log)
 message(STATUS "log-lib=${log-lib}")
 
 # 5. add hiai
-find_library(NPU_DDK_HIAI_FILE NAMES hiai
-  PATHS ${PADDLE_LITE_DIR}/lib
-  NO_DEFAULT_PATH)
-message(STATUS "NPU_DDK_HIAI_FILE=${NPU_DDK_HIAI_FILE}")
 add_library(npu_ddk_hiai SHARED IMPORTED GLOBAL)
 set_property(TARGET npu_ddk_hiai PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/libhiai.so)
 

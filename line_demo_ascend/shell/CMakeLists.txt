@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.4.1)
-project(bias_add_ir)
 
-set(TARGET_EXE bias_add_ir)
+project(bias_add_demo)
+
+set(TARGET_EXE bias_add_demo)
 
 # default is /user/local/Ascend
 if(NOT DEFINED ASCEND_PATH)

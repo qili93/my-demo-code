@@ -7,20 +7,27 @@
 function readlinkf() {
     perl -MCwd -e 'print Cwd::abs_path shift' "$1";
 }
-# andriod ndk path
-ANDROID_NDK=/Users/liqi27/Library/android-ndk-r17c
 # arm64-v8a or armeabi-v7a
 # ANDROID_ABI=arm64-v8a
 ANDROID_ABI=armeabi-v7a
 # arm64-v8a => 23 or armeabi-v7a => 24
 ANDROID_NATIVE_API_LEVEL=android-24 # armeabi-v7a
 # ANDROID_NATIVE_API_LEVEL=android-23 # arm64-v8a 
-# full api or tiny api
-USE_FULL_API=TRUE
 # default with log
 PADDLE_LITE_DIR=$(readlinkf ../../../libs/npu/${ANDROID_ABI}-log)
 #######################################################################
-
+# local variables, do not change them
+#######################################################################
+# build target
+TARGET_EXE=mnist_demo
+# model name
+MODEL_NAME=mnist_model
+# model dir
+MODEL_DIR="../assets/models"
+# model path
+MODEL_PATH="$MODEL_DIR/${MODEL_NAME}"
+# workspace
+WORK_SPACE=/data/local/tmp
 #######################################################################
 # pring usage
 #######################################################################
@@ -30,10 +37,10 @@ function print_usage {
     echo
     echo "----------------------------------------"
     echo -e "compile tiny publish so lib:"
-    echo -e "   ./build.sh --arm_abi=<abi> --with_log=<ON|OFF> tiny_build"
+    echo -e "   ./run_demo.sh --arm_abi=<abi> --with_log=<ON|OFF> tiny_demo"
     echo
     echo -e "compile full publish so lib:"
-    echo -e "   ./build.sh --arm_abi=<abi> --with_log=<ON|OFF> full_build"
+    echo -e "   ./run_demo.sh --arm_abi=<abi> --with_log=<ON|OFF> full_demo"
     echo
     echo -e "optional argument:"
     echo -e "--with_log: (OFF|ON); controls whether to print log information, default is ON"
@@ -42,8 +49,8 @@ function print_usage {
     echo -e "--arm_abi:\t armv8|armv7; default is armv7"
     echo
     echo -e "tasks:"
-    echo -e "tiny_build: build with tiny publish library."
-    echo -e "full_build: build with full publish library."
+    echo -e "tiny_demo: demo with tiny publish library."
+    echo -e "tiny_demo: demo with full publish library."
     echo "----------------------------------------"
     echo
 }
@@ -51,21 +58,13 @@ function print_usage {
 #######################################################################
 # compiling functions
 #######################################################################
-function make_build {
+function run_demo {
     local abi=$1
     local log=$2
     local pub=$3
 
-    cur_dir=$(pwd)
-    build_dir=$cur_dir/build
-    rm -rf $build_dir
-    mkdir -p $build_dir
-    cd $build_dir
-
-    if [ ${pub} == "full" ]; then
-        USE_FULL_API=TRUE
-    else
-        USE_FULL_API=FALSE
+    if [ ${pub} == "tiny" ]; then
+        MODEL_PATH=${MODEL_PATH}.nb
     fi
     echo "Building api: USE_FULL_API=<${USE_FULL_API}>"
 
@@ -76,32 +75,36 @@ function make_build {
         ANDROID_ABI=armeabi-v7a
         ANDROID_NATIVE_API_LEVEL=android-24
     fi
-    echo "Building target: ANDROID_ABI=<${ANDROID_ABI}> ANDROID_NATIVE_API_LEVEL=<${ANDROID_NATIVE_API_LEVEL}>"
+    echo "Running target: ANDROID_ABI=<${ANDROID_ABI}> ANDROID_NATIVE_API_LEVEL=<${ANDROID_NATIVE_API_LEVEL}>"
 
     if [ ${log} == "ON" ]; then
-        PADDLE_LITE_DIR=$(readlinkf ../../../libs/npu/${ANDROID_ABI}-log)
+        PADDLE_LITE_DIR_LIB=$(readlinkf ../../libs/npu/${ANDROID_ABI}-log/lib)
     else
-        PADDLE_LITE_DIR=$(readlinkf ../../../libs/npu/${ANDROID_ABI}-nolog)
+        PADDLE_LITE_DIR_LIB=$(readlinkf ../../libs/npu/${ANDROID_ABI}-nolog/lib)
     fi
-    echo "Linking library: PADDLE_LITE_DIR=<${PADDLE_LITE_DIR}>"
+    echo "Running with library: PADDLE_LITE_DIR_LIB=<${PADDLE_LITE_DIR_LIB}>"
 
-    cmake -DUSE_FULL_API=${USE_FULL_API} \
-        -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK}/build/cmake/android.toolchain.cmake \
-        -DANDROID_NDK=${ANDROID_NDK} \
-        -DANDROID_NATIVE_API_LEVEL=${ANDROID_NATIVE_API_LEVEL} \
-        -DANDROID_STL=c++_shared \
-        -DANDROID_ABI=${ANDROID_ABI} \
-        -DANDROID_ARM_NEON=TRUE \
-        -DCMAKE_VERBOSE_MAKEFILE=ON \
-        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DPADDLE_LITE_DIR="${PADDLE_LITE_DIR}" \
-        ..
-    make
+    # push to device work space
+    adb shell   "rm -r ${WORK_SPACE}/*"
+    adb push   ${PADDLE_LITE_DIR_LIB}/.     ${WORK_SPACE}
+    adb push   ${MODEL_PATH}                  ${WORK_SPACE}
+    adb push   build/${TARGET_EXE}           ${WORK_SPACE}
+    adb shell   chmod +x "${WORK_SPACE}/${TARGET_EXE}"
+    # define exe commands
+    EXE_SHELL="cd ${WORK_SPACE}; "
+    EXE_SHELL+="export GLOG_v=5;"
+    EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE} ./${MODEL_NAME}"
+    echo ${EXE_SHELL}
+    # run
+    adb shell ${EXE_SHELL}
+    adb shell ls -l ${WORK_SPACE}
 
-    cd -
-    echo "ls -l $build_dir"
-    ls -l $build_dir
+    # pull optimized model
+    adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
+
+    # list models files
+    echo "ls -l ${MODEL_DIR}"
+    ls -l ${MODEL_DIR}
 }
 #######################################################################
 # main functions
@@ -123,12 +126,12 @@ function main {
                 WITH_LOG="${i#*=}"
                 shift
                 ;;
-            tiny_build)
-                make_build $ARM_ABI $WITH_LOG tiny
+            tiny_demo)
+                run_demo $ARM_ABI $WITH_LOG tiny
                 shift
                 ;;
-            full_build)
-                make_build $ARM_ABI $WITH_LOG full
+            full_demo)
+                run_demo $ARM_ABI $WITH_LOG full
                 shift
                 ;;
             *)
