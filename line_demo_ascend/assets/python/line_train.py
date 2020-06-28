@@ -80,4 +80,4 @@ def train_line(num_epochs, save_dirname):
 
 if __name__ == '__main__':
     BATCH_SIZE = 64
-    train_line(num_epochs=100, save_dirname='../../models/line_model')
+    train_line(num_epochs=100, save_dirname='../models/line_model')

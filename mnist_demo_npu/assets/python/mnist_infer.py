@@ -46,4 +46,4 @@ def infer_mnist(save_dirname):
         print("Inference result of ./infer_3.png is: %d" % lab[0][0][-1])
 
 if __name__ == '__main__':
-    infer_mnist(save_dirname='../../models/mnist_model')
+    infer_mnist(save_dirname='../models/mnist_model')

@@ -50,4 +50,4 @@ def infer_line(save_dirname):
         save_result(results[0], infer_label)
 
 if __name__ == '__main__':
-    infer_line(save_dirname='../../models/line_model')
+    infer_line(save_dirname='../models/line_model')
