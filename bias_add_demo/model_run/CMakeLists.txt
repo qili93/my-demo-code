@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.5.1)
 
-project(bias_add_build)
+project(bias_add_run)
 
-set(TARGET_EXE bias_add_build)
+set(TARGET_EXE bias_add_run)
 
 # 1. path to Ascend Path
 if(NOT DEFINED ASCEND_PATH)
@@ -38,6 +38,7 @@ link_directories(${ASCEND_PATH}/opp/op_proto/built-in)
 link_directories(${ASCEND_PATH}/opp/framework/built-in/tensorflow)
 link_directories(${ASCEND_PATH}/opp/fusion_pass/built_in)
 link_directories(${ASCEND_PATH}/opp/fusion_pass/built_in/vector_core)
+link_directories(${ASCEND_PATH}/acllib/lib64/stub)
 
 # 5. Ascend link libraries
 find_library(ASCEND_REGISTER_FILE NAMES register
@@ -58,6 +59,10 @@ find_library(ASCEND_OPSPROTO_FILE NAMES opsproto
 
 find_library(ASCEND_OPS_ALL_PLUGIN_FILE NAMES ops_all_plugin
   PATHS ${ASCEND_PATH}/opp/framework/built-in/tensorflow
+  NO_DEFAULT_PATH)
+
+find_library(ASCEND_CL NAMES ascendcl
+  PATHS ${ASCEND_PATH}/acllib/lib64/stub
   NO_DEFAULT_PATH)
 
 if(NOT ASCEND_REGISTER_FILE)
@@ -100,6 +105,16 @@ else()
   set_property(TARGET ascend_ops_all_plugin PROPERTY IMPORTED_LOCATION ${ASCEND_OPS_ALL_PLUGIN_FILE})
 endif()
 
-set(ascend_builder_libs ascend_register ascend_graph ascend_ge_compiler ascend_opsproto ascend_ops_all_plugin CACHE INTERNAL "ascend atc builder libs")
+if(NOT ASCEND_CL)
+  message(FATAL_ERROR "Can not find ASCEND_CL in ${ASCEND_PATH}/acllib/lib64/stub")
+else()
+  message(STATUS "Found ASCEND_CL Library: ${ASCEND_CL}")
+  add_library(ascendcl SHARED IMPORTED GLOBAL)
+  set_property(TARGET ascendcl PROPERTY IMPORTED_LOCATION ${ASCEND_CL})
+endif()
 
-target_link_libraries(${TARGET_EXE} ${ascend_builder_libs})
+
+set(ascend_builder_libs ascend_register ascend_graph ascend_ge_compiler ascend_opsproto ascend_ops_all_plugin CACHE INTERNAL "ascend atc builder libs")
+set(ascend_runtime_libs ascendcl CACHE INTERNAL "ascend atc builder libs")
+
+target_link_libraries(${TARGET_EXE} ${ascend_builder_libs} ${ascend_runtime_libs})
