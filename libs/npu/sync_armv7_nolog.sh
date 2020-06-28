@@ -6,21 +6,21 @@ target_arch=armeabi-v7a
 # base_repo_dir=/workspace/Github-qili93/Paddle-Lite
 base_repo_dir=/workspace/tempcode/Paddle-Lite
 
-cd $base_repo_dir
-# build full
-./lite/tools/build.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared \
-                      --build_npu=ON --npu_ddk_root=./ai_ddk_lib \
-                      --build_extra=ON --with_log=OFF \
-                      full_publish
-mv build.lite.android.armv7.gcc/ build.lite.android.armv7.gcc_full_nolog/
+# cd $base_repo_dir
+# # build full
+# ./lite/tools/build.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared \
+#                       --build_npu=ON --npu_ddk_root=./ai_ddk_lib \
+#                       --build_extra=ON --with_log=OFF \
+#                       full_publish
+# mv build.lite.android.armv7.gcc/ build.lite.android.armv7.gcc_full_nolog/
 
-# build tiny
-./lite/tools/build.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared \
-                      --build_npu=ON --npu_ddk_root=./ai_ddk_lib \
-                      --build_extra=ON --with_log=OFF \
-                      tiny_publish
-mv build.lite.android.armv7.gcc/ build.lite.android.armv7.gcc_tiny_nolog/
-cd -
+# # build tiny
+# ./lite/tools/build.sh --arm_os=android --arm_abi=armv7 --arm_lang=gcc --android_stl=c++_shared \
+#                       --build_npu=ON --npu_ddk_root=./ai_ddk_lib \
+#                       --build_extra=ON --with_log=OFF \
+#                       tiny_publish
+# mv build.lite.android.armv7.gcc/ build.lite.android.armv7.gcc_tiny_nolog/
+# cd -
 
 # paddle full lib
 base_full_dir=$base_repo_dir/build.lite.android.armv7.gcc_full_nolog/inference_lite_lib.android.armv7.npu
@@ -57,6 +57,7 @@ cp $base_hiai_dir/libhiai.so $target_lib
 cp $base_hiai_dir/libhiai_ir.so $target_lib
 cp $base_hiai_dir/libhiai_ir_build.so $target_lib
 cp $base_hiai_dir/libhcl.so $target_lib
+cp $base_hiai_dir/libcpucl.so $target_lib
 echo "copy form $base_hiai_dir to $target_lib succeed"
 
 # ndk - c++_shared
