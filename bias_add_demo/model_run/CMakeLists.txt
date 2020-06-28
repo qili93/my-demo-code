@@ -18,6 +18,8 @@ add_compile_options(-std=c++11)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
 
+include_directories(${ASCEND_PATH}/acllib/include)
+
 # 2.add executable output
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
 
