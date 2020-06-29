@@ -35,7 +35,6 @@ include_directories(${ATC_INCLUDE_DIR}/register)
 link_directories(${ASCEND_PATH}/atc/lib64/plugin/opskernel)
 link_directories(${ASCEND_PATH}/atc/lib64)
 link_directories(${ASCEND_PATH}/opp/op_proto/built-in)
-link_directories(${ASCEND_PATH}/opp/framework/built-in/tensorflow)
 link_directories(${ASCEND_PATH}/opp/fusion_pass/built_in)
 link_directories(${ASCEND_PATH}/opp/fusion_pass/built_in/vector_core)
 
@@ -54,10 +53,6 @@ find_library(ASCEND_GE_COMPILER_FILE NAMES ge_compiler
 
 find_library(ASCEND_OPSPROTO_FILE NAMES opsproto
   PATHS ${ASCEND_PATH}/opp/op_proto/built-in
-  NO_DEFAULT_PATH)
-
-find_library(ASCEND_OPS_ALL_PLUGIN_FILE NAMES ops_all_plugin
-  PATHS ${ASCEND_PATH}/opp/framework/built-in/tensorflow
   NO_DEFAULT_PATH)
 
 if(NOT ASCEND_REGISTER_FILE)
@@ -92,14 +87,6 @@ else()
   set_property(TARGET ascend_opsproto PROPERTY IMPORTED_LOCATION ${ASCEND_OPSPROTO_FILE})
 endif()
 
-if(NOT ASCEND_OPS_ALL_PLUGIN_FILE)
-  message(FATAL_ERROR "Can not find ASCEND_OPS_ALL_PLUGIN_FILE in ${ASCEND_PATH}/opp/framework/built-in/tensorflow")
-else()
-  message(STATUS "Found ASCEND OPS ALL PLUGIN Library: ${ASCEND_OPS_ALL_PLUGIN_FILE}")
-  add_library(ascend_ops_all_plugin SHARED IMPORTED GLOBAL)
-  set_property(TARGET ascend_ops_all_plugin PROPERTY IMPORTED_LOCATION ${ASCEND_OPS_ALL_PLUGIN_FILE})
-endif()
-
-set(ascend_builder_libs ascend_register ascend_graph ascend_ge_compiler ascend_opsproto ascend_ops_all_plugin CACHE INTERNAL "ascend atc builder libs")
+set(ascend_builder_libs ascend_register ascend_graph ascend_ge_compiler ascend_opsproto CACHE INTERNAL "ascend atc builder libs")
 
 target_link_libraries(${TARGET_EXE} ${ascend_builder_libs})

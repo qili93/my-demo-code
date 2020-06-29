@@ -49,10 +49,6 @@ bool GenGraph(Graph& graph) {
     return true;
 }
 
-bool SaveOMModel(Graph& graph) {
-
-}
-
 int main(int argc, char* argv[])
 {
     // 1. Genetate graph
