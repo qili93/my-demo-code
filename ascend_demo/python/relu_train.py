@@ -32,8 +32,8 @@ class RELU(fluid.dygraph.Layer):
         return output
 
 def save_model(save_dirname):
-    place = fluid.CUDAPlace(0) if fluid.core.is_compiled_with_cuda() else fluid.CPUPlace()
-
+    #place = fluid.CUDAPlace(0) if fluid.core.is_compiled_with_cuda() else fluid.CPUPlace()
+    place = fluid.CPUPlace()
     with fluid.dygraph.guard(place):
         model = RELU()
         # save inference model
@@ -52,4 +52,4 @@ def save_model(save_dirname):
         print("Saved inference model to {}".format(save_dirname))
 
 if __name__ == '__main__':
-    save_model(save_dirname='../models/mnist_model')
+    save_model(save_dirname='../assets/relu_model')
