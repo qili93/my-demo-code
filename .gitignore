@@ -2,24 +2,6 @@
 .DS_Store
 .vscode
 # ignore npu lib
-libs/npu/arm64-v8a-log/include
-libs/npu/arm64-v8a-log/lib
-libs/npu/arm64-v8a-nolog/include
-libs/npu/arm64-v8a-nolog/lib
-libs/npu/armeabi-v7a-log/include
-libs/npu/armeabi-v7a-log/lib
-libs/npu/armeabi-v7a-nolog/include
-libs/npu/armeabi-v7a-nolog/lib
-# ignore x86 lib
-libs/x86
-# ignore build dir
-mnist_demo_npu/shell/build
-mnist_demo_x86/shell/build
-line_demo_ascend/shell/build
-# no long sentense demo
-long_sentence_prediction_demo/apk
-long_sentence_prediction_demo/assets
-long_sentence_prediction_demo/shell/build
-# no dmoe build
-bias_add_demo/model_build/build
-bias_add_demo/model_run/build
+lib**
+include**
+build**
