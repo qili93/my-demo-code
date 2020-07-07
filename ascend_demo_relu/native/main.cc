@@ -6,7 +6,7 @@
 
 int main(int argc, char* argv[])
 {
-  std::string model_cache_dir = "../assets/test";
+  std::string model_cache_dir = "../assets/models/native_model";
 
   ge::Graph graph1("IrGraph1");
   OMModelBuild * om_build = new OMModelBuild();
