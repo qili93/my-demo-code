@@ -5,5 +5,8 @@
 lib**
 include**
 build**
-#
+models**
+test**
+*.log
+# not ignore
 !build.sh
