@@ -44,7 +44,7 @@ def save_model(save_dirname):
             shutil.rmtree(save_dirname)
             os.makedirs(save_dirname)
         # save inference model
-        in_np = np.random.random([1, 1, 28, 28]).astype('float32')
+        in_np = np.random.random([1, 1, 2, 2]).astype('float32')
         input_var = fluid.dygraph.to_variable(in_np)
         out_dygraph, static_layer = TracedLayer.trace(model, inputs=[input_var])
         
@@ -52,4 +52,4 @@ def save_model(save_dirname):
         print("Saved inference model to {}".format(save_dirname))
 
 if __name__ == '__main__':
-    save_model(save_dirname='../assets/relu_model')
+    save_model(save_dirname='../models/relu_model')
