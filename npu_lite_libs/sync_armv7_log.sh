@@ -84,3 +84,6 @@ ls -l $target_inc
 # list lib files
 echo "ls -l $target_lib"
 ls -lh $target_lib
+
+# compress libs
+tar -zcvf armeabi-v7a-log.tar.gz ./armeabi-v7a-log
