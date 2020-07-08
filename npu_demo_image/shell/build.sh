@@ -10,7 +10,7 @@ function readlinkf() {
 #######################################
 # ANDROID_NDK=/opt/android-ndk-r17c # For paddlelite docker
 ANDROID_NDK=/Users/liqi27/Library/android-ndk-r17c # For macOS with ndk-bundle
-USE_FULL_API=FALSE
+USE_FULL_API=TRUE
 
 ANDROID_ABI=armeabi-v7a # arm64-v8a
 ANDROID_NATIVE_API_LEVEL=android-23

@@ -31,10 +31,15 @@ set_property(TARGET npu_ddk_ir PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib
 add_library(npu_ddk_ir_build SHARED IMPORTED GLOBAL)
 set_property(TARGET npu_ddk_ir_build PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/libhiai_ir_build.so)
 
-add_library(npu_ddk_hcl SHARED IMPORTED GLOBAL)
-set_property(TARGET npu_ddk_hcl PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/libhcl.so)
+# for 320 only
+# add_library(npu_ddk_hcl SHARED IMPORTED GLOBAL)
+# set_property(TARGET npu_ddk_hcl PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/libhcl.so)
 
-set(npu_runtime_libs npu_ddk_hiai npu_ddk_hcl CACHE INTERNAL "npu ddk runtime libs")
+# 310
+set(npu_runtime_libs npu_ddk_hiai CACHE INTERNAL "npu ddk runtime libs")
+# 320
+#set(npu_runtime_libs npu_ddk_hiai npu_ddk_hcl CACHE INTERNAL "npu ddk runtime libs")
+
 set(npu_builder_libs npu_ddk_ir npu_ddk_ir_build CACHE INTERNAL "npu ddk builder libs")
 
 # 5. link paddle-lite libraries
