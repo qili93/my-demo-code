@@ -85,46 +85,45 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   for (int i = 0; i < WARMUP_COUNT; i++) {
     predictor->Run();
   }
-  // // repeat to obtain the average time, set REPEAT_COUNT=1 in actual products
-  // double max_time_cost = 0.0f;
-  // double min_time_cost = std::numeric_limits<float>::max();
-  // double total_time_cost = 0.0f;
-  // for (int i = 0; i < REPEAT_COUNT; i++) {
-  //   auto start = get_current_us();
-  //   predictor->Run();
-  //   auto end = get_current_us();
-  //   double cur_time_cost = (end - start) / 1000.0f;
-  //   if (cur_time_cost > max_time_cost) {
-  //     max_time_cost = cur_time_cost;
-  //   }
-  //   if (cur_time_cost < min_time_cost) {
-  //     min_time_cost = cur_time_cost;
-  //   }
-  //   total_time_cost += cur_time_cost;
-  //   prediction_time = total_time_cost / REPEAT_COUNT;
-  //   printf("iter %d cost: %f ms\n", i, cur_time_cost);
-  // }
-  // printf("warmup: %d repeat: %d, average: %f ms, max: %f ms, min: %f ms\n",
-  //        WARMUP_COUNT, REPEAT_COUNT, prediction_time, max_time_cost,
-  //        min_time_cost);
+  // repeat to obtain the average time, set REPEAT_COUNT=1 in actual products
+  double max_time_cost = 0.0f;
+  double min_time_cost = std::numeric_limits<float>::max();
+  double total_time_cost = 0.0f;
+  for (int i = 0; i < REPEAT_COUNT; i++) {
+    auto start = get_current_us();
+    predictor->Run();
+    auto end = get_current_us();
+    double cur_time_cost = (end - start) / 1000.0f;
+    if (cur_time_cost > max_time_cost) {
+      max_time_cost = cur_time_cost;
+    }
+    if (cur_time_cost < min_time_cost) {
+      min_time_cost = cur_time_cost;
+    }
+    total_time_cost += cur_time_cost;
+    prediction_time = total_time_cost / REPEAT_COUNT;
+    printf("iter %d cost: %f ms\n", i, cur_time_cost);
+  }
+  printf("warmup: %d repeat: %d, average: %f ms, max: %f ms, min: %f ms\n",
+         WARMUP_COUNT, REPEAT_COUNT, prediction_time, max_time_cost,
+         min_time_cost);
 
-  // // Get the data of output tensor and postprocess to output detected objects
-  // std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(0)));
-  // const float *output_data = output_tensor->mutable_data<float>();
-  // const float *output_data = output_tensor->data<float>();
-  // int64_t output_size = ShapeProduction(output_tensor->shape());
-  // double postprocess_start_time = get_current_us();
-  // std::vector<RESULT> results =  postprocess(output_data, output_size);
-  // double postprocess_end_time = get_current_us();
-  // double postprocess_time = (postprocess_end_time - postprocess_start_time) / 1000.0f;
+  // Get the data of output tensor and postprocess to output detected objects
+  std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(0)));
+  const float *output_data = output_tensor->mutable_data<float>();
+  int64_t output_size = ShapeProduction(output_tensor->shape());
+  double postprocess_start_time = get_current_us();
+  std::vector<RESULT> results =  postprocess(output_data, output_size);
+  double postprocess_end_time = get_current_us();
+  double postprocess_time = (postprocess_end_time - postprocess_start_time) / 1000.0f;
 
-  // printf("results: %d\n", results.size());
-  // for (int i = 0; i < results.size(); i++) {
-  //   printf("Top%d: %d - %f\n", i, results[i].class_id, results[i].score);
-  // }
-  // printf("Preprocess time: %f ms\n", preprocess_time);
-  // printf("Prediction time: %f ms\n", prediction_time);
-  // printf("Postprocess time: %f ms\n\n", postprocess_time);
+  printf("results: %d\n", results.size());
+  for (int i = 0; i < results.size(); i++) {
+    printf("Top%d: %d - %f\n", i, results[i].class_id, results[i].score);
+  }
+  printf("Preprocess time: %f ms\n", preprocess_time);
+  printf("Prediction time: %f ms\n", prediction_time);
+  printf("Postprocess time: %f ms\n\n", postprocess_time);
 }
 
 int main(int argc, char **argv) {
@@ -169,6 +168,7 @@ int main(int argc, char **argv) {
   mobile_config.set_model_from_file(model_dir + ".nb");
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(CPU_POWER_MODE);
+  mobile_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
   try {
     predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
     process(predictor);
