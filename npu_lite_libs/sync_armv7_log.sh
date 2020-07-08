@@ -3,8 +3,8 @@
 target_arch=armeabi-v7a
 
 # paddle repo dir
-# base_repo_dir=/workspace/Github-qili93/Paddle-Lite
-base_repo_dir=/workspace/tempcode/Paddle-Lite
+base_repo_dir=/workspace/Github-qili93/Paddle-Lite
+# base_repo_dir=/workspace/tempcode/Paddle-Lite
 
 # cd $base_repo_dir
 # # build full
@@ -52,7 +52,7 @@ mkdir -p "$target_lib"
 echo "$target_lib created"
 
 # copy hiai
-base_hiai_dir=$base_repo_dir/ai_ddk_lib/lib
+base_hiai_dir=$base_repo_dir/ai_ddk_lib_320/lib
 cp $base_hiai_dir/libhiai.so $target_lib
 cp $base_hiai_dir/libhiai_ir.so $target_lib
 cp $base_hiai_dir/libhiai_ir_build.so $target_lib
