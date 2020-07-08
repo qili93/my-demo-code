@@ -21,4 +21,4 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 
 # run demo
 export GLOG_v=5
-./build/relu_demo
+./build/mnist_demo ../assets/models/mnist_model

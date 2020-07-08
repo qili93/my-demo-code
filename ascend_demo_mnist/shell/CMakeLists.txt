@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 project(mnist_demo)
 
-set(TARGET_EXE relu_demo)
+set(TARGET_EXE mnist_demo)
 
 # 1. path to Paddle-Lite lib
 if(${PADDLE_LITE_DIR} STREQUAL "")
@@ -68,8 +68,18 @@ set(ascend_builder_libs atc_register atc_protobuf atc_graph opp_ops_proto atc_er
 set(ascend_runtime_libs acl_ascendcl acl_runtime CACHE INTERNAL "ascend acllib runtime libs")
 
 # 5. link paddle-lite libraries
-add_library(paddle_api_shared SHARED IMPORTED GLOBAL)
-set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/cxx/lib/libpaddle_full_api_shared.so)
+if(NOT DEFINED USE_FULL_API)
+  set(USE_FULL_API TRUE)
+endif()
+
+if(USE_FULL_API)
+  add_definitions(-DUSE_FULL_API)
+  add_library(paddle_api_shared SHARED IMPORTED GLOBAL)
+  set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/cxx/lib/libpaddle_full_api_shared.so)
+else()
+  add_library(paddle_api_shared SHARED IMPORTED GLOBAL)
+  set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/cxx/lib/libpaddle_light_api_shared.so)
+endif()
 
 add_library(mkl_iomp5 SHARED IMPORTED GLOBAL)
 set_property(TARGET mkl_iomp5 PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/third_party/mklml/lib/libiomp5.so)
