@@ -10,16 +10,6 @@ if(${PADDLE_LITE_DIR} STREQUAL "")
 endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
-if(${OpenCV_DIR} STREQUAL "")
-  message(FATAL_ERROR "OpenCV_DIR not set.")
-  return()
-endif()
-message(STATUS "OpenCV_DIR=${OpenCV_DIR}")
-
-find_package(OpenCV REQUIRED)
-message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
-include_directories(${OpenCV_INCLUDE_DIRS})
-
 # 2. link Paddle-Lite directory
 #link_directories(${PADDLE_LITE_DIR}/lib)
 include_directories(${PADDLE_LITE_DIR}/include)
@@ -61,4 +51,4 @@ else()
   set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/libpaddle_light_api_shared.so)
 endif()
 
-target_link_libraries(${TARGET_EXE} paddle_api_shared ${OpenCV_LIBS} ${log-lib} ${npu_builder_libs} ${npu_runtime_libs})
+target_link_libraries(${TARGET_EXE} paddle_api_shared ${log-lib} ${npu_builder_libs} ${npu_runtime_libs})

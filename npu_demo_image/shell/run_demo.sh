@@ -55,7 +55,7 @@ EXE_SHELL="cd ${WORK_SPACE}; "
 EXE_SHELL+="export GLOG_v=5;"
 EXE_SHELL+="export SUBGRAPH_DISABLE_ONLINE_MODE=true;"
 EXE_SHELL+="export SUBGRAPH_CUSTOM_PARTITION_CONFIG_FILE=./subgraph_custom_partition_config_file.txt;"
-EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE} ./${MODEL_NAME} ${MODEL_TYPE} ./${TEST_NAME}"
+EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE} ./${MODEL_NAME} ${MODEL_TYPE}"
 echo ${EXE_SHELL}
 # run
 adb shell ${EXE_SHELL}
