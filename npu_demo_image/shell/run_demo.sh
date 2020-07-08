@@ -59,11 +59,36 @@ EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE} ./${MODEL_NAME} ${MODEL_TYPE}"
 echo ${EXE_SHELL}
 # run
 adb shell ${EXE_SHELL}
+
+#######################################
+# Post processing commands, do not change
+#######################################
+# show files of /data/local/tmp
+echo ""
+echo "ls -l ${WORK_SPACE}"
 adb shell ls -l ${WORK_SPACE}
+echo ""
 
 # pull optimized model
 adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
 
+# cp om/cfg file to model_cache_dir
+EXE_SHELL="cd ${WORK_SPACE}; "
+EXE_SHELL+="mkdir model_cache_dir;"
+EXE_SHELL+="cp *.om ./model_cache_dir;"
+EXE_SHELL+="cp *.cfg ./model_cache_dir;"
+adb shell ${EXE_SHELL}
+
+# show files of model_cache_dir
+echo ""
+echo "ls -l ${WORK_SPACE}/model_cache_dir"
+adb shell ls -l ${WORK_SPACE}/model_cache_dir
+echo ""
+
+# pull from model_cache_dir
+adb pull  ${WORK_SPACE}/model_cache_dir/.    ${MODEL_DIR}
+
 # list models files
+echo ""
 echo "ls -l ${MODEL_DIR}"
-ls -l ${MODEL_DIR}
+ ls -l ${MODEL_DIR}

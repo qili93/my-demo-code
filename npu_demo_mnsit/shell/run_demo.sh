@@ -47,7 +47,10 @@ echo ${EXE_SHELL}
 # run
 adb shell ${EXE_SHELL}
 
-# show files
+#######################################
+# Post processing commands, do not change
+#######################################
+# show files of /data/local/tmp
 echo ""
 echo "ls -l ${WORK_SPACE}"
 adb shell ls -l ${WORK_SPACE}
@@ -63,7 +66,7 @@ EXE_SHELL+="cp *.om ./model_cache_dir;"
 EXE_SHELL+="cp *.cfg ./model_cache_dir;"
 adb shell ${EXE_SHELL}
 
-# show files
+# show files of model_cache_dir
 echo ""
 echo "ls -l ${WORK_SPACE}/model_cache_dir"
 adb shell ls -l ${WORK_SPACE}/model_cache_dir
