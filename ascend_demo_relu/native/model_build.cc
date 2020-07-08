@@ -10,10 +10,13 @@
 
 bool OMModelBuild::GenGraph(ge::Graph& graph) {
      // // input data op => feed
-    ge::TensorDesc input_desc(ge::Shape({ 1, 1, 2, 2 }), ge::FORMAT_ND, ge::DT_FLOAT);
+    ge::TensorDesc input_desc(ge::Shape({ 1, 1, 4, 4 }), ge::FORMAT_ND, ge::DT_FLOAT);
     auto input_x = ge::op::Data("input_x");
     input_x.update_input_desc_x(input_desc);
     input_x.update_output_desc_y(input_desc);
+
+    auto conv_op = ge::op::Conv2D("conv1")
+         .set_input_x();
 
     auto relu1 = ge::op::Relu("relu")
         .set_input_x(input_x, "y");

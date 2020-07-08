@@ -8,5 +8,8 @@ build**
 models**
 test**
 *.log
+*.om
+kernel_meta/
+data/
 # not ignore
 !build.sh
