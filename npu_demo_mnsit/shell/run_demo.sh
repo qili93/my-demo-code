@@ -51,6 +51,16 @@ adb shell ls -l ${WORK_SPACE}
 # pull optimized model
 adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
 
+# cp om/cfg file to model_cache_dir
+EXE_SHELL="cd ${WORK_SPACE}; "
+EXE_SHELL+="mkdir model_cache_dir;"
+EXE_SHELL+="cp *.om ./model_cache_dir;"
+EXE_SHELL+="cp *.cfg ./model_cache_dir;"
+adb shell ${EXE_SHELL}
+adb shell ls -l ${WORK_SPACE}/model_cache_dir
+# pull from model_cache_dir
+adb pull  ${WORK_SPACE}/model_cache_dir/.    ${MODEL_DIR}
+
 # list models files
 echo "ls -l ${MODEL_DIR}"
  ls -l ${MODEL_DIR}
