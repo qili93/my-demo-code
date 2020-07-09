@@ -52,29 +52,41 @@ mkdir -p "$target_lib"
 echo "$target_lib created"
 
 # copy hiai
-base_hiai_dir=$base_repo_dir/ai_ddk_lib_320/lib
+echo "---------------COPY HW HIAI DDK Libs-----------------"
+base_hiai_dir=$base_repo_dir/ai_ddk_lib_610/lib
+echo "copy form == $base_hiai_dir"
+echo "copy to ==== $target_lib"
 cp $base_hiai_dir/libhiai.so $target_lib
 cp $base_hiai_dir/libhiai_ir.so $target_lib
 cp $base_hiai_dir/libhiai_ir_build.so $target_lib
 cp $base_hiai_dir/libhcl.so $target_lib
 cp $base_hiai_dir/libcpucl.so $target_lib
-echo "copy form $base_hiai_dir to $target_lib succeed"
 
-# ndk - c++_shared
+echo "---------------COPY NDK C++ Shared Libs-----------------"
 base_nkd_dir=/opt/android-ndk-r17c
 base_shared_lib=$base_nkd_dir/sources/cxx-stl/llvm-libc++/libs/$target_arch/libc++_shared.so
+echo "copy form == $base_shared_lib"
+echo "copy to ==== $target_lib"
 cp $base_shared_lib $target_lib
-echo "copy form $base_shared_lib to $target_lib succeed"
 
 # copy full so
+echo "---------------COPY Paddle-Lite Full Libs-----------------"
 full_so_name=libpaddle_full_api_shared.so
+echo "copy from == $base_full_lib/$full_so_name"
+echo "copy to ==== $target_lib"
 cp $base_full_lib/$full_so_name $target_lib
 
 # copy tiny so
+echo "---------------COPY Paddle-Lite Tiny Libs-----------------"
 tiny_so_name=libpaddle_light_api_shared.so
+echo "copy from == $base_full_lib/$tiny_so_name"
+echo "copy to ==== $target_lib"
 cp $base_tiny_lib/$tiny_so_name $target_lib
 
 # copy target_arch/include dir
+echo "---------------COPY Paddle-Lite Headers-----------------"
+echo "copy from == $base_full_include"
+echo "copy to ==== $target_lib"
 cp -r $base_full_include $target_dir
 
 # list include files
