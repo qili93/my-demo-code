@@ -79,7 +79,7 @@ cp $base_full_lib/$full_so_name $target_lib
 # copy tiny so
 echo "---------------COPY Paddle-Lite Tiny Libs-----------------"
 tiny_so_name=libpaddle_light_api_shared.so
-echo "copy from == $base_full_lib/$tiny_so_name"
+echo "copy from == $base_tiny_lib/$tiny_so_name"
 echo "copy to ==== $target_lib"
 cp $base_tiny_lib/$tiny_so_name $target_lib
 
