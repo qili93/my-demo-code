@@ -19,6 +19,16 @@ export SOC_VERSION=Ascend310
 #######################################
 # Run commands, change accordingly
 #######################################
-MODEL_DIR=$(readlinkf ../assets/models/native_model)
+MODEL_DIR=$(readlinkf ../assets/models)
+MODEL_NAME=native_model
 echo "MODEL_DIR=$MODEL_DIR"
-./build/main $MODEL_DIR
+MODEL_FILE=$MODEL_DIR/$MODEL_NAME".om"
+echo "MODEL_FILE=$MODEL_FILE"
+
+# delete om file if build from memory
+rm -rf $MODEL_FILE
+echo "ls -l $MODEL_DIR"
+ls -l $MODEL_DIR
+
+export GLOG_v=5;
+./build/main $MODEL_DIR/$MODEL_NAME

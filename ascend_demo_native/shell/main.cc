@@ -10,13 +10,14 @@ int main(int argc, char **argv) {
     exit(1);
   }
   std::string model_dir = argv[1];
+  VLOG(3) << "Getting model dir to " << model_dir;
 
   ge::Graph graph1("IrGraph1");
   OMModelBuild * om_build = new OMModelBuild();
   if (!om_build->GenGraph(graph1)) {
-    ERROR_LOG("[model_build] GenGraph failed!");
+    ERROR_LOG("[main] GenGraph failed!");
   } else {
-    INFO_LOG("[model_build] GenGraph succees");
+    INFO_LOG("[main] GenGraph succees");
   }
 
   auto device_program = std::make_shared<DeviceProgram>();

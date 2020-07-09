@@ -11,6 +11,7 @@
 namespace my_lite_demo {
 
 std::shared_ptr<AclModelClient> Device::LoadFromMem(const std::vector<char>& model_buffer) {
+  LOG(INFO) << "[ASCEND] Staring LoadFromMem ...";
   if (model_buffer.size() == 0) {
     return nullptr;
   }
@@ -32,7 +33,7 @@ std::shared_ptr<AclModelClient> Device::LoadFromFile(const std::string& model_pa
   LOG(INFO) << "[ASCEND] Staring LoadFromFile ...";
   std::ifstream fs(model_path);
   if (!fs.is_open()) {
-    LOG(ERROR) << "[ASCEND] model file " << model_path.c_str() << "not exists!";
+    LOG(ERROR) << "[ASCEND] model file " << model_path.c_str() << " not exists!";
     return nullptr;
   }
   // Init resources before run model

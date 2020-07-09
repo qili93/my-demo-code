@@ -28,7 +28,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(ge::Graph &om_graph, const std::str
     if (ge::aclgrphBuildInitialize(global_options) !=  ge::GRAPH_SUCCESS) {
       LOG(ERROR) << "[ASCEND] aclgrphBuildInitialize Failed!";
     }
-    LOG(INFO) << "[ASCEND] aclgrphBuildInitialize SUCCESS!";
+    LOG(INFO) << "[ASCEND] aclgrphBuildInitialize success!";
 
     // 3. Build IR Model
     ge::ModelBufferData model_om_buffer;
@@ -38,14 +38,14 @@ bool DeviceProgram::BuildGraphAndCacheToFile(ge::Graph &om_graph, const std::str
     if (ge::aclgrphBuildModel(om_graph, options, model_om_buffer) !=  ge::GRAPH_SUCCESS) {
       LOG(ERROR) << "[ASCEND] aclgrphBuildModel Failed!";
     } else {
-      LOG(INFO) << "[ASCEND] aclgrphBuildModel SUCCESS!";
+      LOG(INFO) << "[ASCEND] aclgrphBuildModel success!";
     }
 
     // 4. Save IR Model
     if (ge::aclgrphSaveModel(model_cache_dir, model_om_buffer) != ge::GRAPH_SUCCESS) {
       LOG(ERROR) << "[ASCEND] aclgrphSaveModel Failed!";
     } else {
-      LOG(INFO) << "[ASCEND] aclgrphSaveModel SUCCESS!";
+      LOG(INFO) << "[ASCEND] success saving model to " << model_cache_dir;
     }
 
     // 5. release resource
@@ -58,7 +58,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(ge::Graph &om_graph, const std::str
       LOG(WARNING) << "[ASCEND] Load model from memory failed!";
       return false;
     }
-    LOG(INFO) << "[ASCEND] build and cache to file success.";
+    LOG(INFO) << "[ASCEND] create model_client and load model from memory success.";
     LOG(INFO) << "[ASCEND] Finishing BuildGraphAndCacheToFile ...";
     return true;
 }

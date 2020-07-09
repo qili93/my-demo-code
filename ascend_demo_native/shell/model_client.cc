@@ -6,6 +6,7 @@
 #include "model_client.h"
 
 bool AclModelClient::LoadFromMem(const void* data, uint32_t size) {
+  LOG(INFO) << "[ASCEND] Starting LoadFromMem ...";
   auto ret = aclmdlLoadFromMem(data, size, &model_id_);
   if (ret != ACL_ERROR_NONE) {
     LOG(WARNING) << "[ASCEND] Load model from memory failed!";
@@ -21,6 +22,7 @@ bool AclModelClient::LoadFromMem(const void* data, uint32_t size) {
     LOG(WARNING) << "[ASCEND] get model description failed!";
     return false;
   }
+  LOG(INFO) << "[ASCEND] Finishing LoadFromMem ...";
   return true;
 }
 
@@ -42,6 +44,7 @@ bool AclModelClient::LoadFromFile(const char* model_path) {
     LOG(WARNING) << "[ASCEND] get model description failed!";
     return false;
   }
+  LOG(INFO) << "[ASCEND] Finishing LoadFromFile ...";
   return true;
 }
 
