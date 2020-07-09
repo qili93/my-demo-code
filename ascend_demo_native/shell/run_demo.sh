@@ -1,7 +1,13 @@
 #!/bin/bash
 cur_dir=$(pwd)
 
-# set environment
+function readlinkf() {
+    perl -MCwd -e 'print Cwd::abs_path shift' "$1";
+}
+
+#######################################
+# Ascend runtime enironement
+#######################################
 export ASCEND_PATH=/usr/local/Ascend
 export ASCEND_ATC_PATH=$ASCEND_PATH/atc
 export ASCEND_OPP_PATH=$ASCEND_PATH/opp
@@ -10,5 +16,9 @@ export PYTHONPATH=${ASCEND_ATC_PATH}/python/site-packages/te:${ASCEND_ATC_PATH}/
 export LD_LIBRARY_PATH=${ASCEND_PATH}/acllib/lib64:${ASCEND_ATC_PATH}/lib64:${ASCEND_PATH}/toolkit/lib64:${ASCEND_PATH}/add-ons:${ASCEND_PATH}/opp/op_proto/built-in:$LD_LIBRARY_PATH
 export SOC_VERSION=Ascend310
 
-# run demo
-./build/main
+#######################################
+# Run commands, change accordingly
+#######################################
+MODEL_DIR=$(readlinkf ../assets/models/native_model)
+echo "MODEL_DIR=$MODEL_DIR"
+./build/main $MODEL_DIR

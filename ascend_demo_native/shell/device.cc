@@ -16,7 +16,7 @@ std::shared_ptr<AclModelClient> Device::LoadFromMem(const std::vector<char>& mod
   }
   // Init resources before run model
   if (!InitDevice()) {
-    ERROR_LOG("[ASCEND] InitDevice failed!.");
+    LOG(ERROR) << "[ASCEND] InitDevice failed!.";
     return nullptr;
   }
   // Create a ACL model  client to load the om model
@@ -29,14 +29,15 @@ std::shared_ptr<AclModelClient> Device::LoadFromMem(const std::vector<char>& mod
 }
 
 std::shared_ptr<AclModelClient> Device::LoadFromFile(const std::string& model_path) {
+  LOG(INFO) << "[ASCEND] Staring LoadFromFile ...";
   std::ifstream fs(model_path);
   if (!fs.is_open()) {
-    ERROR_LOG("[device](LoadFromFile) model file <%s> not exists!", model_path.c_str());
+    LOG(ERROR) << "[ASCEND] model file " << model_path.c_str() << "not exists!";
     return nullptr;
   }
   // Init resources before run model
   if (!InitDevice()) {
-    ERROR_LOG("[ASCEND] InitDevice failed!.");
+    LOG(ERROR) << "[ASCEND] InitDevice failed!.";
     return nullptr;
   }
   // Create a ACL model  client to load the om model
@@ -52,7 +53,7 @@ std::shared_ptr<AclModelClient> Device::LoadFromFile(const std::string& model_pa
 //                    std::vector<ge::Operator>& output_nodes,  // NOLINT
 //                    std::vector<char>* model_buffer) {
 //   // Convert the HiAI IR graph to the HiAI om model
-//   ge::Graph ir_graph("graph");
+//   ge::Graph ir_graph("graph";
 //   ir_graph.SetInputs(input_nodes).SetOutputs(output_nodes);
 
 //   // System init
@@ -61,7 +62,7 @@ std::shared_ptr<AclModelClient> Device::LoadFromFile(const std::string& model_pa
 //   };
 //   auto status = ge::aclgrphBuildInitialize(global_options);
 //   if (status != ge::GRAPH_SUCCESS) {
-//     ERROR_LOG("[ASCEND] InitDevice failed!.");
+//     LOG(ERROR) << "[ASCEND] InitDevice failed!.";
 //     return false;
 //   }
 //   // Build IR model
@@ -70,9 +71,9 @@ std::shared_ptr<AclModelClient> Device::LoadFromFile(const std::string& model_pa
 //   // Do nothing?
 //   status = ge::aclgrphBuildModel(ir_graph, options, om_buffer);
 //   if (status != ge::GRAPH_SUCCESS) {
-//     ERROR_LOG("[ASCEND] aclgrphBuildModel failed!");
+//     LOG(ERROR) << "[ASCEND] aclgrphBuildModel failed!";
 //   }
-//   INFO_LOG("[ASCEND] aclgrphBuildModel success.");
+//   LOG(INFO) << "[ASCEND] aclgrphBuildModel success.";
 
 //   // Copy from om model buffer
 //   model_buffer->resize(om_buffer.length);
@@ -82,53 +83,55 @@ std::shared_ptr<AclModelClient> Device::LoadFromFile(const std::string& model_pa
 
 //   // release resource
 //   ge::aclgrphBuildFinalize();
-//   INFO_LOG("[ASCEND] Build model done.");
+//   LOG(INFO) << "[ASCEND] Build model done.";
 //   return true;
 // }
 
 bool Device::InitDevice() {
+  LOG(INFO) << "[ASCEND] Starting InitDevice ...";
   // skip if device already inited
   if (device_inited_) return true;
 
   // ACL init
   aclError ret = aclInit(NULL);
   if (ret != ACL_ERROR_NONE) {
-    ERROR_LOG("[device](InitDevice) aclInit failed!");
+    LOG(ERROR) << "[ASCEND] aclInit failed!";
     return false;
   }
-  INFO_LOG("[device](InitDevice) aclInit succeed!");
+  LOG(INFO) << "[ASCEND] aclInit succeed!";
   // Open Device
   ret = aclrtSetDevice(device_id_);
   if (ret != ACL_ERROR_NONE) {
-    ERROR_LOG("[device](InitDevice) acl open device %d failed", device_id_);
+    LOG(ERROR) << "[ASCEND] acl open device " << device_id_ << " failed";
     return false;
   }
-  INFO_LOG("[device](InitDevice) open device %d success", device_id_);
+  LOG(INFO) << "[ASCEND] open device " << device_id_ << " success";
   // create context (set current)
   ret = aclrtCreateContext(&context_, device_id_);
   if (ret != ACL_ERROR_NONE) {
-    ERROR_LOG("[device](InitDevice) acl create context failed");
+    LOG(ERROR) << "[ASCEND] acl create context failed";
     return false;
   }
-  INFO_LOG("[device](InitDevice) create context success");
+  LOG(INFO) << "[ASCEND] create context success";
   // create stream
   ret = aclrtCreateStream(&stream_);
   if (ret != ACL_ERROR_NONE) {
-    ERROR_LOG("[device](InitDevice) acl create stream failed");
+    LOG(ERROR) << "[ASCEND] acl create stream failed";
     return false;
   }
-  INFO_LOG("[device](InitDevice) create stream success");
+  LOG(INFO) << "[ASCEND] create stream success";
   // get run mode
   aclrtRunMode runMode;
   ret = aclrtGetRunMode(&runMode);
   if (ret != ACL_ERROR_NONE) {
-    ERROR_LOG("[device](InitDevice) acl get run mode failed");
+    LOG(ERROR) << "[ASCEND] acl get run mode failed";
     return false;
   }
   runmode_is_device_ = (runMode == ACL_DEVICE);
-  INFO_LOG("[device](InitDevice) get run mode success");
+  LOG(INFO) << "[ASCEND] get run mode success";
 
   device_inited_ = true;
+  LOG(INFO) << "[ASCEND] Finishing InitDevice ...";
   return true;
 }
 
@@ -140,32 +143,32 @@ void Device::ReleaseDevice() {
   if (stream_ != nullptr) {
     ret = aclrtDestroyStream(stream_);
     if (ret != ACL_ERROR_NONE) {
-      ERROR_LOG("[device](ReleaseDevice) destroy stream failed");
+      LOG(ERROR) << "[ASCEND] destroy stream failed";
     }
     stream_ = nullptr;
   }
-  INFO_LOG("[device](ReleaseDevice) end to destroy stream");
+  LOG(INFO) << "[ASCEND] end to destroy stream";
 
   if (context_ != nullptr) {
     ret = aclrtDestroyContext(context_);
     if (ret != ACL_ERROR_NONE) {
-      ERROR_LOG("[device](ReleaseDevice) destroy context failed");
+      LOG(ERROR) << "[ASCEND] destroy context failed";
     }
     context_ = nullptr;
   }
-  INFO_LOG("[device](ReleaseDevice) end to destroy context");
+  LOG(INFO) << "[ASCEND] end to destroy context";
 
   ret = aclrtResetDevice(device_id_);
   if (ret != ACL_ERROR_NONE) {
-    ERROR_LOG("[device](ReleaseDevice) reset device failed");
+    LOG(ERROR) << "[ASCEND] reset device failed";
   }
-  INFO_LOG("[device](ReleaseDevice) end to reset device is %d", device_id_);
+  LOG(INFO) << "[ASCEND] end to reset device is " << device_id_;
 
   ret = aclFinalize();
   if (ret != ACL_ERROR_NONE) {
-    ERROR_LOG("[device](ReleaseDevice) finalize acl failed");
+    LOG(ERROR) << "[ASCEND] finalize acl failed";
   }
-  INFO_LOG("[device](ReleaseDevice) end to finalize acl");
+  LOG(INFO) << "[ASCEND] end to finalize acl";
 
   device_inited_ = false;
 }

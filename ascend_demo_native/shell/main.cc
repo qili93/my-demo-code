@@ -4,9 +4,12 @@
 #include "device.h"
 #include "compute.h"
 
-int main(int argc, char* argv[])
-{
-  std::string model_cache_dir = "../assets/models/native_model";
+int main(int argc, char **argv) {
+  if (argc < 2) {
+    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir\n";
+    exit(1);
+  }
+  std::string model_dir = argv[1];
 
   ge::Graph graph1("IrGraph1");
   OMModelBuild * om_build = new OMModelBuild();
@@ -17,10 +20,10 @@ int main(int argc, char* argv[])
   }
 
   auto device_program = std::make_shared<DeviceProgram>();
-  if (device_program->LoadFromCacheFile(model_cache_dir+".om")) {
+  if (device_program->LoadFromCacheFile(model_dir+".om")) {
     INFO_LOG("[main] LoadFromCacheFile succees");
   } else {
-    device_program->BuildGraphAndCacheToFile(graph1, model_cache_dir);
+    device_program->BuildGraphAndCacheToFile(graph1, model_dir);
   }
   if (device_program->model_client_ == nullptr) {
     ERROR_LOG("[main] BuildGraphAndCacheToFile failed!");

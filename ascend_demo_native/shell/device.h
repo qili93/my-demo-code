@@ -34,7 +34,7 @@ class Device {
  private:
   bool device_inited_{false};
   bool runmode_is_device_{false};
-  int32_t device_id_{1};
+  int32_t device_id_{0};
   aclrtContext context_{nullptr};
   aclrtStream stream_{nullptr};
 };
