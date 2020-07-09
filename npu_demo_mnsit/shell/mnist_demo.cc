@@ -42,7 +42,8 @@ void RunModel(std::string model_dir) {
   config.set_model_from_file(model_dir+".nb");
   config.set_threads(CPU_THREAD_NUM);
   config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-  config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  //config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  config.set_subgraph_model_cache_dir("/data/local/tmp");
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
   std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
@@ -74,12 +75,16 @@ void SaveModel(std::string model_dir) {
     config.set_power_mode(PowerMode::LITE_POWER_HIGH);
     config.set_valid_places({Place{TARGET(kNPU), PRECISION(kFloat)},
                              Place{TARGET(kARM), PRECISION(kFloat)}});
-    config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+    //config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+    config.set_subgraph_model_cache_dir("/data/local/tmp");
     // 2. Create PaddlePredictor by CxxConfig
     std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<CxxConfig>(config);
     std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
-    // 3. Save optimized model
+    // 3. Run model
+    predictor->Run();
+    // 4. Save optimized model
     predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
+    //predictor->SaveOptimizedModel(model_dir, LiteModelType::kProtobuf);
     std::cout << "Load model from " << model_dir << std::endl;
     std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
 }
