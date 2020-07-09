@@ -37,7 +37,7 @@ WORK_SPACE=/data/local/tmp
 adb shell   "rm -r ${WORK_SPACE}/*"
 adb push   ${PADDLE_LITE_DIR}/lib/.     ${WORK_SPACE}
 adb push   ${MODEL_DIR}/.                   ${WORK_SPACE}
-adb push   ${MODEL_DIR}/cache_dir/.   ${WORK_SPACE}
+#adb push   ${MODEL_DIR}/cache_dir/.   ${WORK_SPACE}
 adb push   build/${TARGET_EXE}           ${WORK_SPACE}
 adb shell   chmod +x "${WORK_SPACE}/${TARGET_EXE}"
 # define exe commands
