@@ -65,15 +65,12 @@ std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   // Preprocess image and fill the data of input tensor
-  std::unique_ptr<paddle::lite_api::Tensor> input_tensor(
-      std::move(predictor->GetInput(0)));
+  std::unique_ptr<paddle::lite_api::Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(INPUT_SHAPE);
-  int input_width = INPUT_SHAPE[3];
-  int input_height = INPUT_SHAPE[2];
   auto *input_data = input_tensor->mutable_data<float>();
   double preprocess_start_time = get_current_us();
   for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-    input_data[i] = 1.0;
+    input_data[i] = 1;
   }
   double preprocess_end_time = get_current_us();
   double preprocess_time = (preprocess_end_time - preprocess_start_time) / 1000.0f;
@@ -148,18 +145,17 @@ int main(int argc, char **argv) {
   cxx_config.set_threads(CPU_THREAD_NUM);
   cxx_config.set_power_mode(CPU_POWER_MODE);
   cxx_config.set_valid_places(
-      {paddle::lite_api::Place{TARGET(kARM), PRECISION(kFloat)},
-       paddle::lite_api::Place{TARGET(kNPU), PRECISION(kFloat)}});
-  cxx_config.set_subgraph_model_cache_dir(
-      model_dir.substr(0, model_dir.find_last_of("/")));
+      {paddle::lite_api::Place{TARGET(kNPU), PRECISION(kFloat)},
+       paddle::lite_api::Place{TARGET(kARM), PRECISION(kFloat)}});
+  cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  //cxx_config.set_subgraph_model_cache_dir("/data/local/tmp");
   try {
     predictor = paddle::lite_api::CreatePaddlePredictor(cxx_config);
+    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
     process(predictor);
-    predictor->SaveOptimizedModel(
-        model_dir, paddle::lite_api::LiteModelType::kNaiveBuffer);
+    predictor->SaveOptimizedModel(model_dir, paddle::lite_api::LiteModelType::kNaiveBuffer);
   } catch (std::exception e) {
-    std::cout << "An internal error occurred in PaddleLite(cxx config)."
-              << std::endl;
+    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
 #endif
 
@@ -169,12 +165,13 @@ int main(int argc, char **argv) {
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(CPU_POWER_MODE);
   mobile_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  //mobile_config.set_subgraph_model_cache_dir("/data/local/tmp");
   try {
     predictor = paddle::lite_api::CreatePaddlePredictor(mobile_config);
+    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
     process(predictor);
   } catch (std::exception e) {
-    std::cout << "An internal error occurred in PaddleLite(mobile config)."
-              << std::endl;
+    std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
 
   return 0;

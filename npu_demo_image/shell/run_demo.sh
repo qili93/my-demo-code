@@ -29,12 +29,6 @@ MODEL_NAME=mobilenet_v1_fp32_224_fluid
 MODEL_TYPE=0
 # model dir
 MODEL_DIR=$(readlinkf ../assets/models)
-# test name
-LABEL_NAME=synset_words.txt
-# test dir
-LABEL_DIR=$(readlinkf ../assets/labels)
-# image dir
-IMAGE_DIR=$(readlinkf ../assets/images)
 # workspace
 WORK_SPACE=/data/local/tmp
 
@@ -45,8 +39,7 @@ WORK_SPACE=/data/local/tmp
 adb shell   "rm -r ${WORK_SPACE}/*"
 adb push   ${PADDLE_LITE_DIR}/lib/.     ${WORK_SPACE}
 adb push   ${MODEL_DIR}/.                   ${WORK_SPACE}
-adb push   ${LABEL_DIR}/.                      ${WORK_SPACE}
-adb push   ${IMAGE_DIR}/.                     ${WORK_SPACE}
+#adb push   ${MODEL_DIR}/cache_dir/.   ${WORK_SPACE}
 adb push   ./subgraph_custom_partition_config_file.txt ${WORK_SPACE}
 adb push   build/${TARGET_EXE}           ${WORK_SPACE}
 adb shell    chmod +x "${WORK_SPACE}/${TARGET_EXE}"
@@ -74,21 +67,26 @@ adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
 
 # cp om/cfg file to model_cache_dir
 EXE_SHELL="cd ${WORK_SPACE}; "
-EXE_SHELL+="mkdir model_cache_dir;"
-EXE_SHELL+="cp *.om ./model_cache_dir;"
-EXE_SHELL+="cp *.cfg ./model_cache_dir;"
+EXE_SHELL+="mkdir cache_dir;"
+EXE_SHELL+="cp *.om ./cache_dir;"
+EXE_SHELL+="cp *.cfg ./cache_dir;"
 adb shell ${EXE_SHELL}
 
 # show files of model_cache_dir
 echo ""
-echo "ls -l ${WORK_SPACE}/model_cache_dir"
-adb shell ls -l ${WORK_SPACE}/model_cache_dir
+echo "ls -l ${WORK_SPACE}/cache_dir"
+adb shell ls -l ${WORK_SPACE}/cache_dir
 echo ""
 
 # pull from model_cache_dir
-adb pull  ${WORK_SPACE}/model_cache_dir/.    ${MODEL_DIR}
+adb pull  ${WORK_SPACE}/cache_dir/.    ${MODEL_DIR}/cache_dir
 
 # list models files
 echo ""
 echo "ls -l ${MODEL_DIR}"
  ls -l ${MODEL_DIR}
+
+ # list models files
+echo ""
+echo "ls -l ${MODEL_DIR}/cache_dir"
+ ls -l ${MODEL_DIR}/cache_dir
