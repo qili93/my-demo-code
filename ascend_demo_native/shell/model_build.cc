@@ -33,28 +33,35 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
     input_x.update_input_desc_x(input_desc);
     input_x.update_output_desc_y(input_desc);
 
-    // weight tensor
-    auto weight_shape = ge::Shape({ 2, 2, 1, 1 });
-    ge::TensorDesc desc_weight_1(weight_shape, ge::FORMAT_ND, ge::DT_FLOAT);
-    ge::Tensor weight_tensor(desc_weight_1);
-    uint32_t weight_1_len = weight_shape.GetShapeSize() * sizeof(float);
-    float weight_value = 0.006448820233345032;
-    auto status = weight_tensor.SetData(reinterpret_cast<uint8_t*>(&weight_value), weight_1_len);
+    // filter tensor
+    auto filter_shape = ge::Shape({ 2, 2, 1, 1 });
+    ge::TensorDesc filter_desc(filter_shape, ge::FORMAT_ND, ge::DT_FLOAT);
+    ge::Tensor filter_tensor(filter_desc);
+    int64_t filter_data_size = filter_shape.GetShapeSize();
+    int64_t filter_data_length = filter_data_size * sizeof(float);
+    // generating random data to filter tensor between 0 to 1
+    srand (static_cast <unsigned> (time(0)));
+    float * pdata = new(std::nothrow) float[filter_data_size];
+    for (int64_t j = 0; j < filter_data_size; j++) {
+      pdata[j] = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX));
+    }
+    auto status = filter_tensor.SetData(reinterpret_cast<uint8_t*>(pdata), filter_data_length);
     if (status != ge::GRAPH_SUCCESS) {
-        std::cout << __FILE__ << ":" << __LINE__ << "Set Tensor Data Failed" << std::endl;
-        return false;
+      LOG(ERROR) << "Set Filter Tensor Data Failed";
+      return false;
     }
 
     // const op
-    auto conv_weight = ge::op::Const("Conv2D/weight").set_attr_value(weight_tensor);
+    auto conv_filter = ge::op::Const("Conv2D/weight").set_attr_value(filter_tensor);
 
     // conv op
     auto conv_op = ge::op::Conv2D("conv1");
     conv_op.set_input_x(input_x);
-    conv_op.set_input_filter(conv_weight);
+    conv_op.set_input_filter(conv_filter);
     conv_op.set_attr_strides({ 1, 1, 1, 1 });
     conv_op.set_attr_pads({ 0, 0, 0, 0 });
     conv_op.set_attr_dilations({ 1, 1, 1, 1 });
+    conv_op.set_attr_data_format("NCHW");
 
     ge::TensorDesc conv2d_input_desc_x(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
     ge::TensorDesc conv2d_input_desc_filter(ge::Shape(), ge::FORMAT_HWCN, ge::DT_FLOAT);
