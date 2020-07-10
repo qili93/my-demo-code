@@ -11,6 +11,4 @@ public:
 
   bool GenGraph(ge::Graph& graph);
   bool SaveModel(ge::Graph& om_graph, std::string model_path);
-
-  bool GenerateData(ge::Tensor &weight, uint32_t len);
 };

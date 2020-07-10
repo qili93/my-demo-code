@@ -99,6 +99,7 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
     auto status = device_itensors[i]->SetData(reinterpret_cast<uint8_t*>(pdata), data_length);
     if (status != ge::GRAPH_SUCCESS) {
       LOG(INFO) << "Set Input Tensor Data Failed";
+      delete [] pdata;
       return false;
     }
   }
