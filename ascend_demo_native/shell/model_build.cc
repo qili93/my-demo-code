@@ -60,14 +60,21 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
 
     // conv op
     auto conv_op = ge::op::Conv2D("conv1");
-    conv_op.set_input_x(input_x);
+    conv_op.set_input_x(input_x); // {1, 1, 4, 4}
+    // filter: A 4D tensor of filters - H, W, C = ic, N = bs
     conv_op.set_input_filter(conv_filter);
+    // bias: 1D tensor of foramt ND
     conv_op.set_input_bias(conv_bias);
-    conv_op.set_attr_strides({ 1, 1, 1, 1 }); // same format to input X
-    conv_op.set_attr_pads({ 0, 0, 0, 0 }); //top, bottom, left and right
-    conv_op.set_attr_dilations({ 1, 1, 1, 1 }); // same format to input X
-    conv_op.set_attr_groups(1); //must set to 1
-    conv_op.set_attr_data_format("NCHW"); // string
+    // filter: A 4D tensor of filters - H, W, C = ic, N = bs
+    conv_op.set_attr_strides({ 1, 1, 1, 1 });
+    // pads: A list of 4 integers. Specifying the top, bottom, left and right
+    conv_op.set_attr_pads({ 0, 0, 0, 0 });
+    // dilations: A list of 4 integers. same dimension order and value as strides
+    conv_op.set_attr_dilations({ 1, 1, 1, 1 });
+    // "groups". Must be set to 1.
+    conv_op.set_attr_groups(1);
+    // string from: "NHWC", "NCHW"
+    conv_op.set_attr_data_format("NCHW");
 
     ge::TensorDesc conv2d_input_desc_x(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
     ge::TensorDesc conv2d_input_desc_filter(ge::Shape(), ge::FORMAT_HWCN, ge::DT_FLOAT);
@@ -76,8 +83,35 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
     conv_op.update_input_desc_filter(conv2d_input_desc_filter);
     conv_op.update_output_desc_y(conv2d_output_desc_y);
 
+    //DepthwiseConv2D
+    auto deepwisec_conv_op = ge::op::DepthwiseConv2D("conv2");
+    // x: A 4D tensor of type float16, with shape [N, C, H, W] or [N, H, W, C]
+    deepwisec_conv_op.set_input_x(conv_op); // {1, 1, 3, 3}
+    // filter: A 4D tensor of type float16, with shape [H, W, C, K]
+    // The filter is 4D with shape [Hf, Wf, C, K], but the data is 6D with shape
+    // [C1, Hf, Wf, K, Co, C0], where K is fixed at 1, and Co and C0 are 16.
+    deepwisec_conv_op.set_input_filter(conv_filter);
+    // bias: 1D tensor of foramt ND, type float16 or int32
+    deepwisec_conv_op.set_input_bias(conv_bias);
+    // filter: A 4D tensor of filters
+    // Must be with shape [1, 1, stride_height, stride_width] or [1, stride_height, stride_width, 1].
+    deepwisec_conv_op.set_attr_strides({ 1, 1, 1, 1 });
+    // dilations: A list of 4 integers. 
+    // Must be with shape [1, 1, dilation_height, dilation_width] or [1, dilation_height, dilation_width, 1].
+    deepwisec_conv_op.set_attr_dilations({ 1, 1, 1, 1 });
+    // pads: pads: A required list or tuple. Padding added to each dimension of the input.
+    deepwisec_conv_op.set_attr_pads({ 0, 0, 0, 0 });
+    // "groups" NOT supported for DepthwiseConv2D
+    // deepwisec_conv_op.set_attr_groups(1);
+    // string from: "NHWC", "NCHW". Defaults to "NHWC".
+    deepwisec_conv_op.set_attr_data_format("NCHW");
+
+    deepwisec_conv_op.update_input_desc_x(conv2d_input_desc_x);
+    deepwisec_conv_op.update_input_desc_filter(conv2d_input_desc_filter);
+    deepwisec_conv_op.update_output_desc_y(conv2d_output_desc_y);
+
     auto relu1 = ge::op::Relu("relu");
-    relu1.set_input_x(conv_op, "y");
+    relu1.set_input_x(deepwisec_conv_op, "y");
 
     // Build Graph
     std::vector<ge::Operator> inputs{ input_x };
