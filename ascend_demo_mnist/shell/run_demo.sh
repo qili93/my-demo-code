@@ -15,8 +15,8 @@ export LD_LIBRARY_PATH=${ASCEND_PATH}/acllib/lib64:${ASCEND_ATC_PATH}/lib64:${AS
 export SOC_VERSION=Ascend310
 
 # set paddle-lite environment
-BASE_REPO_PATH=/home/liqi27/Github-qili93/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
+PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend/inference_lite_lib
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
 # run demo

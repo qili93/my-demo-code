@@ -10,8 +10,8 @@ function readlinkf() {
 #######################################
 ASCEND_PATH=/usr/local/Ascend
 
-BASE_REPO_PATH=/home/liqi27/Github-qili93/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
+PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend/inference_lite_lib
 
 USE_FULL_API=TRUE
 

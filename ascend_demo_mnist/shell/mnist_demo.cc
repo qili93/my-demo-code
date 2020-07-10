@@ -79,7 +79,7 @@ void SaveModel(std::string model_dir) {
   config.set_model_dir(model_dir);
   config.set_threads(CPU_THREAD_NUM);
   config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-    config.set_valid_places({Place{TARGET(kASCEND), PRECISION(kFloat)},
+    config.set_valid_places({Place{TARGET(kHuaweiAscend), PRECISION(kFloat)},
                              Place{TARGET(kX86), PRECISION(kFloat)},
                              Place{TARGET(kHost), PRECISION(kFloat)}});
   config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
