@@ -2,8 +2,7 @@
 
 #include <vector>
 #include <memory>
-#include "utils.h"
-#include "logging.h"
+#include "utility.h"
 #include "acl/acl.h"
 #include "graph/graph.h"
 #include "graph/types.h"

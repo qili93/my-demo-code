@@ -2,7 +2,6 @@
 #include <ctime>
 #include "device.h"
 #include "compute.h"
-#include "utils.h"
 
  bool DeviceProgram::LoadFromCacheFile(const std::string& model_cache_dir) {
   //auto device_ = std::make_shared<Device>();
@@ -33,6 +32,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(ge::Graph &om_graph, const std::str
     // 3. Build IR Model
     ge::ModelBufferData model_om_buffer;
     std::map<std::string, std::string> options;
+    options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
     //PrepareOptions(options);
 
     if (ge::aclgrphBuildModel(om_graph, options, model_om_buffer) !=  ge::GRAPH_SUCCESS) {

@@ -1,8 +1,7 @@
 #pragma once
 
 #include "graph/graph.h"
-#include "utils.h"
-#include "logging.h"
+#include "utility.h"
 
 class OMModelBuild {
 public:

@@ -188,7 +188,7 @@ set(ascend_builder_libs atc_register atc_protobuf atc_graph opp_ops_proto atc_er
 
 set(ascend_runtime_libs acl_ascendcl acl_runtime CACHE INTERNAL "ascend acllib runtime libs")
 
-add_executable(${TARGET_EXE} ${TARGET_EXE}.cc device.cc compute.cc model_build.cc model_client.cc logging.cc)
+add_executable(${TARGET_EXE} ${TARGET_EXE}.cc device.cc compute.cc model_build.cc model_client.cc logging.cc utility.cc)
 
 target_link_libraries(main ${ascend_runtime_libs} ${ascend_builder_libs})
 

@@ -19,6 +19,12 @@ BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
 PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend/inference_lite_lib
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
+# set model dir
+MODEL_DIR=$(readlinkf ../assets/models/mnist_model)
+rm -rf $MODEL_DIR/*.om
+rm -rf $MODEL_DIR/*.cfg
+rm -rf $MODEL_DIR/*.nb
+
 # run demo
 export GLOG_v=5
-./build/mnist_demo ../assets/models/mnist_model
+./build/mnist_demo $MODEL_DIR
