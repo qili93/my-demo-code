@@ -58,35 +58,45 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   }
 }
 
-void RunModel(std::string model_dir) {
+void RunModel(std::string model_dir, std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   // 1. Create MobileConfig
-  MobileConfig config;
-  config.set_model_from_file(model_dir+".nb");
-  config.set_threads(CPU_THREAD_NUM);
-  config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-  config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
-  //config.set_subgraph_model_cache_dir("/data/local/tmp");
+  MobileConfig mobile_config;
+  mobile_config.set_model_from_file(model_dir+".nb");
+  mobile_config.set_threads(CPU_THREAD_NUM);
+  mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
+  //mobile_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  //mobile_config.set_huawei_ascend_device_id(1);
+  //mobile_config.set_subgraph_model_cache_dir("/data/local/tmp");
   // 2. Create PaddlePredictor by MobileConfig
-  std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
-  std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
+  try {
+    predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
+    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
+  } catch (std::exception e) {
+    std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
+  }
   // 3. Run model
   process(predictor);
 }
 
-void SaveModel(std::string model_dir) {
+void SaveRunModel(std::string model_dir, std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   // 1. Create CxxConfig
-  CxxConfig config;
-  config.set_model_dir(model_dir);
-  config.set_threads(CPU_THREAD_NUM);
-  config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-    config.set_valid_places({Place{TARGET(kHuaweiAscend), PRECISION(kFloat)},
+  CxxConfig cxx_config;
+  cxx_config.set_model_dir(model_dir);
+  cxx_config.set_threads(CPU_THREAD_NUM);
+  cxx_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
+  cxx_config.set_valid_places({Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
                              Place{TARGET(kX86), PRECISION(kFloat)},
                              Place{TARGET(kHost), PRECISION(kFloat)}});
-  config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
-  //config.set_subgraph_model_cache_dir("/data/local/tmp");
+  //cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  cxx_config.set_device_id(1);
+  //cxx_config.set_subgraph_model_cache_dir("/data/local/tmp");
   // 2. Create PaddlePredictor by CxxConfig
-  std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<CxxConfig>(config);
-  std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
+  try {
+    predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
+    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
+  } catch (std::exception e) {
+    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
+  }
   // 3. Run model
   process(predictor);
   // 4. Save optimized model
@@ -101,12 +111,14 @@ int main(int argc, char **argv) {
     std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir\n";
     exit(1);
   }
-  std::string model_path = argv[1];
+  std::string model_dir = argv[1];
+
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
 
 #ifdef USE_FULL_API
-  SaveModel(model_path);
+  //SaveRunModel(model_dir, predictor);
 #endif
-  RunModel(model_path);
+  RunModel(model_dir, predictor);
   return 0;
 }
 

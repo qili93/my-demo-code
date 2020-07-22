@@ -8,10 +8,11 @@ function readlinkf() {
 #######################################
 # Local Settings: please change accrodingly
 #######################################
-ASCEND_PATH=/usr/local/Ascend
+export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
+echo "export HUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT"
 
-BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend/inference_lite_lib
+BASE_REPO_PATH=/workspace/Paddle-Lite
+PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
 
 USE_FULL_API=TRUE
 
@@ -24,7 +25,7 @@ mkdir -p $build_dir
 cd $build_dir
 
 cmake -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
-      -DASCEND_PATH=${ASCEND_PATH} \
+      -DHUAWEI_ASCEND_NPU_DDK_ROOT=${HUAWEI_ASCEND_NPU_DDK_ROOT} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
