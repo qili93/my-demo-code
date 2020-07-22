@@ -1,5 +1,6 @@
 #include <iostream>
 #include <algorithm>
+#include <thread>
 #include "paddle_api.h"
 
 using namespace paddle::lite_api;  // NOLINT
@@ -58,27 +59,28 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   }
 }
 
-void RunModel(std::string model_dir, std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
-  // 1. Create MobileConfig
+void RunModel(const std::string& thread_name, const std::string model_dir, const int device_id) {
+  // 1. Create CxxConfig
   MobileConfig mobile_config;
   mobile_config.set_model_from_file(model_dir+".nb");
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-  //mobile_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
-  //mobile_config.set_huawei_ascend_device_id(1);
-  //mobile_config.set_subgraph_model_cache_dir("/data/local/tmp");
-  // 2. Create PaddlePredictor by MobileConfig
+  //cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  mobile_config.set_device_id(device_id);
+  //cxx_config.set_subgraph_model_cache_dir("/data/local/tmp");
+  // 2. Create PaddlePredictor by CxxConfig
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   try {
     predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
-    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
+    std::cout << "[" << thread_name << "]: PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
-    std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
+    std::cout << "[" << thread_name << "]: An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
   // 3. Run model
   process(predictor);
 }
 
-void SaveRunModel(std::string model_dir, std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
+void SaveRunModel(const std::string& thread_name, const std::string model_dir, const int device_id) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   cxx_config.set_model_dir(model_dir);
@@ -88,37 +90,42 @@ void SaveRunModel(std::string model_dir, std::shared_ptr<paddle::lite_api::Paddl
                              Place{TARGET(kX86), PRECISION(kFloat)},
                              Place{TARGET(kHost), PRECISION(kFloat)}});
   //cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
-  cxx_config.set_device_id(1);
+  cxx_config.set_device_id(device_id);
   //cxx_config.set_subgraph_model_cache_dir("/data/local/tmp");
   // 2. Create PaddlePredictor by CxxConfig
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   try {
     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
+    std::cout << "[" << thread_name << "]: PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
-    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
+    std::cout << "[" << thread_name << "]: An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
   // 3. Run model
   process(predictor);
   // 4. Save optimized model
   predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
   //predictor->SaveOptimizedModel(model_dir, LiteModelType::kProtobuf);
-  std::cout << "Load model from " << model_dir << std::endl;
-  std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
+  std::cout << "[" << thread_name << "]: Load model from " << model_dir << std::endl;
+  std::cout << "[" << thread_name << "]: Save optimized model to " << (model_dir+".nb") << std::endl;
 }
 
-int main(int argc, char **argv) {
-  if (argc < 2) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir\n";
-    exit(1);
-  }
-  std::string model_dir = argv[1];
+int main() {
+    std::thread t1(SaveRunModel, "t1", "../assets/models/mnist_model1", 1);
+    std::thread t2(RunModel, "t2", "../assets/models/mnist_model2", 2);
+    t1.join();
+    t2.join();
 
-  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
-
-#ifdef USE_FULL_API
-  SaveRunModel(model_dir, predictor);
-#endif
-  RunModel(model_dir, predictor);
-  return 0;
+    std::this_thread::sleep_for(std::chrono::milliseconds{5000});
+    return 0;
 }
+
+// int main(int argc, char **argv) {
+//   std::thread thread1(RunModel, "../assets/models/mnist_model1", 1);
+//   std::thread thread2(RunModel, "../assets/models/mnist_model2", 2);
+//   thread1.join();
+//   thread2.join();
+
+//   std::this_thread::sleep_for(std::chrono::milliseconds{5000});
+//   return 0;
+// }
 
