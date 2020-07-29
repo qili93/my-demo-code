@@ -73,8 +73,7 @@ bool Device::Build(std::vector<char>* model_buffer, const std::string model_cach
 
   // Cache om buffer to file
   if (!model_cache_dir.empty()) {
-    auto model_path = model_cache_dir + ".om";
-    ATC_CALL(ge::aclgrphSaveModel(model_path, om_buffer));
+    ATC_CALL(ge::aclgrphSaveModel(model_cache_dir, om_buffer));
   }
 
   return true;

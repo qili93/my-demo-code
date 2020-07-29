@@ -280,6 +280,16 @@ bool AclModelClient::ModelExecute(
   CreateInputDataset(input_tensor);
   CreateOutputDataset(output_tensor);
 
+  // // print input_tensor
+  // for (size_t i = 0; i < input_tensor->size(); i++) {
+  //   auto item = input_tensor->at(i);
+  //   size_t input_size = reinterpret_cast<size_t>(item->GetSize() / sizeof(float));
+  //   float* input_data = reinterpret_cast<float*>(item->GetData());
+  //   for (size_t index = 0; index < input_size; index++) {
+  //     LOG(INFO) << "[HUAWEI_ASCEND_NPU] input_tensor[" << i << "][" << index << "]=" << input_data[index];
+  //   }
+  // }
+
   // model execution
   ACL_CALL(aclmdlExecute(model_id_, input_dataset_, output_dataset_));
 
@@ -289,6 +299,28 @@ bool AclModelClient::ModelExecute(
                << model_id_;
     return false;
   }
+
+  // print output tensor
+  for (size_t i = 0; i < output_tensor->size(); i++) {
+    auto item = output_tensor->at(i);
+    size_t output_size = reinterpret_cast<size_t>(item->GetSize() / sizeof(float));
+    float* output_data = reinterpret_cast<float*>(item->GetData());
+    if (i == 0) {
+      size_t rwo_num = static_cast<int>(output_size/6);
+      for (size_t row = 0; row < rwo_num; row++) {
+        std::stringstream ss;
+        for (size_t col= 0; col < 6; col++) {
+          size_t index = row * rwo_num + col;
+          ss << output_data[index] << " ";
+        }
+        LOG(INFO) << ss.str();
+      }
+    }
+    for (size_t index = 0; index < output_size; index++) {
+      LOG(INFO) << "[ASCEND] output_tensor[" << i << "][" << index << "]=" << output_data[index];
+    }
+  }
+
   VLOG(3) << "[HUAWEI_ASCEND_NPU] GetTensorFromDataset succeed, modelId:"
           << model_id_;
 

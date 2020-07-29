@@ -68,8 +68,10 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
     srand (static_cast <unsigned> (time(0)));
     float * pdata = new(std::nothrow) float[data_shape];
     for (int64_t j = 0; j < data_shape; j++) {
-      pdata[j] = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/2));
+      //pdata[j] = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/2));
+      pdata[j] = 1.0f;
     }
+    // set pdata to device_itensors
     auto status = device_itensors[i]->SetData(reinterpret_cast<uint8_t*>(pdata), data_length);
     if (status != ge::GRAPH_SUCCESS) {
       LOG(INFO) << "Set Input Tensor Data Failed";

@@ -131,10 +131,10 @@ ge::Operator YoloV3DetectionOutput_OP(ge::Operator net1, ge::Operator net2, ge::
                .set_attr_coords(4) // shout be fixed at 4
                .set_attr_classes(2)
                .set_attr_obj_threshold(0.5) // yolo_box: conf_thredhold
-               .set_attr_post_nms_topn(32) // multiclass_nms: keep_top_k - max_box_number_per_batch should be a multiple of 16
+               .set_attr_post_nms_topn(16) // multiclass_nms: keep_top_k - max_box_number_per_batch should be a multiple of 16
                .set_attr_score_threshold(0.01) // multiclass_nms: score_threshold
                .set_attr_iou_threshold(0.45) // multiclass_nms: nms_threshold
-               .set_attr_pre_nms_topn(16); // multiclass_nms: nms_top_k - parameter[pre_nms_topn] should be in the range of [1, 31]
+               .set_attr_pre_nms_topn(8); // multiclass_nms: nms_top_k - parameter[pre_nms_topn] should be in the range of [1, 31]
     TENSOR_UPDATE_INPUT(net, coord_data_low, ge::FORMAT_NCHW, ge::DT_FLOAT);
     TENSOR_UPDATE_INPUT(net, coord_data_mid, ge::FORMAT_NCHW, ge::DT_FLOAT);
     TENSOR_UPDATE_INPUT(net, coord_data_high, ge::FORMAT_NCHW, ge::DT_FLOAT);
@@ -150,36 +150,118 @@ ge::Operator YoloV3DetectionOutput_OP(ge::Operator net1, ge::Operator net2, ge::
     return net;
 }
 
+ge::Operator Reshape_OP1(ge::Operator inputNet) {
+    // Const Tensor of new shape
+    auto new_shape = ge::Shape( {3L} );
+    ge::TensorDesc new_shape_desc( new_shape, ge::FORMAT_ND, ge::DT_INT32 );
+    ge::Tensor new_shape_tensor( new_shape_desc );
+    uint32_t out_size_length = new_shape.GetShapeSize();
+    int *pdata = new( std::nothrow ) int[out_size_length];
+    pdata[0] = 1; // batch size
+    pdata[1] = 6; // 6
+    pdata[2] = -1; // keep_top_k
+    ATC_CALL(new_shape_tensor.SetData( reinterpret_cast<uint8_t *>( pdata ), out_size_length * sizeof(int) ));
+    // Const OP of new shape
+    auto new_shape_op = ge::op::Const( GetGlobalIndex( "Const/new_size" ) )
+                       .set_attr_value( new_shape_tensor );
+    // Reshape OP
+    auto net = ge::op::Reshape( GetGlobalIndex( "Reshape" ) )
+               .set_input_x(inputNet, "box_out")
+               .set_input_shape(new_shape_op)
+               .set_attr_axis(0)
+               .set_attr_num_axes(-1);
+    TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, shape, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
+ge::Operator Transpose_OP(ge::Operator inputNet) {
+    auto net = ge::op::TransposeD( GetGlobalIndex( "Transpose" ) )
+               .set_input_x(inputNet)
+               .set_attr_perm({0,2,1}); // batch (0), 6 (1), keep_top_k (2) => batch (0), keep_top_k (2), 6 (1)
+    TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
+ge::Operator Reshape_OP2(ge::Operator inputNet) {
+    // Const Tensor of new shape
+    auto new_shape = ge::Shape( {2L} );
+    ge::TensorDesc new_shape_desc( new_shape, ge::FORMAT_ND, ge::DT_INT32 );
+    ge::Tensor new_shape_tensor( new_shape_desc );
+    uint32_t out_size_length = new_shape.GetShapeSize();
+    int *pdata = new( std::nothrow ) int[out_size_length];
+    pdata[0] = -1; // keep_top_k
+    pdata[1] = 6; // batch * 6
+    ATC_CALL(new_shape_tensor.SetData( reinterpret_cast<uint8_t *>( pdata ), out_size_length * sizeof(int) ));
+    // Const OP of new shape
+    auto new_shape_op = ge::op::Const( GetGlobalIndex( "Const/new_size" ) )
+                       .set_attr_value( new_shape_tensor );
+    // Reshape OP
+    auto net = ge::op::Reshape( GetGlobalIndex( "Reshape" ) )
+               .set_input_x(inputNet, "box_out")
+               .set_input_shape(new_shape_op)
+               .set_attr_axis(0)
+               .set_attr_num_axes(-1);
+    TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, shape, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
 bool GenYoloV3Graph(ge::Graph& graph) {
     // ==========================input data op => format: NCHW==========================
-    // input x: A 4D tensor of input images - NCHW
-    ge::TensorDesc input_desc(ge::Shape({ 1L, 1L, 10L, 10L }), ge::FORMAT_ND, ge::DT_FLOAT);
-    auto input_x = ge::op::Data("input_x").set_attr_index(0);
-    input_x.update_input_desc_x(input_desc);
-    input_x.update_output_desc_y(input_desc);
+    // input x low: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_low(ge::Shape({ 1L, 21L, 6L, 6L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_low = ge::op::Data("input_x1").set_attr_index(0);
+    input_x_low.update_input_desc_x(input_desc_low);
+    input_x_low.update_output_desc_y(input_desc_low);
+
+    // input x mid: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_mid(ge::Shape({ 1L, 21L, 12L, 12L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_mid = ge::op::Data("input_x2").set_attr_index(1);
+    input_x_mid.update_input_desc_x(input_desc_mid);
+    input_x_mid.update_output_desc_y(input_desc_mid);
+
+    // input x high: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_high(ge::Shape({ 1L, 21L, 24L, 24L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_high = ge::op::Data("input_x3").set_attr_index(2);
+    input_x_high.update_input_desc_x(input_desc_high);
+    input_x_high.update_output_desc_y(input_desc_high);
 
     // input imgsize: 2D tensor of shape (batchsize, 2)
     ge::TensorDesc imgsize_desc(ge::Shape({ 1L, 4L}), ge::FORMAT_ND, ge::DT_FLOAT);
-    auto input_imgsize = ge::op::Data("input_imgsize").set_attr_index(1);
-    input_imgsize.update_input_desc_x(imgsize_desc);
-    input_imgsize.update_output_desc_y(imgsize_desc);
+    auto input_img_size = ge::op::Data("input_imgsize").set_attr_index(3);
+    input_img_size.update_input_desc_x(imgsize_desc);
+    input_img_size.update_output_desc_y(imgsize_desc);
 
-    // Prepare 3 Yolo Input
-    ge::Operator input_low = Conv2d_OP(input_x); // 1, 21, 8, 8  height[2] multi with width[2]'s size must bigger than 32b
-    ge::Operator input_mid = NearestNeighbor_OP(input_low, 16, 16); // 1, 21, 16, 16
-    ge::Operator input_high = NearestNeighbor_OP(input_mid, 32, 32); // 1, 21, 32, 32
+    // // Prepare 3 Yolo Input
+    // ge::Operator input_low = Conv2d_OP(input_x); // 1, 21, 6, 6  height[2] multi with width[2]'s size must bigger than 32b
+    // ge::Operator input_mid = NearestNeighbor_OP(input_low, 12, 12); // 1, 21, 12, 12
+    // ge::Operator input_high = NearestNeighbor_OP(input_mid, 24, 24); // 1, 21, 24, 24
 
     // Yolo OP
-    ge::Operator net_low = YOLO_OP(input_low);
-    ge::Operator net_mid = YOLO_OP(input_mid);
-    ge::Operator net_high = YOLO_OP(input_high);
+    ge::Operator net_low = YOLO_OP(input_x_low);
+    ge::Operator net_mid = YOLO_OP(input_x_mid);
+    ge::Operator net_high = YOLO_OP(input_x_high);
 
     // YoloV3DetectionOutput_OP
-    ge::Operator net_out = YoloV3DetectionOutput_OP(net_low, net_mid, net_high, input_imgsize);
+    ge::Operator net_detect = YoloV3DetectionOutput_OP(net_low, net_mid, net_high, input_img_size);
+
+    // Reshpae OP [batch, 6 * keep_top_k] => [batch, 6, keep_top_k]
+    ge::Operator net_reshape1 = Reshape_OP1(net_detect);
+
+    // Tranpose OP [batch, 6, keep_top_k] => [batch, keep_top_k, 6]
+    ge::Operator net_transpose = Transpose_OP(net_reshape1);
+
+    // Reshape OP [batch, keep_top_k, 6] => [ batch * keep_top_k, 6]
+    ge::Operator net_reshape2 = Reshape_OP2(net_detect);
 
     // Set inputs and outputs
-    std::vector<ge::Operator> inputs{ input_x, input_imgsize };
-    std::vector<ge::Operator> outputs{ net_out };
+    std::vector<ge::Operator> inputs{ input_x_low, input_x_mid, input_x_high, input_img_size };
+    // std::vector<ge::Operator> outputs{ net_reshape2 };
+    std::vector<ge::Operator> outputs{ net_detect };
     graph.SetInputs(inputs).SetOutputs(outputs);
 
     return true;
