@@ -26,7 +26,7 @@ class Device {
   std::shared_ptr<AclModelClient> LoadFromFile(const std::string& model_path,
                                                const int device_id);
   // Build the ACL IR graph to the ACL om model
-  bool Build(std::vector<char>* model_buffer);
+  bool Build(std::vector<char>* model_buffer, const std::string model_cache_dir);
 
   bool InitDevice();
   bool ReleaseDevice();

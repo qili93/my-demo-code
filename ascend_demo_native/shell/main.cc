@@ -1,7 +1,4 @@
 #include <unistd.h>
-#include "model_build.h"
-#include "model_client.h"
-#include "device.h"
 #include "subgraph_compute.h"
 
 int main(int argc, char **argv) {

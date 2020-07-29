@@ -46,7 +46,7 @@ std::shared_ptr<AclModelClient> Device::LoadFromFile(
 
 std::mutex Device::device_mutex_;
 
-bool Device::Build(std::vector<char>* model_buffer) {
+bool Device::Build(std::vector<char>* model_buffer, const std::string model_cache_dir) {
   std::lock_guard<std::mutex> lock(device_mutex_);
 
   ge::Graph ir_graph("graph");
@@ -70,6 +70,12 @@ bool Device::Build(std::vector<char>* model_buffer) {
   memcpy(reinterpret_cast<void*>(model_buffer->data()),
          reinterpret_cast<void*>(om_buffer.data.get()),
          om_buffer.length);
+
+  // Cache om buffer to file
+  if (!model_cache_dir.empty()) {
+    auto model_path = model_cache_dir + ".om";
+    ATC_CALL(ge::aclgrphSaveModel(model_path, om_buffer));
+  }
 
   return true;
 }

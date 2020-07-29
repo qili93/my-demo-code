@@ -1,4 +1,4 @@
-#include "model_build.h"
+#include "utility.h"
 
 #define TENSOR_UPDATE_INPUT(net,attr,format,dtype) ge::TensorDesc input_desc_##attr( ge::Shape(), format, dtype ); \
     net.update_input_desc_##attr( input_desc_##attr);
@@ -35,11 +35,12 @@ bool SetConstTensorFromValue(ge::Tensor &weight, uint32_t len, T value) {
 /*
 * Const Op封装，同时加载对应Const数据文件
 */
-ge::Operator Const_OP( ge::Shape dataShape, const char *str ) {
+template <typename T>
+ge::Operator Const_OP( ge::Shape dataShape, const char *str , T value) {
     ge::TensorDesc descWeight( dataShape, ge::FORMAT_ND, ge::DT_FLOAT );
     ge::Tensor weightTensor( descWeight );
     uint32_t weightLen = dataShape.GetShapeSize();
-    SetConstTensorFromValue<float>(weightTensor, weightLen, 1.0f);
+    SetConstTensorFromValue<T>(weightTensor, weightLen, value);
     auto net = ge::op::Const( GetGlobalIndex( str ) )
                .set_attr_value( weightTensor );
     return net;
@@ -48,15 +49,15 @@ ge::Operator Const_OP( ge::Shape dataShape, const char *str ) {
 /*
 * 卷积操作，有weight和bias场景
 */
-ge::Operator Conv2d_OP( ge::Operator inputNet, uint32_t depth ) {
-    auto weightshapeDynamicConst0 = ge::Shape( {255L, depth, 1L, 1L} );
-    auto dynamicConst0Out = Const_OP( weightshapeDynamicConst0, "dynamic_const" );
-    auto weightshapeDynamicConst1 = ge::Shape( {255L} );
-    auto dynamicConst1Out = Const_OP( weightshapeDynamicConst1, "dynamic_const" );
+ge::Operator Conv2d_OP( ge::Operator inputNet ) {
+    auto filter_shape = ge::Shape( {21L, 1L, 3L, 3L} );
+    auto filter_op = Const_OP<float>( filter_shape, "conv_filter", static_cast<float>(1.0f) );
+    auto bias_shape = ge::Shape( {21L} );
+    auto bias_op = Const_OP<float>( bias_shape, "conv_bias", static_cast<float>(1.0f) );
     auto net = ge::op::Conv2D( GetGlobalIndex( "conv1" ) )
                .set_input_x( inputNet )
-               .set_input_filter( dynamicConst0Out )
-               .set_input_bias( dynamicConst1Out )
+               .set_input_filter( filter_op )
+               .set_input_bias( bias_op )
                .set_attr_strides( {1L, 1L, 1L, 1L} )
                .set_attr_pads( {0, 0, 0, 0} )
                .set_attr_dilations( {1L, 1L, 1L, 1L} )
@@ -69,14 +70,41 @@ ge::Operator Conv2d_OP( ge::Operator inputNet, uint32_t depth ) {
     return net;
 }
 
+/*
+* nearest_interp，scale = 2
+*/
+ge::Operator NearestNeighbor_OP(ge::Operator inputNet, int output_height, int output_width) {
+    // create out size const tensor
+    auto out_size_shape = ge::Shape( {2L} );
+    ge::TensorDesc out_size_desc( out_size_shape, ge::FORMAT_ND, ge::DT_INT32 );
+    ge::Tensor out_size_tensor( out_size_desc );
+    uint32_t out_size_length = out_size_shape.GetShapeSize();
+    int *pdata = new( std::nothrow ) int[2];
+    pdata[0] = output_height;
+    pdata[1] = output_width;
+    ATC_CALL(out_size_tensor.SetData( reinterpret_cast<uint8_t *>( pdata ), out_size_length * sizeof(int) ));
+    // create out size const op
+    auto out_size_op = ge::op::Const( GetGlobalIndex( "Const/out_size" ) )
+                       .set_attr_value( out_size_tensor );
+
+    // NearestNeighbor op
+    auto net = ge::op::ResizeNearestNeighborV2( GetGlobalIndex( "ResizeNearestNeighborV2" ) )
+               .set_input_x( inputNet )
+               .set_input_size( out_size_op )
+               .set_attr_align_corners( false );
+    TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, size,  ge::FORMAT_NCHW, ge::DT_INT32);
+    TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
 ge::Operator YOLO_OP(ge::Operator inputNet) {
     auto net = ge::op::Yolo( GetGlobalIndex( "Yolo" ) )
                .set_input_x(inputNet)
                .set_attr_boxes(3)
-               .set_attr_coords(4)
-               .set_attr_classes(80)
-               .set_attr_yolo_version("V3")
-               .set_attr_softmax(true);
+               .set_attr_coords(4) // shout be fixed at 4
+               .set_attr_classes(2)
+               .set_attr_yolo_version("V3");
     TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
     TENSOR_UPDATE_OUTPUT(net, coord_data, ge::FORMAT_NCHW, ge::DT_FLOAT);
     TENSOR_UPDATE_OUTPUT(net, obj_prob, ge::FORMAT_NCHW, ge::DT_FLOAT);
@@ -100,14 +128,13 @@ ge::Operator YoloV3DetectionOutput_OP(ge::Operator net1, ge::Operator net2, ge::
                .set_attr_biases_mid({30, 61, 62, 45, 59, 119})
                .set_attr_biases_high({10, 13, 16, 30, 33, 23})
                .set_attr_boxes(3)
-               .set_attr_coords(4)
-               .set_attr_classes(80)
-               .set_attr_relative(1)
-               .set_attr_obj_threshold(0.5)
-               .set_attr_post_nms_topn(1024)
-               .set_attr_score_threshold(0.5)
-               .set_attr_iou_threshold(0.45)
-               .set_attr_pre_nms_topn(512);
+               .set_attr_coords(4) // shout be fixed at 4
+               .set_attr_classes(2)
+               .set_attr_obj_threshold(0.5) // yolo_box: conf_thredhold
+               .set_attr_post_nms_topn(32) // multiclass_nms: keep_top_k - max_box_number_per_batch should be a multiple of 16
+               .set_attr_score_threshold(0.01) // multiclass_nms: score_threshold
+               .set_attr_iou_threshold(0.45) // multiclass_nms: nms_threshold
+               .set_attr_pre_nms_topn(16); // multiclass_nms: nms_top_k - parameter[pre_nms_topn] should be in the range of [1, 31]
     TENSOR_UPDATE_INPUT(net, coord_data_low, ge::FORMAT_NCHW, ge::DT_FLOAT);
     TENSOR_UPDATE_INPUT(net, coord_data_mid, ge::FORMAT_NCHW, ge::DT_FLOAT);
     TENSOR_UPDATE_INPUT(net, coord_data_high, ge::FORMAT_NCHW, ge::DT_FLOAT);
@@ -125,230 +152,35 @@ ge::Operator YoloV3DetectionOutput_OP(ge::Operator net1, ge::Operator net2, ge::
 
 bool GenYoloV3Graph(ge::Graph& graph) {
     // ==========================input data op => format: NCHW==========================
-    // x: A 4D tensor of input images.
-    ge::TensorDesc input_desc(ge::Shape({ 1, 1, 28, 28 }), ge::FORMAT_ND, ge::DT_FLOAT);
-    auto input_x = ge::op::Data("input_x");
+    // input x: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc(ge::Shape({ 2L, 1L, 10L, 10L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x = ge::op::Data("input_x").set_attr_index(0);
     input_x.update_input_desc_x(input_desc);
     input_x.update_output_desc_y(input_desc);
 
-    // DebugGeOPInfo("Input OP", &input_x);
+    // input imgsize: 2D tensor of shape (batchsize, 2)
+    ge::TensorDesc imgsize_desc(ge::Shape({ 2L, 2L}), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_imgsize = ge::op::Data("input_imgsize").set_attr_index(1);
+    input_imgsize.update_input_desc_x(imgsize_desc);
+    input_imgsize.update_output_desc_y(imgsize_desc);
 
-    // ==========================filter const op => format: NCHW==========================
-    // filter: A 4D tensor of filters.
-    auto filter_shape = ge::Shape({ 4, 1, 5, 5 }); // HCHW = oc, ic, h, w
-    ge::TensorDesc filter_desc(filter_shape, ge::FORMAT_ND, ge::DT_FLOAT);
-    ge::Tensor filter_tensor(filter_desc);
-    int64_t filter_data_size = filter_shape.GetShapeSize();
-    int64_t filter_data_length = filter_data_size * sizeof(float);
-    // generating random data to filter tensor between 0 to 1
-    srand (static_cast <unsigned> (time(0)));
-    float * filter_data = new(std::nothrow) float[filter_data_size];
-    for (int64_t j = 0; j < filter_data_size; j++) {
-      filter_data[j] = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX));
-    }
-    auto status = filter_tensor.SetData(reinterpret_cast<uint8_t*>(filter_data), filter_data_length);
-    if (status != ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "Set Filter Tensor Data Failed";
-      delete [] filter_data;
-      return false;
-    }
-    // const op of filter
-    auto conv_filter = ge::op::Const("Conv2D/filter").set_attr_value(filter_tensor);
+    // Prepare 3 Yolo Input
+    ge::Operator input_low = Conv2d_OP(input_x); // 2, 21, 8, 8  height[2] multi with width[2]'s size must bigger than 32b
+    ge::Operator input_mid = NearestNeighbor_OP(input_low, 16, 16); // 2, 21, 16, 16
+    ge::Operator input_high = NearestNeighbor_OP(input_mid, 32, 32); // 2, 21, 32, 32
 
-    // DebugGeOPInfo("Filter OP", &conv_filter);
+    // Yolo OP
+    ge::Operator net_low = YOLO_OP(input_low);
+    ge::Operator net_mid = YOLO_OP(input_mid);
+    ge::Operator net_high = YOLO_OP(input_high);
 
-    // ==========================Bias Const OP => format ND {oc}==========================
-    // bias: An optional 1D tensor. => {oc}
-    auto bias_shape = ge::Shape({4});
-    ge::TensorDesc bias_desc(bias_shape, ge::FORMAT_ND, ge::DT_FLOAT);
-    ge::Tensor bias_tensor(bias_desc);
-    int64_t bias_data_size = bias_shape.GetShapeSize();
-    int64_t bias_data_length = bias_data_size * sizeof(float);
-    // generating random data to bias tensor between 0 to 1
-    float * bias_data = new(std::nothrow) float[bias_data_size];
-    for (int64_t j = 0; j < bias_data_size; j++) {
-      bias_data[j] = static_cast <float> (rand()) /( static_cast <float> (RAND_MAX));
-    }
-    status = bias_tensor.SetData(reinterpret_cast<uint8_t*>(bias_data), bias_data_length);
-    if (status != ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "Set Bias Tensor Data Failed";
-      delete [] bias_data;
-      return false;
-    }
-    // const op of bias
-    auto conv_bias = ge::op::Const("Conv2D/bias").set_attr_value(bias_tensor);
+    // YoloV3DetectionOutput_OP
+    ge::Operator net_out = YoloV3DetectionOutput_OP(net_low, net_mid, net_high, input_imgsize);
 
-    // DebugGeOPInfo("Bias OP", &conv_bias);
-
-    // ge::op::ResizeNearestNeighborV2("test");
-    // ge::op::ResizeBilinearV2("test");
-    // ge::op::Yolo("yolo");
-    // ge::op::YoloV3DetectionOutput("yolov3");
-    // ge::Operator::OpListFloat();
-    // ge::Operator::OpListInt();
-    // ge::op::Add();
-    // ge::op::Reshape();
-    // ge::op::Relu();
-
-    // ge::op::BNInference("batch_norm");
-
-    // ge::op::Conv2D();
-
-    // ========================== Conv2D OP ==========================
-    // Output: y: A 4D Tensor of output images.
-    auto conv_op = ge::op::Conv2D("conv1");
-    // Input: x: A 4D tensor of input images.
-    conv_op.set_input_x(input_x); // {1, 1, 4, 4}
-    // filter: A 4D tensor of filters - H, W, C = ic, N = oc
-    conv_op.set_input_filter(conv_filter);
-    // bias: 1D tensor of foramt ND
-    conv_op.set_input_bias(conv_bias);
-    // filter: A 4D tensor of filters - H, W, C = ic, N = bs
-    conv_op.set_attr_strides({ 1, 1, 1, 1 });
-    // pads: A list of 4 integers. Specifying the top, bottom, left and right
-    conv_op.set_attr_pads({ 0, 0, 0, 0 });
-    // dilations: A list of 4 integers. same dimension order and value as strides
-    conv_op.set_attr_dilations({ 1, 1, 1, 1 });
-    // "groups". Must be set to 1.
-    conv_op.set_attr_groups(1);
-    // string from: "NHWC", "NCHW"
-    conv_op.set_attr_data_format("NCHW");
-    // update conv op input and output
-    ge::TensorDesc conv2d_input_desc_x(input_desc.GetShape(), ge::FORMAT_NCHW, input_desc.GetDataType());
-    ge::TensorDesc conv2d_input_desc_filter(filter_desc.GetShape(), ge::FORMAT_NCHW, filter_desc.GetDataType());
-    ge::TensorDesc conv2d_input_desc_bias(bias_desc.GetShape(), ge::FORMAT_ND, bias_desc.GetDataType());
-    ge::TensorDesc conv2d_output_desc_y(ge::Shape(), ge::FORMAT_NCHW, input_desc.GetDataType());
-    conv_op.update_input_desc_x(conv2d_input_desc_x);
-    conv_op.update_input_desc_filter(conv2d_input_desc_filter);
-    conv_op.update_input_desc_bias(conv2d_input_desc_bias);
-    conv_op.update_output_desc_y(conv2d_output_desc_y);
-
-    // DebugGeOPInfo("Conv OP 1", &conv_op);
-
-
-    // auto bn_op = ge::op::BatchNorm("bn1");
-
-    // auto bn_conv_out = ge::op::BNInference("bn_conv");
-
-
-    // //DepthwiseConv2D
-    // auto deepwisec_conv_op = ge::op::DepthwiseConv2D("conv2");
-    // // x: A 4D tensor of type float16, with shape [N, C, H, W] or [N, H, W, C]
-    // deepwisec_conv_op.set_input_x(conv_op, "conv2_x"); // {1, 1, 3, 3}
-    // // filter: A 4D tensor of type float16, with shape [H, W, C, K]
-    // // The filter is 4D with shape [Hf, Wf, C, K], but the data is 6D with shape
-    // // [C1, Hf, Wf, K, Co, C0], where K is fixed at 1, and Co and C0 are 16.
-    // deepwisec_conv_op.set_input_filter(conv_filter, "conv2_filter");
-    // // bias: 1D tensor of foramt ND, type float16 or int32
-    // deepwisec_conv_op.set_input_bias(conv_bias, "conv2_bias");
-    // // filter: A 4D tensor of filters
-    // // Must be with shape [1, 1, stride_height, stride_width] or [1, stride_height, stride_width, 1].
-    // deepwisec_conv_op.set_attr_strides({ 1, 1, 1, 1 });
-    // // dilations: A list of 4 integers. 
-    // // Must be with shape [1, 1, dilation_height, dilation_width] or [1, dilation_height, dilation_width, 1].
-    // deepwisec_conv_op.set_attr_dilations({ 1, 1, 1, 1 });
-    // // pads: pads: A required list or tuple. Padding added to each dimension of the input.
-    // deepwisec_conv_op.set_attr_pads({ 0, 0, 0, 0 });
-    // // "groups" NOT supported for DepthwiseConv2D
-    // // deepwisec_conv_op.set_attr_groups(1);
-    // // string from: "NHWC", "NCHW". Defaults to "NHWC".
-    // deepwisec_conv_op.set_attr_data_format("NCHW");
-
-    // deepwisec_conv_op.update_input_desc_x(conv2d_input_desc_x);
-    // deepwisec_conv_op.update_input_desc_filter(conv2d_input_desc_filter);
-    // deepwisec_conv_op.update_output_desc_y(conv2d_output_desc_y);
-
-    // ========================== RELU OP ==========================
-    auto relu1 = ge::op::Relu("relu");
-    relu1.set_input_x(conv_op);
-
-    // ========================== POOL OP ==========================
-    // // Ouput: y: An NCHW tensor of type float16, float32, int32.
-    // auto pool_op = ge::op::Pooling("pool1");
-    // // x: An NCHW tensor of type float16, float32, int8.
-    // pool_op.set_input_x(relu1);
-    // // mode: either "1" (max pooling) or "0" (avg pooling). Defaults to "0".
-    // pool_op.set_attr_mode(0);
-    // // window[0]: int32, specifying the window size along in the H dimension. The value range is [1, 32768]. Defaults to "1".
-    // // window[1]: int32, specifying the window size along in the W dimension. The value range is [1, 32768]. Defaults to "1".
-    // pool_op.set_attr_window({4, 4});
-    // // stride[0]: An optional int32, specifying the stride along in the H dimension. The value range is [1, 63]. Defaults to "1".
-    // // stride[1]: An optional int32, specifying the stride along in the W dimension. The value range is [1, 63]. Defaults to "1".
-    // pool_op.set_attr_stride({4, 4});
-    // // pads: A list of 4 integers. Specifying the top, bottom, left and right
-    // pool_op.set_attr_pad({ 0, 0, 0, 0});
-    // // dilation: A list of 4 integers. Specifying the up, bottom, left and right
-    // pool_op.set_attr_dilation({1, 1, 1, 1});
-    // // ceil_mode: int32, either "0" (ceil mode) or "1" (floor mode). Defaults to "0".
-    // pool_op.set_attr_ceil_mode(0);
-    // // update tensor input
-    // ge::TensorDesc pooling_input_desc_x(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    // ge::TensorDesc pooling_output_desc_y(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    // pool_op.update_input_desc_x(pooling_input_desc_x);
-    // pool_op.update_output_desc_y(pooling_output_desc_y);
-
-    // Build Graph
-    std::vector<ge::Operator> inputs{ input_x };
-    std::vector<ge::Operator> outputs{ relu1 };
-    std::vector<std::pair<ge::Operator, std::string>> outputs_with_name = {{ relu1, "y" }};
-
+    // Set inputs and outputs
+    std::vector<ge::Operator> inputs{ input_x, input_imgsize };
+    std::vector<ge::Operator> outputs{ net_out };
     graph.SetInputs(inputs).SetOutputs(outputs);
+
     return true;
 }
-
-// bool YoloModelLoad(Graph &graph) {
-//     Graph graph("yolov3");
-//     aclError ret;
-
-//     if (!GenGraph(graph)) {
-//         LOG(FATAL) << "Generate Yolov3 IR Graph Failed!"
-//         return false;
-//     }
-//     LOG(INFO) << "Generate Yolov3 IR Graph Success."
-//     return true;
-// }
-
-// bool OMModelBuild::SaveModel(ge::Graph& om_graph, std::string model_path)
-// {
-//     LOG(INFO) << "-------Enter: [model_build](SaveModel)-------";
-//     // 1. Genetate graph
-//     // ge::Graph om_graph("bias_add_graph");
-//     // if(!GenGraph(om_graph)) {
-//     //   LOG(ERROR) << "Generate BiasAdd Graph Failed!");
-//     // }
-//     // LOG(INFO) << "Generate BiasAdd Graph SUCCESS!");
-
-//     // 2. system init
-//     std::map<std::string, std::string> global_options = {
-//         {ge::ir_option::SOC_VERSION, "Ascend310"},
-//     };
-//     if (ge::aclgrphBuildInitialize(global_options) !=  ge::GRAPH_SUCCESS) {
-//       LOG(ERROR) << "[model_build](SaveModel) aclgrphBuildInitialize Failed!";
-//     } else {
-//       LOG(INFO) << "[model_build](SaveModel) aclgrphBuildInitialize succees";
-//     }
-
-//     // 3. Build IR Model
-//     ge::ModelBufferData model_om_buffer;
-//     std::map<std::string, std::string> options;
-//     options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "debug"));
-//     //PrepareOptions(options);
-
-//     if (ge::aclgrphBuildModel(om_graph, options, model_om_buffer) !=  ge::GRAPH_SUCCESS) {
-//       LOG(ERROR) << "[model_build](SaveModel) aclgrphBuildModel Failed!";
-//     } else {
-//       LOG(INFO) << "[model_build](SaveModel) aclgrphBuildModel succees";
-//     }
-
-//     // 4. Save IR Model
-//     if (ge::aclgrphSaveModel(model_path, model_om_buffer) != ge::GRAPH_SUCCESS) {
-//       LOG(ERROR) << "[model_build](SaveModel) aclgrphSaveModel Failed!";
-//     } else {
-//       LOG(INFO) << "[model_build](SaveModel) aclgrphSaveModel succees";
-//     }
-
-//     // 5. release resource
-//     ge::aclgrphBuildFinalize();
-//     LOG(INFO) << "-------Leave: [model_build](SaveModel)-------";
-//     return true;
-// }

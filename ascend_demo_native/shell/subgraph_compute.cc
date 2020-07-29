@@ -20,13 +20,15 @@
 bool DeviceProgram::BuildGraphAndCacheToFile(const std::string& model_cache_dir){
   LOG(INFO) << "[ASCEND] Staring BuildGraphAndCacheToFile ...";
 
+  // Build IR model and save to cache file
   std::vector<char> model_buffer;
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Building model from model buffer...";
-  if (!my_lite_demo::Device::Global().Build(&model_buffer)) {
+  if (!my_lite_demo::Device::Global().Build(&model_buffer, model_cache_dir)) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Build model failed!";
     return false;
   }
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Build model success.";
+
   // Load the om model and create a model manager client
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model from memory ...";
   model_client_ = my_lite_demo::Device::Global().LoadFromMem(model_buffer, device_id_);
@@ -35,6 +37,7 @@ bool DeviceProgram::BuildGraphAndCacheToFile(const std::string& model_cache_dir)
     return false;
   }
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Load model from memory success.";
+
   return true;
 }
 
@@ -53,11 +56,7 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
   device_itensors.resize(device_idims_.size());
   LOG(INFO) << "[ASCEND] resize device_itensors to " << device_idims_.size();
   for (size_t i = 0; i < device_idims_.size(); i++) {
-    LOG(INFO) << "[ASCEND] Inputs[" << i << "] device dims: {" 
-            << device_idims_[i].GetNumber() << ","
-            << device_idims_[i].GetChannel() << ","
-            << device_idims_[i].GetHeight() << ","
-            << device_idims_[i].GetWidth() << "}";
+    LOG(INFO) << "[ASCEND] Inputs[" << i << "] device dims:" << device_idims_[i].repr();
     device_itensors[i].reset(new ge::Tensor(device_idims_[i].GetGeTensorDesc()));
 
     int64_t data_shape = device_idims_[i].GetGeTensorDesc().GetShape().GetShapeSize();
