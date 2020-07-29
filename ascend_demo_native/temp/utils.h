@@ -1,10 +1,18 @@
-#pragma once
+// Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-#include <map>
-#include <memory>
-#include <string>
-#include <vector>
-#include "logging.h"
+#pragma once
 #include "acl/acl.h"
 #include "ge/ge_api_types.h"
 #include "ge/ge_ir_build.h"
@@ -12,36 +20,21 @@
 #include "graph/graph.h"
 #include "graph/tensor.h"
 #include "graph/types.h"
-#include "all_ops.h" // opp/op_proto/built-in/inc
+#include "logging.h"
 
 /*
  * This file contains some Huawei Ascend NPU specific uitls.
  */
 
-std::string to_string(int index);
-
-const std::string& CvtFormat(ge::Format format);
-const std::string& CvtDataType(ge::DataType data_type);
-
-void DebugGeTensorDescInfo(const std::string& name, ge::TensorDesc tensor_desc);
-void DebugGeTensorInfo(const std::string & name, ge::Tensor *ge_tensor);
-void DebugGeOPInfo(const std::string& op_name, ge::Operator *ge_op);
-
 #define ACL_CALL(msg)                                       \
   CHECK_EQ(reinterpret_cast<aclError>(msg), ACL_ERROR_NONE) \
       << (msg) << " Huawei Ascend NPU ACL Error: "          \
-      << ::paddle::lite::huawei_ascend_npu::AclErrorInfo(   \
-             reinterpret_cast<int>(msg))
+      << ::AclErrorInfo(reinterpret_cast<int>(msg))
 
 #define ATC_CALL(msg)                                                 \
   CHECK_EQ(reinterpret_cast<ge::graphStatus>(msg), ge::GRAPH_SUCCESS) \
       << (msg) << " Huawei Ascend NPU ATC Error: "                    \
-      << ::paddle::lite::huawei_ascend_npu::AtcErrorInfo(             \
-             reinterpret_cast<uint32_t>(msg))
-
-namespace paddle {
-namespace lite {
-namespace huawei_ascend_npu {
+      << ::AtcErrorInfo(reinterpret_cast<uint32_t>(msg))
 
 static const char* AtcErrorInfo(uint32_t error) {
   switch (error) {
@@ -123,7 +116,3 @@ static const char* AclErrorInfo(int error) {
       break;
   }
 }
-
-}  // namespace huawei_ascend_npu
-}  // namespace lite
-}  // namespace paddle

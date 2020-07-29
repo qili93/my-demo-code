@@ -5,18 +5,21 @@ function readlinkf() {
     perl -MCwd -e 'print Cwd::abs_path shift' "$1";
 }
 
-ASCEND_PATH=/usr/local/Ascend
-BASE_REPO_PATH=/home/liqi27/Github-qili93/Paddle-Lite
-# PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.ascend/inference_lite_lib.ascend
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+#######################################
+# Local Settings: please change accrodingly
+#######################################
+export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
+echo "export HUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT"
 
+#######################################
+# Build commands, do not change them
+#######################################
 build_dir=$cur_dir/build
 rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
-cmake -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
-      -DASCEND_PATH=${ASCEND_PATH} \
+cmake -DHUAWEI_ASCEND_NPU_DDK_ROOT=${HUAWEI_ASCEND_NPU_DDK_ROOT} \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -DCMAKE_BUILD_TYPE=Debug \

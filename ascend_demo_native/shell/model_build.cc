@@ -1,14 +1,129 @@
-#include "graph/graph.h"
-#include "graph/types.h"
-#include "graph/tensor.h"
-#include "graph/ge_error_codes.h"
-#include "ge/ge_api_types.h"
-#include "ge/ge_ir_build.h"
-#include "all_ops.h" // opp/op_proto/built-in/inc
-
 #include "model_build.h"
 
-bool OMModelBuild::GenGraph(ge::Graph& graph) {
+#define TENSOR_UPDATE_INPUT(net,attr,format,dtype) ge::TensorDesc input_desc_##attr( ge::Shape(), format, dtype ); \
+    net.update_input_desc_##attr( input_desc_##attr);
+#define TENSOR_UPDATE_OUTPUT(net,attr,format,dtype) ge::TensorDesc output_desc_##attr( ge::Shape(), format, dtype ); \
+    net.update_output_desc_##attr(output_desc_##attr );
+
+/*
+* 对op名称添加后缀，保证op名称不重复
+*/
+const char *GetGlobalIndex( const char *str ) {
+    static std::string strIndex;
+    static uint32_t globalIndex = 0;
+    strIndex.erase();
+    strIndex.append(str);
+    strIndex.append("_" + to_string(globalIndex));
+    globalIndex++;
+    return strIndex.c_str();
+}
+
+/*
+* 设置Const Op Data
+*/
+template <typename T>
+bool SetConstTensorFromValue(ge::Tensor &weight, uint32_t len, T value) {
+  // len = len * sizeof( ge::DT_FLOAT );
+  T *pdata = new( std::nothrow ) T[len];
+  for (size_t i = 0; i < len; i ++) {
+    pdata[i] = value;
+  }
+  ATC_CALL(weight.SetData( reinterpret_cast<uint8_t *>( pdata ), len * sizeof(T) ));
+  return true;
+}
+
+/*
+* Const Op封装，同时加载对应Const数据文件
+*/
+ge::Operator Const_OP( ge::Shape dataShape, const char *str ) {
+    ge::TensorDesc descWeight( dataShape, ge::FORMAT_ND, ge::DT_FLOAT );
+    ge::Tensor weightTensor( descWeight );
+    uint32_t weightLen = dataShape.GetShapeSize();
+    SetConstTensorFromValue<float>(weightTensor, weightLen, 1.0f);
+    auto net = ge::op::Const( GetGlobalIndex( str ) )
+               .set_attr_value( weightTensor );
+    return net;
+}
+
+/*
+* 卷积操作，有weight和bias场景
+*/
+ge::Operator Conv2d_OP( ge::Operator inputNet, uint32_t depth ) {
+    auto weightshapeDynamicConst0 = ge::Shape( {255L, depth, 1L, 1L} );
+    auto dynamicConst0Out = Const_OP( weightshapeDynamicConst0, "dynamic_const" );
+    auto weightshapeDynamicConst1 = ge::Shape( {255L} );
+    auto dynamicConst1Out = Const_OP( weightshapeDynamicConst1, "dynamic_const" );
+    auto net = ge::op::Conv2D( GetGlobalIndex( "conv1" ) )
+               .set_input_x( inputNet )
+               .set_input_filter( dynamicConst0Out )
+               .set_input_bias( dynamicConst1Out )
+               .set_attr_strides( {1L, 1L, 1L, 1L} )
+               .set_attr_pads( {0, 0, 0, 0} )
+               .set_attr_dilations( {1L, 1L, 1L, 1L} )
+               .set_attr_groups( 1 )
+               .set_attr_data_format("NCHW");
+    TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_INPUT(net, filter, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_INPUT(net, bias, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    return net;
+}
+
+ge::Operator YOLO_OP(ge::Operator inputNet) {
+    auto net = ge::op::Yolo( GetGlobalIndex( "Yolo" ) )
+               .set_input_x(inputNet)
+               .set_attr_boxes(3)
+               .set_attr_coords(4)
+               .set_attr_classes(80)
+               .set_attr_yolo_version("V3")
+               .set_attr_softmax(true);
+    TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, coord_data, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, obj_prob, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, classes_prob, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
+ge::Operator YoloV3DetectionOutput_OP(ge::Operator net1, ge::Operator net2, ge::Operator net3, ge::Operator imgInfo) {
+    auto net = ge::op::YoloV3DetectionOutput( GetGlobalIndex( "YoloV3DetectionOutput" ) )
+               .set_input_coord_data_low(net1, "coord_data")
+               .set_input_coord_data_mid(net2, "coord_data")
+               .set_input_coord_data_high(net3, "coord_data")
+               .set_input_obj_prob_low (net1, "obj_prob")
+               .set_input_obj_prob_mid(net2, "obj_prob")
+               .set_input_obj_prob_high(net3, "obj_prob")
+               .set_input_classes_prob_low(net1, "classes_prob")
+               .set_input_classes_prob_mid(net2, "classes_prob")
+               .set_input_classes_prob_high(net3, "classes_prob")
+               .set_input_img_info(imgInfo)
+               .set_attr_biases_low({116, 90, 156, 198, 373, 326})
+               .set_attr_biases_mid({30, 61, 62, 45, 59, 119})
+               .set_attr_biases_high({10, 13, 16, 30, 33, 23})
+               .set_attr_boxes(3)
+               .set_attr_coords(4)
+               .set_attr_classes(80)
+               .set_attr_relative(1)
+               .set_attr_obj_threshold(0.5)
+               .set_attr_post_nms_topn(1024)
+               .set_attr_score_threshold(0.5)
+               .set_attr_iou_threshold(0.45)
+               .set_attr_pre_nms_topn(512);
+    TENSOR_UPDATE_INPUT(net, coord_data_low, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, coord_data_mid, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, coord_data_high, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, obj_prob_low, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, obj_prob_mid, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, obj_prob_high, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, classes_prob_low, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, classes_prob_mid, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, classes_prob_high, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(net, img_info, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, box_out,  ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, box_out_num, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
+bool GenYoloV3Graph(ge::Graph& graph) {
     // ==========================input data op => format: NCHW==========================
     // x: A 4D tensor of input images.
     ge::TensorDesc input_desc(ge::Shape({ 1, 1, 28, 28 }), ge::FORMAT_ND, ge::DT_FLOAT);
@@ -16,7 +131,7 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
     input_x.update_input_desc_x(input_desc);
     input_x.update_output_desc_y(input_desc);
 
-    DebugGeOPInfo("Input OP", &input_x);
+    // DebugGeOPInfo("Input OP", &input_x);
 
     // ==========================filter const op => format: NCHW==========================
     // filter: A 4D tensor of filters.
@@ -40,7 +155,7 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
     // const op of filter
     auto conv_filter = ge::op::Const("Conv2D/filter").set_attr_value(filter_tensor);
 
-    DebugGeOPInfo("Filter OP", &conv_filter);
+    // DebugGeOPInfo("Filter OP", &conv_filter);
 
     // ==========================Bias Const OP => format ND {oc}==========================
     // bias: An optional 1D tensor. => {oc}
@@ -63,7 +178,21 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
     // const op of bias
     auto conv_bias = ge::op::Const("Conv2D/bias").set_attr_value(bias_tensor);
 
-    DebugGeOPInfo("Bias OP", &conv_bias);
+    // DebugGeOPInfo("Bias OP", &conv_bias);
+
+    // ge::op::ResizeNearestNeighborV2("test");
+    // ge::op::ResizeBilinearV2("test");
+    // ge::op::Yolo("yolo");
+    // ge::op::YoloV3DetectionOutput("yolov3");
+    // ge::Operator::OpListFloat();
+    // ge::Operator::OpListInt();
+    // ge::op::Add();
+    // ge::op::Reshape();
+    // ge::op::Relu();
+
+    // ge::op::BNInference("batch_norm");
+
+    // ge::op::Conv2D();
 
     // ========================== Conv2D OP ==========================
     // Output: y: A 4D Tensor of output images.
@@ -94,7 +223,13 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
     conv_op.update_input_desc_bias(conv2d_input_desc_bias);
     conv_op.update_output_desc_y(conv2d_output_desc_y);
 
-    DebugGeOPInfo("Conv OP 1", &conv_op);
+    // DebugGeOPInfo("Conv OP 1", &conv_op);
+
+
+    // auto bn_op = ge::op::BatchNorm("bn1");
+
+    // auto bn_conv_out = ge::op::BNInference("bn_conv");
+
 
     // //DepthwiseConv2D
     // auto deepwisec_conv_op = ge::op::DepthwiseConv2D("conv2");
@@ -128,80 +263,92 @@ bool OMModelBuild::GenGraph(ge::Graph& graph) {
     relu1.set_input_x(conv_op);
 
     // ========================== POOL OP ==========================
-    // Ouput: y: An NCHW tensor of type float16, float32, int32.
-    auto pool_op = ge::op::Pooling("pool1");
-    // x: An NCHW tensor of type float16, float32, int8.
-    pool_op.set_input_x(relu1);
-    // mode: either "1" (max pooling) or "0" (avg pooling). Defaults to "0".
-    pool_op.set_attr_mode(0);
-    // window[0]: int32, specifying the window size along in the H dimension. The value range is [1, 32768]. Defaults to "1".
-    // window[1]: int32, specifying the window size along in the W dimension. The value range is [1, 32768]. Defaults to "1".
-    pool_op.set_attr_window({4, 4});
-    // stride[0]: An optional int32, specifying the stride along in the H dimension. The value range is [1, 63]. Defaults to "1".
-    // stride[1]: An optional int32, specifying the stride along in the W dimension. The value range is [1, 63]. Defaults to "1".
-    pool_op.set_attr_stride({4, 4});
-    // pads: A list of 4 integers. Specifying the top, bottom, left and right
-    pool_op.set_attr_pad({ 0, 0, 0, 0});
-    // dilation: A list of 4 integers. Specifying the up, bottom, left and right
-    pool_op.set_attr_dilation({1, 1, 1, 1});
-    // ceil_mode: int32, either "0" (ceil mode) or "1" (floor mode). Defaults to "0".
-    pool_op.set_attr_ceil_mode(0);
-    // update tensor input
-    ge::TensorDesc pooling_input_desc_x(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    ge::TensorDesc pooling_output_desc_y(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
-    pool_op.update_input_desc_x(pooling_input_desc_x);
-    pool_op.update_output_desc_y(pooling_output_desc_y);
+    // // Ouput: y: An NCHW tensor of type float16, float32, int32.
+    // auto pool_op = ge::op::Pooling("pool1");
+    // // x: An NCHW tensor of type float16, float32, int8.
+    // pool_op.set_input_x(relu1);
+    // // mode: either "1" (max pooling) or "0" (avg pooling). Defaults to "0".
+    // pool_op.set_attr_mode(0);
+    // // window[0]: int32, specifying the window size along in the H dimension. The value range is [1, 32768]. Defaults to "1".
+    // // window[1]: int32, specifying the window size along in the W dimension. The value range is [1, 32768]. Defaults to "1".
+    // pool_op.set_attr_window({4, 4});
+    // // stride[0]: An optional int32, specifying the stride along in the H dimension. The value range is [1, 63]. Defaults to "1".
+    // // stride[1]: An optional int32, specifying the stride along in the W dimension. The value range is [1, 63]. Defaults to "1".
+    // pool_op.set_attr_stride({4, 4});
+    // // pads: A list of 4 integers. Specifying the top, bottom, left and right
+    // pool_op.set_attr_pad({ 0, 0, 0, 0});
+    // // dilation: A list of 4 integers. Specifying the up, bottom, left and right
+    // pool_op.set_attr_dilation({1, 1, 1, 1});
+    // // ceil_mode: int32, either "0" (ceil mode) or "1" (floor mode). Defaults to "0".
+    // pool_op.set_attr_ceil_mode(0);
+    // // update tensor input
+    // ge::TensorDesc pooling_input_desc_x(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
+    // ge::TensorDesc pooling_output_desc_y(ge::Shape(), ge::FORMAT_NCHW, ge::DT_FLOAT);
+    // pool_op.update_input_desc_x(pooling_input_desc_x);
+    // pool_op.update_output_desc_y(pooling_output_desc_y);
 
     // Build Graph
     std::vector<ge::Operator> inputs{ input_x };
-    std::vector<ge::Operator> outputs{ pool_op };
-    std::vector<std::pair<ge::Operator, std::string>> outputs_with_name = {{ pool_op, "y" }};
+    std::vector<ge::Operator> outputs{ relu1 };
+    std::vector<std::pair<ge::Operator, std::string>> outputs_with_name = {{ relu1, "y" }};
 
     graph.SetInputs(inputs).SetOutputs(outputs);
     return true;
 }
 
-bool OMModelBuild::SaveModel(ge::Graph& om_graph, std::string model_path)
-{
-    LOG(INFO) << "-------Enter: [model_build](SaveModel)-------";
-    // 1. Genetate graph
-    // ge::Graph om_graph("bias_add_graph");
-    // if(!GenGraph(om_graph)) {
-    //   LOG(ERROR) << "Generate BiasAdd Graph Failed!");
-    // }
-    // LOG(INFO) << "Generate BiasAdd Graph SUCCESS!");
+// bool YoloModelLoad(Graph &graph) {
+//     Graph graph("yolov3");
+//     aclError ret;
 
-    // 2. system init
-    std::map<std::string, std::string> global_options = {
-        {ge::ir_option::SOC_VERSION, "Ascend310"},
-    };
-    if (ge::aclgrphBuildInitialize(global_options) !=  ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "[model_build](SaveModel) aclgrphBuildInitialize Failed!";
-    } else {
-      LOG(INFO) << "[model_build](SaveModel) aclgrphBuildInitialize succees";
-    }
+//     if (!GenGraph(graph)) {
+//         LOG(FATAL) << "Generate Yolov3 IR Graph Failed!"
+//         return false;
+//     }
+//     LOG(INFO) << "Generate Yolov3 IR Graph Success."
+//     return true;
+// }
 
-    // 3. Build IR Model
-    ge::ModelBufferData model_om_buffer;
-    std::map<std::string, std::string> options;
-    options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "debug"));
-    //PrepareOptions(options);
+// bool OMModelBuild::SaveModel(ge::Graph& om_graph, std::string model_path)
+// {
+//     LOG(INFO) << "-------Enter: [model_build](SaveModel)-------";
+//     // 1. Genetate graph
+//     // ge::Graph om_graph("bias_add_graph");
+//     // if(!GenGraph(om_graph)) {
+//     //   LOG(ERROR) << "Generate BiasAdd Graph Failed!");
+//     // }
+//     // LOG(INFO) << "Generate BiasAdd Graph SUCCESS!");
 
-    if (ge::aclgrphBuildModel(om_graph, options, model_om_buffer) !=  ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "[model_build](SaveModel) aclgrphBuildModel Failed!";
-    } else {
-      LOG(INFO) << "[model_build](SaveModel) aclgrphBuildModel succees";
-    }
+//     // 2. system init
+//     std::map<std::string, std::string> global_options = {
+//         {ge::ir_option::SOC_VERSION, "Ascend310"},
+//     };
+//     if (ge::aclgrphBuildInitialize(global_options) !=  ge::GRAPH_SUCCESS) {
+//       LOG(ERROR) << "[model_build](SaveModel) aclgrphBuildInitialize Failed!";
+//     } else {
+//       LOG(INFO) << "[model_build](SaveModel) aclgrphBuildInitialize succees";
+//     }
 
-    // 4. Save IR Model
-    if (ge::aclgrphSaveModel(model_path, model_om_buffer) != ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "[model_build](SaveModel) aclgrphSaveModel Failed!";
-    } else {
-      LOG(INFO) << "[model_build](SaveModel) aclgrphSaveModel succees";
-    }
+//     // 3. Build IR Model
+//     ge::ModelBufferData model_om_buffer;
+//     std::map<std::string, std::string> options;
+//     options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "debug"));
+//     //PrepareOptions(options);
 
-    // 5. release resource
-    ge::aclgrphBuildFinalize();
-    LOG(INFO) << "-------Leave: [model_build](SaveModel)-------";
-    return true;
-}
+//     if (ge::aclgrphBuildModel(om_graph, options, model_om_buffer) !=  ge::GRAPH_SUCCESS) {
+//       LOG(ERROR) << "[model_build](SaveModel) aclgrphBuildModel Failed!";
+//     } else {
+//       LOG(INFO) << "[model_build](SaveModel) aclgrphBuildModel succees";
+//     }
+
+//     // 4. Save IR Model
+//     if (ge::aclgrphSaveModel(model_path, model_om_buffer) != ge::GRAPH_SUCCESS) {
+//       LOG(ERROR) << "[model_build](SaveModel) aclgrphSaveModel Failed!";
+//     } else {
+//       LOG(INFO) << "[model_build](SaveModel) aclgrphSaveModel succees";
+//     }
+
+//     // 5. release resource
+//     ge::aclgrphBuildFinalize();
+//     LOG(INFO) << "-------Leave: [model_build](SaveModel)-------";
+//     return true;
+// }

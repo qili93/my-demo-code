@@ -1,14 +1,13 @@
-#include <cstdlib>
-#include <ctime>
-#include "device.h"
-#include "compute.h"
+#include <sys/time.h>
+#include <time.h>
+#include "subgraph_compute.h"
 
  bool DeviceProgram::LoadFromCacheFile(const std::string& model_cache_dir) {
   //auto device_ = std::make_shared<Device>();
   //model_client_ = my_lite_demo::Device::Global().LoadFromFile(model_cache_dir);
   LOG(INFO) << "[ASCEND] Staring LoadFromCacheFile ...";
   //my_lite_demo::Device my_device;
-  model_client_ = my_lite_demo::Device::Global().LoadFromFile(model_cache_dir);
+  model_client_ = my_lite_demo::Device::Global().LoadFromFile(model_cache_dir, device_id_);
   if (!model_client_) {
     LOG(WARNING) << "[ASCEND] Load model from cached file failed!";
     return false;
@@ -18,49 +17,25 @@
   return true;
  }
 
-bool DeviceProgram::BuildGraphAndCacheToFile(ge::Graph &om_graph, const std::string& model_cache_dir){
-    LOG(INFO) << "[ASCEND] Staring BuildGraphAndCacheToFile ...";
-    // 2. system init
-    std::map<std::string, std::string> global_options = {
-        {ge::ir_option::SOC_VERSION, "Ascend310"},
-    };
-    if (ge::aclgrphBuildInitialize(global_options) !=  ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "[ASCEND] aclgrphBuildInitialize Failed!";
-    }
-    LOG(INFO) << "[ASCEND] aclgrphBuildInitialize success!";
+bool DeviceProgram::BuildGraphAndCacheToFile(const std::string& model_cache_dir){
+  LOG(INFO) << "[ASCEND] Staring BuildGraphAndCacheToFile ...";
 
-    // 3. Build IR Model
-    ge::ModelBufferData model_om_buffer;
-    std::map<std::string, std::string> options;
-    options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "error"));
-    //PrepareOptions(options);
-
-    if (ge::aclgrphBuildModel(om_graph, options, model_om_buffer) !=  ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "[ASCEND] aclgrphBuildModel Failed!";
-    } else {
-      LOG(INFO) << "[ASCEND] aclgrphBuildModel success!";
-    }
-
-    // 4. Save IR Model
-    if (ge::aclgrphSaveModel(model_cache_dir, model_om_buffer) != ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "[ASCEND] aclgrphSaveModel Failed!";
-    } else {
-      LOG(INFO) << "[ASCEND] success saving model to " << model_cache_dir;
-    }
-
-    // 5. release resource
-    ge::aclgrphBuildFinalize();
-    
-    //my_lite_demo::Device my_device;
-    std::vector<char> model_buffer(model_om_buffer.data.get(), model_om_buffer.data.get()+model_om_buffer.length);
-    model_client_ = my_lite_demo::Device::Global().LoadFromMem(model_buffer);
-    if (!model_client_) {
-      LOG(WARNING) << "[ASCEND] Load model from memory failed!";
-      return false;
-    }
-    LOG(INFO) << "[ASCEND] create model_client and load model from memory success.";
-    LOG(INFO) << "[ASCEND] Finishing BuildGraphAndCacheToFile ...";
-    return true;
+  std::vector<char> model_buffer;
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Building model from model buffer...";
+  if (!my_lite_demo::Device::Global().Build(&model_buffer)) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Build model failed!";
+    return false;
+  }
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Build model success.";
+  // Load the om model and create a model manager client
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model from memory ...";
+  model_client_ = my_lite_demo::Device::Global().LoadFromMem(model_buffer, device_id_);
+  if (!model_client_) {
+    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Load model from memory failed!";
+    return false;
+  }
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Load model from memory success.";
+  return true;
 }
 
 bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& device_itensors,
@@ -118,26 +93,25 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
     int64_t data_length = data_shape * sizeof(float);
     LOG(INFO) << "[ASCEND] Set Output Tensor Shape is: " << data_shape;
     LOG(INFO) << "[ASCEND] Set Output Tensor Size is: " << data_length;
-    // float data_value = 0.5;
-    // auto status = device_itensors[i]->SetData(reinterpret_cast<uint8_t*>(&data_value), data_length);
-    // if (status != ge::GRAPH_SUCCESS) {
-    //   LOG(INFO) << "Set Input Tensor Data Failed";
-    //   return false;
-    // }
   }
 
-  // ge::TensorDesc output_desc(ge::Shape({ 1, 1, 3, 3 }), ge::FORMAT_ND, ge::DT_FLOAT);
-  // ge::Tensor output_y(output_desc);
-  // device_otensors.push_back(std::make_shared<ge::Tensor>(output_y));
   LOG(INFO) << "[ASCEND] Finishing InitDeivceTensors ...";
   return true;
 }
 
 bool DeviceProgram::ZeroCopyRun(std::vector<std::shared_ptr<ge::Tensor>>* device_itensors,
                  std::vector<std::shared_ptr<ge::Tensor>>* device_otensors) {
-  LOG(INFO) << "[ASCEND] Staring ZeroCopyRun ...";
-  model_client_->ModelExecute(device_itensors, device_otensors);
-  my_lite_demo::Device::Global().ReleaseDevice();
+  auto GetCurrentUS = []() -> double {
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return 1e+6 * time.tv_sec + time.tv_usec;
+  };
+  auto start_time = GetCurrentUS();
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Starting ZeroCopyRun to ModelExecute ...";
+  CHECK_EQ(model_client_->ModelExecute(device_itensors, device_otensors), true);
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Process cost " << GetCurrentUS() - start_time << " us";
+  // unload model after model execution
+  CHECK_EQ(model_client_->UnloadModel(), true);
   LOG(INFO) << "[ASCEND] Finishing ZeroCopyRun ...";
   return true;
 }

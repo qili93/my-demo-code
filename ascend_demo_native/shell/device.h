@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <memory>
+#include <mutex>
 #include <vector>
 #include "graph/graph.h"
 #include "model_client.h"
@@ -13,30 +15,27 @@ class Device {
     static Device x;
     return x;
   }
-  Device() : device_inited_(false) {}
-  ~Device() { ReleaseDevice(); }
+  Device() { InitOnce(); }
+
+  ~Device() { DestroyOnce(); }
 
   // Load the ir om model from buffer, and create a ACL model client to run
   // inference
-  std::shared_ptr<AclModelClient> LoadFromMem(const std::vector<char>& model_buffer);
-  std::shared_ptr<AclModelClient> LoadFromFile(const std::string& model_path);
+  std::shared_ptr<AclModelClient> LoadFromMem(
+      const std::vector<char>& model_buffer, const int device_id);
+  std::shared_ptr<AclModelClient> LoadFromFile(const std::string& model_path,
+                                               const int device_id);
   // Build the ACL IR graph to the ACL om model
-  bool Build(std::vector<ge::Operator>& input_nodes,   // NOLINT
-             std::vector<ge::Operator>& output_nodes,  // NOLINT
-             std::vector<char>* model_buffer);         // NOLINT
-
-  bool test();
-  bool runModeIsDevice() const { return runmode_is_device_; }
+  bool Build(std::vector<char>* model_buffer);
 
   bool InitDevice();
-  void ReleaseDevice();
+  bool ReleaseDevice();
 
  private:
-  bool device_inited_{false};
-  bool runmode_is_device_{false};
-  int32_t device_id_{0};
-  aclrtContext context_{nullptr};
-  aclrtStream stream_{nullptr};
+  void InitOnce();
+  void DestroyOnce();
+  bool runtime_inited_{false};
+  static std::mutex device_mutex_;
 };
 
 } // namespace my_lite_demo

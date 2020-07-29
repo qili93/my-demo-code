@@ -6,9 +6,10 @@ function readlinkf() {
 }
 
 #######################################
-# Ascend runtime enironement
+# Local Settings: please change accrodingly
 #######################################
-export ASCEND_PATH=/usr/local/Ascend
+export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
+echo "export HUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT"
 
 #######################################
 # Build commands, do not change them
@@ -18,7 +19,7 @@ rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
-cmake -DASCEND_PATH=${ASCEND_PATH} \
+cmake -DHUAWEI_ASCEND_NPU_DDK_ROOT=${HUAWEI_ASCEND_NPU_DDK_ROOT} \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -DCMAKE_BUILD_TYPE=Debug \

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "graph/graph.h"
 #include "utility.h"
 
 class OMModelBuild {

@@ -1,15 +1,8 @@
 #pragma once
 
+#include <string>
 #include <vector>
-#include <memory>
 #include "utility.h"
-#include "acl/acl.h"
-#include "graph/graph.h"
-#include "graph/types.h"
-#include "graph/tensor.h"
-#include "graph/ge_error_codes.h"
-#include "ge/ge_api_types.h"
-#include "ge/ge_ir_build.h"
 
 class TensorDesc {
  public:
@@ -20,12 +13,11 @@ class TensorDesc {
       dim_order[3] = 2;
     }
     // create ge::Tensordesc
-    ge_tensor_desc_ = new ge::TensorDesc(GetGeShape(dims), GetGeFormat(format), GetGeDataType(data_type));
+    ge_tensor_desc_ = new ge::TensorDesc(
+        GetGeShape(dims), GetGeFormat(format), GetGeDataType(data_type));
     CHECK(ge_tensor_desc_ != nullptr);
   }
-  ~TensorDesc() {
-    ge_tensor_desc_ = nullptr;
-  }
+  ~TensorDesc() { ge_tensor_desc_ = nullptr; }
   int64_t GetNumber() const {
     return ge_tensor_desc_->GetShape().GetDim(dim_order[0]);
   }
@@ -45,10 +37,10 @@ class TensorDesc {
     ge::Shape ge_shape({0, 0, 0, 0});
     for (size_t i = 0; i < dims.dimCount; i++) {
       if (ge_shape.SetDim(i, dims.dims[i]) != ge::GRAPH_SUCCESS) {
-        LOG(WARNING) << "[ASCEND] ge::Shape SetDim failed!";
-      }
-      else {
-        VLOG(3) << "[ASCEND] Setting Ge Shape["<< i <<"] = <" << dims.dims[i] <<">";
+        LOG(WARNING) << "[HUAWEI_ASCEND_NPU] ge::Shape SetDim failed!";
+      } else {
+        VLOG(3) << "[HUAWEI_ASCEND_NPU] Setting Ge Shape[" << i << "] = <"
+                << dims.dims[i] << ">";
       }
     }
     return ge_shape;
@@ -66,7 +58,7 @@ class TensorDesc {
         ge_format = ge::FORMAT_ND;
         break;
       default:
-        LOG(FATAL) << "[ASCEND] format not supported:" << format;
+        LOG(FATAL) << "[HUAWEI_ASCEND_NPU] format not supported:" << format;
         break;
     }
     return ge_format;
@@ -96,12 +88,12 @@ class TensorDesc {
         ge_datatype = ge::DT_BOOL;
         break;
       default:
-        LOG(FATAL) << "[ASCEND] data type not supported!";
+        LOG(FATAL) << "[HUAWEI_ASCEND_NPU] data type not supported!";
         break;
     }
     return ge_datatype;
   }
-  
+
  private:
   ge::TensorDesc* ge_tensor_desc_{nullptr};
   // n c h w order, default to ACL_FORMAT_NCHW
@@ -110,18 +102,55 @@ class TensorDesc {
 
 class AclModelClient {
  public:
-  AclModelClient() {}
-  virtual ~AclModelClient() {}
+  explicit AclModelClient(int device_id) {
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Creating Huawei Ascend Device: "
+            << device_id;
+    device_num_ = num_devices();
+    if (device_id < 0 || device_id >= device_num_) {
+      LOG(FATAL) << "Failed with invalid device id " << device_id;
+      return;
+    }
+    device_id_ = device_id;
+    ACL_CALL(aclrtSetDevice(device_id_));
+  }
+
+  ~AclModelClient() {
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Destroying Huawei Ascend Device: "
+            << device_id_;
+    ACL_CALL(aclrtResetDevice(device_id_));
+  }
 
   bool LoadFromMem(const void* data, uint32_t size);
   bool LoadFromFile(const char* model_path);
-  bool GetModelIOTensorDim(std::vector<TensorDesc> *input_tensor, std::vector<TensorDesc> *output_tensor);
-  bool ModelExecute(std::vector<std::shared_ptr<ge::Tensor>> *input_tensor, std::vector<std::shared_ptr<ge::Tensor>> *output_tensor);
+  bool GetModelIOTensorDim(std::vector<TensorDesc>* input_tensor,
+                           std::vector<TensorDesc>* output_tensor);
+  bool ModelExecute(std::vector<std::shared_ptr<ge::Tensor>>* input_tensor,
+                    std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
+  bool UnloadModel();
+
  private:
-  aclmdlDataset* CreateInputDataset(std::vector<std::shared_ptr<ge::Tensor>>* input_tensor);
-  aclmdlDataset* CreateOutputDataset(std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
-  bool GetTensorFromDataset(aclmdlDataset * output_dataset, std::vector<std::shared_ptr<ge::Tensor>> *output_tensor);
+  void CreateInputDataset(
+      std::vector<std::shared_ptr<ge::Tensor>>* input_tensor);
+  void CreateOutputDataset(
+      std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
+  bool GetTensorFromDataset(
+      std::vector<std::shared_ptr<ge::Tensor>>* output_tensor);
+  void DestroyDataset(aclmdlDataset** dataset);
+
+private:
+  uint32_t num_devices();
+
  private:
+  int device_id_{0};
+  int device_num_{0};
+  aclrtContext context_{nullptr};
+  bool load_flag_{false};
   uint32_t model_id_{0};
+  size_t model_memory_size_;
+  size_t model_weight_size_;
+  void* model_memory_ptr_;
+  void* model_weight_ptr_;
   aclmdlDesc* model_desc_{nullptr};
+  aclmdlDataset* input_dataset_{nullptr};
+  aclmdlDataset* output_dataset_{nullptr};
 };
