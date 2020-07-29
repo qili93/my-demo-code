@@ -153,21 +153,21 @@ ge::Operator YoloV3DetectionOutput_OP(ge::Operator net1, ge::Operator net2, ge::
 bool GenYoloV3Graph(ge::Graph& graph) {
     // ==========================input data op => format: NCHW==========================
     // input x: A 4D tensor of input images - NCHW
-    ge::TensorDesc input_desc(ge::Shape({ 2L, 1L, 10L, 10L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    ge::TensorDesc input_desc(ge::Shape({ 1L, 1L, 10L, 10L }), ge::FORMAT_ND, ge::DT_FLOAT);
     auto input_x = ge::op::Data("input_x").set_attr_index(0);
     input_x.update_input_desc_x(input_desc);
     input_x.update_output_desc_y(input_desc);
 
     // input imgsize: 2D tensor of shape (batchsize, 2)
-    ge::TensorDesc imgsize_desc(ge::Shape({ 2L, 2L}), ge::FORMAT_ND, ge::DT_FLOAT);
+    ge::TensorDesc imgsize_desc(ge::Shape({ 1L, 4L}), ge::FORMAT_ND, ge::DT_FLOAT);
     auto input_imgsize = ge::op::Data("input_imgsize").set_attr_index(1);
     input_imgsize.update_input_desc_x(imgsize_desc);
     input_imgsize.update_output_desc_y(imgsize_desc);
 
     // Prepare 3 Yolo Input
-    ge::Operator input_low = Conv2d_OP(input_x); // 2, 21, 8, 8  height[2] multi with width[2]'s size must bigger than 32b
-    ge::Operator input_mid = NearestNeighbor_OP(input_low, 16, 16); // 2, 21, 16, 16
-    ge::Operator input_high = NearestNeighbor_OP(input_mid, 32, 32); // 2, 21, 32, 32
+    ge::Operator input_low = Conv2d_OP(input_x); // 1, 21, 8, 8  height[2] multi with width[2]'s size must bigger than 32b
+    ge::Operator input_mid = NearestNeighbor_OP(input_low, 16, 16); // 1, 21, 16, 16
+    ge::Operator input_high = NearestNeighbor_OP(input_mid, 32, 32); // 1, 21, 32, 32
 
     // Yolo OP
     ge::Operator net_low = YOLO_OP(input_low);

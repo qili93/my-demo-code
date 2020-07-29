@@ -54,15 +54,15 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
   LOG(INFO) << "[ASCEND] GetModelIOTensorDim success.";
 
   device_itensors.resize(device_idims_.size());
-  LOG(INFO) << "[ASCEND] resize device_itensors to " << device_idims_.size();
+  LOG(INFO) << "[ASCEND] resize device_itensors number to " << device_idims_.size();
   for (size_t i = 0; i < device_idims_.size(); i++) {
     LOG(INFO) << "[ASCEND] Inputs[" << i << "] device dims:" << device_idims_[i].repr();
     device_itensors[i].reset(new ge::Tensor(device_idims_[i].GetGeTensorDesc()));
 
     int64_t data_shape = device_idims_[i].GetGeTensorDesc().GetShape().GetShapeSize();
     int64_t data_length = data_shape * sizeof(float);
-    LOG(INFO) << "[ASCEND] Set Input Tensor Shape is: " << data_shape;
-    LOG(INFO) << "[ASCEND] Set Input Tensor Size is: " << data_length;
+    LOG(INFO) << "[ASCEND] Input Tensor Shape Size is: " << data_shape;
+    LOG(INFO) << "[ASCEND] Input Tensor Data Size is: " << data_length;
 
     // generating random data to input tensor between -1 to 1
     srand (static_cast <unsigned> (time(0)));
@@ -79,19 +79,15 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
   }
 
   device_otensors.resize(device_odims_.size());
-  LOG(INFO) << "[ASCEND] resize device_otensors to " << device_odims_.size();
+  LOG(INFO) << "[ASCEND] resize device_otensors number to " << device_odims_.size();
   for (size_t i = 0; i < device_odims_.size(); i++) {
-    LOG(INFO) << "[ASCEND] Output[" << i << "] device dims: {" 
-            << device_odims_[i].GetNumber() << ","
-            << device_odims_[i].GetChannel() << ","
-            << device_odims_[i].GetHeight() << ","
-            << device_odims_[i].GetWidth() << "}";
+    LOG(INFO) << "[ASCEND] Output[" << i << "] device dims: " << device_odims_[i].repr(); 
     device_otensors[i].reset(new ge::Tensor(device_odims_[i].GetGeTensorDesc()));
 
     int64_t data_shape = device_odims_[i].GetGeTensorDesc().GetShape().GetShapeSize();
     int64_t data_length = data_shape * sizeof(float);
-    LOG(INFO) << "[ASCEND] Set Output Tensor Shape is: " << data_shape;
-    LOG(INFO) << "[ASCEND] Set Output Tensor Size is: " << data_length;
+    LOG(INFO) << "[ASCEND] Output Tensor Shape Size is: " << data_shape;
+    LOG(INFO) << "[ASCEND] Output Tensor Data Size is: " << data_length;
   }
 
   LOG(INFO) << "[ASCEND] Finishing InitDeivceTensors ...";

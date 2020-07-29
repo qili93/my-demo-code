@@ -37,25 +37,13 @@ class TensorDesc {
     return ss.str();
   }
 
-  int64_t GetNumber() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[0]);
-  }
-  int64_t GetChannel() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[1]);
-  }
-  int64_t GetHeight() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[2]);
-  }
-  int64_t GetWidth() const {
-    return ge_tensor_desc_->GetShape().GetDim(dim_order[3]);
-  }
   const ge::TensorDesc& GetGeTensorDesc() const { return *ge_tensor_desc_; }
 
  private:
   ge::Shape GetGeShape(aclmdlIODims dims) {
     auto shape_data = std::vector<int64_t>({1L, 1L, 1L, 1L});
     shape_data.resize(dims.dimCount);
-    VLOG(3) << "Resize shape date to " << dims.dimCount;
+    VLOG(3) << "Resize shape size to " << dims.dimCount;
     ge::Shape ge_shape(shape_data);
     for (size_t i = 0; i < dims.dimCount; i++) {
       if (ge_shape.SetDim(i, dims.dims[i]) != ge::GRAPH_SUCCESS) {
@@ -83,6 +71,7 @@ class TensorDesc {
         LOG(FATAL) << "[HUAWEI_ASCEND_NPU] format not supported:" << format;
         break;
     }
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data format to: " <<  CvtFormat(ge_format);
     return ge_format;
   }
   ge::DataType GetGeDataType(aclDataType data_type) {
@@ -113,6 +102,7 @@ class TensorDesc {
         LOG(FATAL) << "[HUAWEI_ASCEND_NPU] data type not supported!";
         break;
     }
+    VLOG(3) << "[HUAWEI_ASCEND_NPU] Getting data type to: " <<  CvtDataType(ge_datatype);
     return ge_datatype;
   }
 

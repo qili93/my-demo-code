@@ -121,11 +121,7 @@ bool AclModelClient::GetModelIOTensorDim(
     aclmdlIODims input_dim;
     aclmdlGetInputDims(model_desc_, i, &input_dim);
     aclDataType data_type = aclmdlGetInputDataType(model_desc_, i);
-    VLOG(3) << "[HUAWEI_ASCEND_NPU] data_type of inputs[" << i << "] is "
-            << data_type;
     aclFormat data_format = aclmdlGetInputFormat(model_desc_, i);
-    VLOG(3) << "[HUAWEI_ASCEND_NPU] data_format of inputs[" << i << "] is "
-            << data_format;
     TensorDesc tensor_desc = TensorDesc(data_type, input_dim, data_format);
     input_tensor->push_back(tensor_desc);
   }
@@ -137,11 +133,7 @@ bool AclModelClient::GetModelIOTensorDim(
     aclmdlIODims output_dim;
     aclmdlGetOutputDims(model_desc_, i, &output_dim);
     aclDataType data_type = aclmdlGetOutputDataType(model_desc_, i);
-    VLOG(3) << "[HUAWEI_ASCEND_NPU] data_type of outputs[" << i << "] is "
-            << data_type;
     aclFormat data_format = aclmdlGetOutputFormat(model_desc_, i);
-    VLOG(3) << "[HUAWEI_ASCEND_NPU] data_format of outputs[" << i << "] is "
-            << data_format;
     TensorDesc tensor_desc = TensorDesc(data_type, output_dim, data_format);
     output_tensor->push_back(tensor_desc);
   }
