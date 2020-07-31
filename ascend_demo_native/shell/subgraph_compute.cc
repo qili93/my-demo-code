@@ -53,6 +53,7 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
   }
   LOG(INFO) << "[ASCEND] GetModelIOTensorDim success.";
 
+  // Init Input Tensors
   device_itensors.resize(device_idims_.size());
   LOG(INFO) << "[ASCEND] resize device_itensors number to " << device_idims_.size();
   for (size_t i = 0; i < device_idims_.size(); i++) {
@@ -60,26 +61,50 @@ bool DeviceProgram::InitDeivceTensors(std::vector<std::shared_ptr<ge::Tensor>>& 
     device_itensors[i].reset(new ge::Tensor(device_idims_[i].GetGeTensorDesc()));
 
     int64_t data_shape = device_idims_[i].GetGeTensorDesc().GetShape().GetShapeSize();
-    int64_t data_length = data_shape * sizeof(float);
     LOG(INFO) << "[ASCEND] Input Tensor Shape Size is: " << data_shape;
-    LOG(INFO) << "[ASCEND] Input Tensor Data Size is: " << data_length;
 
-    // generating random data to input tensor between -1 to 1
-    srand (static_cast <unsigned> (time(0)));
-    float * pdata = new(std::nothrow) float[data_shape];
-    for (int64_t j = 0; j < data_shape; j++) {
-      //pdata[j] = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/2));
-      pdata[j] = 1.0f;
+    // get data type
+    auto data_type = device_idims_[i].GetGeTensorDesc().GetDataType();;
+    // Init Float 
+    if (data_type == ge::DT_FLOAT) {
+      int64_t data_length = data_shape * sizeof(float);
+      LOG(INFO) << "[ASCEND] Input Tensor Data Size is: " << data_length;
+      // generating random data to input tensor between -1 to 1
+      srand (static_cast <unsigned> (time(0)));
+      float * pdata = new(std::nothrow) float[data_shape];
+      for (int64_t j = 0; j < data_shape; j++) {
+        //pdata[j] = -1 + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/2));
+        pdata[j] = 1.0f;
+      }
+      // set pdata to device_itensors
+      auto status = device_itensors[i]->SetData(reinterpret_cast<uint8_t*>(pdata), data_length);
+      if (status != ge::GRAPH_SUCCESS) {
+        LOG(INFO) << "Set Input Tensor Data Failed";
+        delete [] pdata;
+        return false;
+      }
     }
-    // set pdata to device_itensors
-    auto status = device_itensors[i]->SetData(reinterpret_cast<uint8_t*>(pdata), data_length);
-    if (status != ge::GRAPH_SUCCESS) {
-      LOG(INFO) << "Set Input Tensor Data Failed";
-      delete [] pdata;
-      return false;
+    // Init Int32
+    if (data_type == ge::DT_INT32) {
+      int64_t data_length = data_shape * sizeof(int);
+      LOG(INFO) << "[ASCEND] Input Tensor Data Size is: " << data_length;
+      // generating random data to input tensor between -1 to 1
+      srand (static_cast <unsigned> (time(0)));
+      int * pdata = new(std::nothrow) int[data_shape];
+      for (int64_t j = 0; j < data_shape; j++) {
+        pdata[j] = 1;
+      }
+      // set pdata to device_itensors
+      auto status = device_itensors[i]->SetData(reinterpret_cast<uint8_t*>(pdata), data_length);
+      if (status != ge::GRAPH_SUCCESS) {
+        LOG(INFO) << "Set Input Tensor Data Failed";
+        delete [] pdata;
+        return false;
+      }
     }
   }
 
+  // Init Output Tensors
   device_otensors.resize(device_odims_.size());
   LOG(INFO) << "[ASCEND] resize device_otensors number to " << device_odims_.size();
   for (size_t i = 0; i < device_odims_.size(); i++) {

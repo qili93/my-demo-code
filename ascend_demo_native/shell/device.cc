@@ -5,6 +5,8 @@
 #include "device.h"
 
 extern bool GenYoloV3Graph(ge::Graph& graph);
+extern bool GenConcatGraph(ge::Graph& graph);
+extern bool GenConcatDGraph(ge::Graph& graph);
 
 namespace my_lite_demo {
 
@@ -51,7 +53,9 @@ bool Device::Build(std::vector<char>* model_buffer, const std::string model_cach
 
   ge::Graph ir_graph("graph");
   // ir_graph.SetInputs(input_nodes).SetOutputs(output_nodes);
-  if (GenYoloV3Graph(ir_graph)) {
+  // if (GenYoloV3Graph(ir_graph)) {
+  if (GenConcatGraph(ir_graph)) {
+  // if (GenConcatDGraph(ir_graph)) {
     LOG(INFO) << "[HUAWEI_ASCEND_NPU] GenGGenerate YoloV3 IR graph succees";
   } else {
     LOG(ERROR) << "[HUAWEI_ASCEND_NPU] GenGGenerate YoloV3 IR graph failed!";

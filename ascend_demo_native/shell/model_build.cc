@@ -1,9 +1,14 @@
 #include "utility.h"
 
-#define TENSOR_UPDATE_INPUT(net,attr,format,dtype) ge::TensorDesc input_desc_##attr( ge::Shape(), format, dtype ); \
-    net.update_input_desc_##attr( input_desc_##attr);
-#define TENSOR_UPDATE_OUTPUT(net,attr,format,dtype) ge::TensorDesc output_desc_##attr( ge::Shape(), format, dtype ); \
-    net.update_output_desc_##attr(output_desc_##attr );
+#define TENSOR_UPDATE_INPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_input_desc_##attr(ge::Shape(), format, dtype); \
+  op.update_input_desc_##attr(_##op##_input_desc_##attr);
+#define TENSOR_UPDATE_OUTPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_output_desc_##attr(ge::Shape(), format, dtype); \
+  op.update_output_desc_##attr(_##op##_output_desc_##attr);
+#define TENSOR_UPDATE_DYNAMIC_INPUT(op, attr, idx, format, dtype)               \
+  ge::TensorDesc _##op##_input_desc_##attr##_##idx(ge::Shape(), format, dtype); \
+  op.update_dynamic_input_desc_##attr(idx, _##op##_input_desc_##attr##_##idx);
 
 /*
 * 对op名称添加后缀，保证op名称不重复
@@ -210,11 +215,61 @@ ge::Operator Reshape_OP2(ge::Operator inputNet) {
     return net;
 }
 
+/*
+* Concat三输入
+*/
+ge::Operator ConcatTrible_OP(ge::Operator net1, ge::Operator net2, ge::Operator net3, ge::Operator axis) {
+    auto net = ge::op::Concat( GetGlobalIndex( "Concat" ) )
+               .create_dynamic_input_x( 3 )
+               .set_dynamic_input_x( 0, net1 )
+               .set_dynamic_input_x( 1, net2 )
+               .set_dynamic_input_x( 2, net3 )
+               .set_input_concat_dim( axis ) // axis
+               .set_attr_N(3);
+    TENSOR_UPDATE_INPUT(net, concat_dim, ge::FORMAT_NCHW, ge::DT_INT32);
+    TENSOR_UPDATE_DYNAMIC_INPUT(net, x, 0, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_DYNAMIC_INPUT(net, x, 1, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_DYNAMIC_INPUT(net, x, 2, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
+/*
+* ConcatD三输入
+*/
+ge::Operator ConcatDTrible_OP(ge::Operator net1, ge::Operator net2, ge::Operator net3) {
+    auto net = ge::op::ConcatD( GetGlobalIndex( "ConcatD" ) )
+               .create_dynamic_input_x( 3 )
+               .set_dynamic_input_x( 0, net1 )
+               .set_dynamic_input_x( 1, net2 )
+               .set_dynamic_input_x( 2, net3 )
+               .set_attr_concat_dim(1) // axis
+               .set_attr_N(3);
+    TENSOR_UPDATE_DYNAMIC_INPUT(net, x, 0, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_DYNAMIC_INPUT(net, x, 1, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_DYNAMIC_INPUT(net, x, 2, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    return net;
+}
+
+
+/*
+* ConcatD单输入
+*/
+ge::Operator ConcatSingle_OP(ge::Operator net1) {
+    auto net = ge::op::ConcatD( GetGlobalIndex( "ConcatD" ) )
+               .create_dynamic_input_x( 1 )
+               .set_dynamic_input_x( 0, net1 )
+               .set_attr_concat_dim(1)
+               .set_attr_N(1);
+    return net;
+}
+
 bool GenYoloV3Graph(ge::Graph& graph) {
     // ==========================input data op => format: NCHW==========================
     // input x low: A 4D tensor of input images - NCHW
     ge::TensorDesc input_desc_low(ge::Shape({ 1L, 21L, 6L, 6L }), ge::FORMAT_ND, ge::DT_FLOAT);
-    auto input_x_low = ge::op::Data("input_x1").set_attr_index(0);
+    auto input_x_low = ge::op::Data("input_x1");//.set_attr_index(0);
     input_x_low.update_input_desc_x(input_desc_low);
     input_x_low.update_output_desc_y(input_desc_low);
 
@@ -226,13 +281,13 @@ bool GenYoloV3Graph(ge::Graph& graph) {
 
     // input x high: A 4D tensor of input images - NCHW
     ge::TensorDesc input_desc_high(ge::Shape({ 1L, 21L, 24L, 24L }), ge::FORMAT_ND, ge::DT_FLOAT);
-    auto input_x_high = ge::op::Data("input_x3").set_attr_index(2);
+    auto input_x_high = ge::op::Data("input_x3");//.set_attr_index(2);
     input_x_high.update_input_desc_x(input_desc_high);
     input_x_high.update_output_desc_y(input_desc_high);
 
     // input imgsize: 2D tensor of shape (batchsize, 2)
     ge::TensorDesc imgsize_desc(ge::Shape({ 1L, 4L}), ge::FORMAT_ND, ge::DT_FLOAT);
-    auto input_img_size = ge::op::Data("input_imgsize").set_attr_index(3);
+    auto input_img_size = ge::op::Data("input_imgsize");//.set_attr_index(3);
     input_img_size.update_input_desc_x(imgsize_desc);
     input_img_size.update_output_desc_y(imgsize_desc);
 
@@ -259,10 +314,131 @@ bool GenYoloV3Graph(ge::Graph& graph) {
     ge::Operator net_reshape2 = Reshape_OP2(net_detect);
 
     // Set inputs and outputs
-    std::vector<ge::Operator> inputs{ input_x_low, input_x_mid, input_x_high, input_img_size };
+    std::vector<ge::Operator> input_nodes{ input_x_low, input_x_mid, input_x_high, input_img_size };
     // std::vector<ge::Operator> outputs{ net_reshape2 };
-    std::vector<ge::Operator> outputs{ net_detect };
-    graph.SetInputs(inputs).SetOutputs(outputs);
+    std::vector<ge::Operator> output_nodes{ net_detect };
+
+    // set input node attr index is node size > 1
+    if (input_nodes.size() > 1) {
+      int idx = 0;
+      for (auto node : input_nodes) {
+        node.SetAttr("index", idx);
+        idx++;
+      }
+    }
+    graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+
+    return true;
+}
+
+bool GenConcatGraph(ge::Graph& graph) {
+    // input x low: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_low(ge::Shape({ 1L, 108L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_low = ge::op::Data("input_x1");//.set_attr_index(0);
+    input_x_low.update_input_desc_x(input_desc_low);
+    input_x_low.update_output_desc_y(input_desc_low);
+
+    // input x mid: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_mid(ge::Shape({ 1L, 432L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_mid = ge::op::Data("input_x2");//.set_attr_index(1);
+    input_x_mid.update_input_desc_x(input_desc_mid);
+    input_x_mid.update_output_desc_y(input_desc_mid);
+
+    // input x high: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_high(ge::Shape({ 1L, 1728L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_high = ge::op::Data("input_x3");//.set_attr_index(2);
+    input_x_high.update_input_desc_x(input_desc_high);
+    input_x_high.update_output_desc_y(input_desc_high);
+
+    // input axis: An int32, or int64. Specifies the dimension along which to concatenate.
+    ge::TensorDesc input_desc_axis(ge::Shape({ 1L }), ge::FORMAT_ND, ge::DT_INT32);
+    auto input_axis = ge::op::Data("input_axis");//.set_attr_index(2);
+    input_axis.update_input_desc_x(input_desc_axis);
+    input_axis.update_output_desc_y(input_desc_axis);
+
+    // Concat OP
+    ge::Operator concat_output = ConcatTrible_OP(input_x_low, input_x_mid, input_x_high, input_axis);
+
+    // Set inputs and outputs
+    std::vector<ge::Operator> input_nodes{ input_x_low, input_x_mid, input_x_high, input_axis };
+    // std::vector<ge::Operator> outputs{ net_reshape2 };
+    std::vector<ge::Operator> output_nodes{ concat_output };
+
+    // set input node attr index is node size > 1
+    if (input_nodes.size() > 1) {
+      int idx = 0;
+      for (auto node : input_nodes) {
+        node.SetAttr("index", idx);
+        idx++;
+      }
+    }
+    graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+
+    VLOG(3) << "Getting input node size " << input_nodes.size();
+    VLOG(3) << "Getting output node size " << output_nodes.size();
+
+    // for debug
+    for (auto node : input_nodes) {
+        VLOG(3) << "input ndoe name " << node.GetName();
+        VLOG(3) << "input node type " << node.GetOpType();
+    }
+    for (auto node : output_nodes) {
+        VLOG(3) << "output ndoe name " << node.GetName();
+        VLOG(3) << "output node type " << node.GetOpType();
+    }
+
+    return true;
+}
+
+bool GenConcatDGraph(ge::Graph& graph) {
+    // input x low: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_low(ge::Shape({ 1L, 108L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_low = ge::op::Data("input_x1");//.set_attr_index(0);
+    input_x_low.update_input_desc_x(input_desc_low);
+    input_x_low.update_output_desc_y(input_desc_low);
+
+    // input x mid: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_mid(ge::Shape({ 1L, 432L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_mid = ge::op::Data("input_x2");//.set_attr_index(1);
+    input_x_mid.update_input_desc_x(input_desc_mid);
+    input_x_mid.update_output_desc_y(input_desc_mid);
+
+    // input x high: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_high(ge::Shape({ 1L, 1728L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x_high = ge::op::Data("input_x3");//.set_attr_index(2);
+    input_x_high.update_input_desc_x(input_desc_high);
+    input_x_high.update_output_desc_y(input_desc_high);
+
+    // Concat OP
+    ge::Operator concat_output = ConcatDTrible_OP(input_x_low, input_x_mid, input_x_high);
+
+    // Set inputs and outputs
+    std::vector<ge::Operator> input_nodes{ input_x_low, input_x_mid, input_x_high };
+    // std::vector<ge::Operator> outputs{ net_reshape2 };
+    std::vector<ge::Operator> output_nodes{ concat_output };
+
+    // set input node attr index is node size > 1
+    if (input_nodes.size() > 1) {
+      int idx = 0;
+      for (auto node : input_nodes) {
+        node.SetAttr("index", idx);
+        idx++;
+      }
+    }
+    graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+
+    VLOG(3) << "Getting input node size " << input_nodes.size();
+    VLOG(3) << "Getting output node size " << output_nodes.size();
+
+    // for debug
+    for (auto node : input_nodes) {
+        VLOG(3) << "input ndoe name " << node.GetName();
+        VLOG(3) << "input node type " << node.GetOpType();
+    }
+    for (auto node : output_nodes) {
+        VLOG(3) << "output ndoe name " << node.GetName();
+        VLOG(3) << "output node type " << node.GetOpType();
+    }
 
     return true;
 }

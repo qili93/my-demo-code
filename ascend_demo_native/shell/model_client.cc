@@ -7,50 +7,19 @@ bool AclModelClient::LoadFromMem(const void* data, uint32_t size) {
     return true;
   }
 
-  auto ret = aclmdlQuerySizeFromMem(
-      data, size, &model_memory_size_, &model_weight_size_);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] query model size from memory failed!";
-    return false;
-  }
-  ret = aclrtMalloc(
-      &model_memory_ptr_, model_memory_size_, ACL_MEM_MALLOC_HUGE_FIRST);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] malloc buffer for model memory "
-                    "failed, require size is "
-                 << model_memory_size_;
-    return false;
-  }
-  ret = aclrtMalloc(
-      &model_weight_ptr_, model_weight_size_, ACL_MEM_MALLOC_HUGE_FIRST);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] malloc buffer for model weigth "
-                    "failed, require size is "
-                 << model_weight_size_;
-    return false;
-  }
-  ret = aclmdlLoadFromMemWithMem(data,
-                                 size,
-                                 &model_id_,
-                                 model_memory_ptr_,
-                                 model_memory_size_,
-                                 model_weight_ptr_,
-                                 model_weight_size_);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Load model from memory failed!";
-    return false;
-  }
+  ACL_CALL(aclmdlQuerySizeFromMem(data, size, &model_memory_size_, &model_weight_size_));
+  ACL_CALL(aclrtMalloc(&model_memory_ptr_, model_memory_size_, ACL_MEM_MALLOC_HUGE_FIRST));
+  ACL_CALL(aclrtMalloc(&model_weight_ptr_, model_weight_size_, ACL_MEM_MALLOC_HUGE_FIRST));
+  ACL_CALL(aclmdlLoadFromMemWithMem(data, size, &model_id_, model_memory_ptr_, model_memory_size_, model_weight_ptr_, model_weight_size_));
+  
   model_desc_ = aclmdlCreateDesc();
   if (model_desc_ == nullptr) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] create model description failed!";
     return false;
   }
-  ret = aclmdlGetDesc(model_desc_, model_id_);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] get model description failed!";
-    return false;
-  }
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] AclModelClient LoadFromMem success.";
+  ACL_CALL(aclmdlGetDesc(model_desc_, model_id_));
+
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Load model form memeory success.";
   load_flag_ = true;
   return true;
 }
@@ -60,49 +29,20 @@ bool AclModelClient::LoadFromFile(const char* model_path) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] model is already loaded!";
     return true;
   }
-  auto ret =
-      aclmdlQuerySize(model_path, &model_memory_size_, &model_weight_size_);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] query model size from file failed!";
-    return false;
-  }
-  ret = aclrtMalloc(
-      &model_memory_ptr_, model_memory_size_, ACL_MEM_MALLOC_HUGE_FIRST);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] malloc buffer for model memory "
-                    "failed, require size is "
-                 << model_memory_size_;
-    return false;
-  }
-  ret = aclrtMalloc(
-      &model_weight_ptr_, model_weight_size_, ACL_MEM_MALLOC_HUGE_FIRST);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] malloc buffer for model weigth "
-                    "failed, require size is "
-                 << model_weight_size_;
-    return false;
-  }
-  ret = aclmdlLoadFromFileWithMem(model_path,
-                                  &model_id_,
-                                  model_memory_ptr_,
-                                  model_memory_size_,
-                                  model_weight_ptr_,
-                                  model_weight_size_);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] Load model from file failed!";
-    return false;
-  }
+
+  ACL_CALL(aclmdlQuerySize(model_path, &model_memory_size_, &model_weight_size_));
+  ACL_CALL(aclrtMalloc(&model_memory_ptr_, model_memory_size_, ACL_MEM_MALLOC_HUGE_FIRST));
+  ACL_CALL(aclrtMalloc(&model_weight_ptr_, model_weight_size_, ACL_MEM_MALLOC_HUGE_FIRST));
+  ACL_CALL(aclmdlLoadFromFileWithMem(model_path, &model_id_, model_memory_ptr_, model_memory_size_, model_weight_ptr_, model_weight_size_));
+
   model_desc_ = aclmdlCreateDesc();
   if (model_desc_ == nullptr) {
     LOG(WARNING) << "[HUAWEI_ASCEND_NPU] create model description failed!";
     return false;
   }
-  ret = aclmdlGetDesc(model_desc_, model_id_);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] get model description failed!";
-    return false;
-  }
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] Loading model file success:" << model_path;
+  ACL_CALL(aclmdlGetDesc(model_desc_, model_id_));
+
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Load model form file success: " << model_path;
   load_flag_ = true;
   return true;
 }
@@ -115,11 +55,11 @@ bool AclModelClient::GetModelIOTensorDim(
     return false;
   }
   size_t input_num = aclmdlGetNumInputs(model_desc_);
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] input numher is " << input_num;
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] input number is " << input_num;
   for (size_t i = 0; i < input_num; i++) {
     VLOG(3) << "[HUAWEI_ASCEND_NPU] printing input [" << i << "] ....";
     aclmdlIODims input_dim;
-    aclmdlGetInputDims(model_desc_, i, &input_dim);
+    ACL_CALL(aclmdlGetInputDims(model_desc_, i, &input_dim));
     aclDataType data_type = aclmdlGetInputDataType(model_desc_, i);
     aclFormat data_format = aclmdlGetInputFormat(model_desc_, i);
     TensorDesc tensor_desc = TensorDesc(data_type, input_dim, data_format);
@@ -127,11 +67,11 @@ bool AclModelClient::GetModelIOTensorDim(
   }
 
   size_t output_num = aclmdlGetNumOutputs(model_desc_);
-  VLOG(3) << "[HUAWEI_ASCEND_NPU] output numher is " << output_num;
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] output number is " << output_num;
   for (size_t i = 0; i < output_num; i++) {
     VLOG(3) << "[HUAWEI_ASCEND_NPU] printing output [" << i << "] ....";
     aclmdlIODims output_dim;
-    aclmdlGetOutputDims(model_desc_, i, &output_dim);
+    ACL_CALL(aclmdlGetOutputDims(model_desc_, i, &output_dim));
     aclDataType data_type = aclmdlGetOutputDataType(model_desc_, i);
     aclFormat data_format = aclmdlGetOutputFormat(model_desc_, i);
     TensorDesc tensor_desc = TensorDesc(data_type, output_dim, data_format);
@@ -156,28 +96,11 @@ bool AclModelClient::GetTensorFromDataset(
     uint32_t device_size = aclGetDataBufferSize(buffer_device);
 
     void* tensor_data = nullptr;
-    aclError ret = aclrtMallocHost(&tensor_data, device_size);
-    if (ret != ACL_ERROR_NONE) {
-      LOG(ERROR) << "[HUAWEI_ASCEND_NPU] aclrtMallocHost failed, ret " << ret;
-      return false;
-    }
-    ret = aclrtMemcpy(tensor_data,
-                      device_size,
-                      device_data,
-                      device_size,
-                      ACL_MEMCPY_DEVICE_TO_HOST);
-    if (ret != ACL_ERROR_NONE) {
-      LOG(ERROR) << "[HUAWEI_ASCEND_NPU] aclrtMemcpy failed, ret " << ret;
-      return false;
-    }
-    if (output_tensor->at(i)->SetData(reinterpret_cast<uint8_t*>(tensor_data),
-                                      device_size) != ge::GRAPH_SUCCESS) {
-      LOG(ERROR) << "[HUAWEI_ASCEND_NPU] SetData to output tensor failed";
-      return false;
-    }
+    ACL_CALL(aclrtMallocHost(&tensor_data, device_size));
+    ACL_CALL(aclrtMemcpy(tensor_data, device_size, device_data, device_size, ACL_MEMCPY_DEVICE_TO_HOST));
+    ATC_CALL(output_tensor->at(i)->SetData(reinterpret_cast<uint8_t*>(tensor_data), device_size));
   }
-  VLOG(3)
-      << "[HUAWEI_ASCEND_NPU] Get output tensor from output dataset succeed.";
+  VLOG(3) << "[HUAWEI_ASCEND_NPU] Get output tensor from dataset succeed.";
   return true;
 }
 
@@ -193,16 +116,11 @@ void AclModelClient::CreateInputDataset(
     auto item = input_tensor->at(i);
     size_t buffer_size = item->GetSize();
     void* buffer_device = nullptr;
-    aclError ret =
-        aclrtMalloc(&buffer_device, buffer_size, ACL_MEM_MALLOC_NORMAL_ONLY);
-    if (ret != ACL_ERROR_NONE) {
-      LOG(ERROR)
-          << "[HUAWEI_ASCEND_NPU] input malloc device buffer failed. size is "
-          << buffer_size;
-      return;
-    }
+
+    ACL_CALL(aclrtMalloc(&buffer_device, buffer_size, ACL_MEM_MALLOC_NORMAL_ONLY));
+
     void* buffer_data = reinterpret_cast<void*>(item->GetData());
-    ret = aclrtMemcpy(buffer_device,
+    auto ret = aclrtMemcpy(buffer_device,
                       buffer_size,
                       buffer_data,
                       buffer_size,
@@ -210,20 +128,20 @@ void AclModelClient::CreateInputDataset(
     if (ret != ACL_ERROR_NONE) {
       LOG(ERROR) << "[HUAWEI_ASCEND_NPU] input memcpy failed, buffer size is "
                  << buffer_size;
-      aclrtFree(buffer_device);
+      ACL_CALL(aclrtFree(buffer_device));
       return;
     }
     aclDataBuffer* data_buffer =
         aclCreateDataBuffer(buffer_device, buffer_size);
     if (data_buffer == nullptr) {
       LOG(ERROR) << "[HUAWEI_ASCEND_NPU] output aclCreateDataBuffer failed!";
-      aclrtFree(buffer_device);
+      ACL_CALL(aclrtFree(buffer_device));
       return;
     }
     if (aclmdlAddDatasetBuffer(input_dataset_, data_buffer) != ACL_ERROR_NONE) {
       LOG(ERROR) << "[HUAWEI_ASCEND_NPU] input aclmdlAddDatasetBuffer failed!";
-      aclrtFree(buffer_device);
-      aclDestroyDataBuffer(data_buffer);
+      ACL_CALL(aclrtFree(buffer_device));
+      ACL_CALL(aclDestroyDataBuffer(data_buffer));
       return;
     }
   }
@@ -241,26 +159,19 @@ void AclModelClient::CreateOutputDataset(
   for (size_t i = 0; i < output_size; i++) {
     size_t buffer_size = aclmdlGetOutputSizeByIndex(model_desc_, i);
     void* buffer_device = nullptr;
-    aclError ret =
-        aclrtMalloc(&buffer_device, buffer_size, ACL_MEM_MALLOC_NORMAL_ONLY);
-    if (ret != ACL_ERROR_NONE) {
-      LOG(ERROR)
-          << "[HUAWEI_ASCEND_NPU] output malloc device buffer failed. size is "
-          << buffer_size;
-      return;
-    }
+    ACL_CALL(aclrtMalloc(&buffer_device, buffer_size, ACL_MEM_MALLOC_NORMAL_ONLY));
     aclDataBuffer* data_buffer =
         aclCreateDataBuffer(buffer_device, buffer_size);
     if (data_buffer == nullptr) {
       LOG(ERROR) << "[HUAWEI_ASCEND_NPU] output aclCreateDataBuffer failed!";
-      aclrtFree(buffer_device);
+      ACL_CALL(aclrtFree(buffer_device));
       return;
     }
     if (aclmdlAddDatasetBuffer(output_dataset_, data_buffer) !=
         ACL_ERROR_NONE) {
       LOG(ERROR) << "[HUAWEI_ASCEND_NPU] output aclmdlAddDatasetBuffer failed!";
-      aclrtFree(buffer_device);
-      aclDestroyDataBuffer(data_buffer);
+      ACL_CALL(aclrtFree(buffer_device));
+      ACL_CALL(aclDestroyDataBuffer(data_buffer));
       return;
     }
   }
@@ -280,16 +191,6 @@ bool AclModelClient::ModelExecute(
   CreateInputDataset(input_tensor);
   CreateOutputDataset(output_tensor);
 
-  // // print input_tensor
-  // for (size_t i = 0; i < input_tensor->size(); i++) {
-  //   auto item = input_tensor->at(i);
-  //   size_t input_size = reinterpret_cast<size_t>(item->GetSize() / sizeof(float));
-  //   float* input_data = reinterpret_cast<float*>(item->GetData());
-  //   for (size_t index = 0; index < input_size; index++) {
-  //     LOG(INFO) << "[HUAWEI_ASCEND_NPU] input_tensor[" << i << "][" << index << "]=" << input_data[index];
-  //   }
-  // }
-
   // model execution
   ACL_CALL(aclmdlExecute(model_id_, input_dataset_, output_dataset_));
 
@@ -299,28 +200,6 @@ bool AclModelClient::ModelExecute(
                << model_id_;
     return false;
   }
-
-  // print output tensor
-  for (size_t i = 0; i < output_tensor->size(); i++) {
-    auto item = output_tensor->at(i);
-    size_t output_size = reinterpret_cast<size_t>(item->GetSize() / sizeof(float));
-    float* output_data = reinterpret_cast<float*>(item->GetData());
-    if (i == 0) {
-      size_t rwo_num = static_cast<int>(output_size/6);
-      for (size_t row = 0; row < rwo_num; row++) {
-        std::stringstream ss;
-        for (size_t col= 0; col < 6; col++) {
-          size_t index = row * rwo_num + col;
-          ss << output_data[index] << " ";
-        }
-        LOG(INFO) << ss.str();
-      }
-    }
-    for (size_t index = 0; index < output_size; index++) {
-      LOG(INFO) << "[ASCEND] output_tensor[" << i << "][" << index << "]=" << output_data[index];
-    }
-  }
-
   VLOG(3) << "[HUAWEI_ASCEND_NPU] GetTensorFromDataset succeed, modelId:"
           << model_id_;
 
@@ -339,21 +218,13 @@ void AclModelClient::DestroyDataset(aclmdlDataset** dataset) {
     aclDataBuffer* buffer_device = aclmdlGetDatasetBuffer(*dataset, i);
     void* device_data = aclGetDataBufferAddr(buffer_device);
     if (device_data == nullptr) {
-      LOG(WARNING)
-          << "[HUAWEI_ASCEND_NPU] failed to get data buffer of deivce data!";
+      LOG(WARNING) << "[HUAWEI_ASCEND_NPU] failed to get data buffer!";
     } else {
-      if (aclrtFree(device_data) != ACL_ERROR_NONE) {
-        LOG(WARNING) << "[HUAWEI_ASCEND_NPU] failed to free deivce data!";
-      }
+      ACL_CALL(aclrtFree(device_data));
     }
-    if (aclDestroyDataBuffer(buffer_device) != ACL_ERROR_NONE) {
-      LOG(WARNING)
-          << "[HUAWEI_ASCEND_NPU] failed to destroy deivce data buffer!";
-    }
+    ACL_CALL(aclDestroyDataBuffer(buffer_device));
   }
-  if (aclmdlDestroyDataset(*dataset) != ACL_ERROR_NONE) {
-    LOG(WARNING) << "[HUAWEI_ASCEND_NPU] failed to destroy dataset!";
-  }
+  ACL_CALL(aclmdlDestroyDataset(*dataset));
   *dataset = nullptr;
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Destroy dataset success.";
 }
@@ -368,24 +239,20 @@ bool AclModelClient::UnloadModel() {
   DestroyDataset(&input_dataset_);
   DestroyDataset(&output_dataset_);
 
-  aclError ret = aclmdlUnload(model_id_);
-  if (ret != ACL_ERROR_NONE) {
-    LOG(ERROR) << "unload model failed, model id is " << model_id_;
-    return false;
-  }
+  ACL_CALL(aclmdlUnload(model_id_));
   if (model_desc_ != nullptr) {
-    (void)aclmdlDestroyDesc(model_desc_);
+    ACL_CALL(aclmdlDestroyDesc(model_desc_));
     model_desc_ = nullptr;
   }
 
   if (model_memory_ptr_ != nullptr) {
-    aclrtFree(model_memory_ptr_);
+    ACL_CALL(aclrtFree(model_memory_ptr_));
     model_memory_ptr_ = nullptr;
     model_memory_size_ = 0;
   }
 
   if (model_weight_ptr_ != nullptr) {
-    aclrtFree(model_weight_ptr_);
+    ACL_CALL(aclrtFree(model_weight_ptr_));
     model_weight_ptr_ = nullptr;
     model_weight_size_ = 0;
   }
