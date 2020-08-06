@@ -13,3 +13,5 @@ kernel_meta/
 data/
 # not ignore
 !build.sh
+!test*.sh
+!test*.py

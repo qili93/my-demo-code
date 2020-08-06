@@ -9,6 +9,9 @@
 #define TENSOR_UPDATE_DYNAMIC_INPUT(op, attr, idx, format, dtype)               \
   ge::TensorDesc _##op##_input_desc_##attr##_##idx(ge::Shape(), format, dtype); \
   op.update_dynamic_input_desc_##attr(idx, _##op##_input_desc_##attr##_##idx);
+#define TENSOR_UPDATE_DYNAMIC_OUTPUT(op, attr, idx, format, dtype)               \
+  ge::TensorDesc _##op##_output_desc_##attr##_##idx(ge::Shape(), format, dtype); \
+  op.update_dynamic_output_desc_##attr(idx, _##op##_output_desc_##attr##_##idx);
 
 /*
 * 对op名称添加后缀，保证op名称不重复
@@ -441,4 +444,270 @@ bool GenConcatDGraph(ge::Graph& graph) {
     }
 
     return true;
+}
+
+bool GenConv2DGraph(ge::Graph& graph) {
+    // input x: A 4D tensor of input images - bs, ic, h, w
+    ge::TensorDesc input_desc_x(ge::Shape({ 1L, 6L, 3L, 4L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x = ge::op::Data("input_x");//.set_attr_index(0);
+    input_x.update_input_desc_x(input_desc_x);
+    input_x.update_output_desc_y(input_desc_x);
+
+    // input filter: A 4D tensor of input images - oc, ic/groups, kh, hw
+    ge::TensorDesc input_desc_filter(ge::Shape({ 6L, 1L, 3L, 3L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_filter = ge::op::Data("input_filter");//.set_attr_index(1);
+    input_filter.update_input_desc_x(input_desc_filter);
+    input_filter.update_output_desc_y(input_desc_filter);
+
+    // Conv2D OP
+    auto conv2d_op = ge::op::Conv2D( GetGlobalIndex( "conv2d" ) )
+               .set_input_x( input_x )
+               .set_input_filter( input_filter )
+               .set_attr_strides( {1L, 1L, 1L, 1L} ) // 1, 1, stride[0], stride[1]
+               .set_attr_pads( {0, 0, 0, 0} ) // padding[0],  padding[1],  padding[2], padding[3]
+               .set_attr_dilations( {1L, 1L, 1L, 1L} ) // 1, 1, dilations[0], dilations[1]
+               .set_attr_groups( 6 )
+               .set_attr_data_format("NCHW");
+    TENSOR_UPDATE_INPUT(conv2d_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_INPUT(conv2d_op, filter, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_INPUT(conv2d_op, bias, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_OUTPUT(conv2d_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT );
+
+    // Set inputs and outputs
+    std::vector<ge::Operator> input_nodes{ input_x, input_filter };
+    // std::vector<ge::Operator> outputs{ net_reshape2 };
+    std::vector<ge::Operator> output_nodes{ conv2d_op };
+    // set input node attr index is node size > 1
+    if (input_nodes.size() > 1) {
+      int idx = 0;
+      for (auto node : input_nodes) {
+        node.SetAttr("index", idx);
+        idx++;
+      }
+    }
+    graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+}
+
+
+bool GenDepthwiseConv2DGraph(ge::Graph& graph) {
+    // input x: A 4D tensor of input images - bs, ic, h, w
+    ge::TensorDesc input_desc_x(ge::Shape({ 1L, 6L, 3L, 4L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x = ge::op::Data("input_x");//.set_attr_index(0);
+    input_x.update_input_desc_x(input_desc_x);
+    input_x.update_output_desc_y(input_desc_x);
+
+    // input filter: A 4D tensor of input images - NCHW - kh, hw, oc, K = 1
+    ge::TensorDesc input_desc_filter(ge::Shape({ 1L, 6L, 3L, 3L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_filter = ge::op::Data("input_filter");//.set_attr_index(1);
+    input_filter.update_input_desc_x(input_desc_filter);
+    input_filter.update_output_desc_y(input_desc_filter);
+
+    // Conv2D OP
+    auto conv2d_op = ge::op::DepthwiseConv2D( GetGlobalIndex( "conv2d" ) )
+               .set_input_x( input_x )
+               .set_input_filter( input_filter )
+               .set_attr_strides( {1L, 1L, 1L, 1L} ) // 1, 1, stride[0], stride[1]
+               .set_attr_pads( {0, 0, 0, 0} ) // padding[0],  padding[1],  padding[2], padding[3]
+               .set_attr_dilations( {1L, 1L, 1L, 1L} ) // 1, 1, dilations[0], dilations[1]
+               .set_attr_data_format("NCHW");
+    TENSOR_UPDATE_INPUT(conv2d_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_INPUT(conv2d_op, filter, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_INPUT(conv2d_op, bias, ge::FORMAT_NCHW, ge::DT_FLOAT );
+    TENSOR_UPDATE_OUTPUT(conv2d_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT );
+
+    // // BatchNorm OP
+    // auto pool_op = ge::op::Pooling("pooling");
+    // auto bn_op = ge::op::BNInference("batchnorm");
+    // auto fc_op = ge::op::FullyConnection("fc");
+    // fc_op.set_attr_num_output(1);
+    // auto reshape_op = ge::op::Reshape("reshape");
+    // auto add_op = ge::op::Add("add");
+    // auto sub_op = ge::op::Sub("sub");
+    // auto mul_op = ge::op::Mul("mul");
+    // auto div_op = ge::op::Div("div");
+
+    // Set inputs and outputs
+    std::vector<ge::Operator> input_nodes{ input_x, input_filter };
+    // std::vector<ge::Operator> outputs{ net_reshape2 };
+    std::vector<ge::Operator> output_nodes{ conv2d_op };
+    // set input node attr index is node size > 1
+    if (input_nodes.size() > 1) {
+      int idx = 0;
+      for (auto node : input_nodes) {
+        node.SetAttr("index", idx);
+        idx++;
+      }
+    }
+    graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+}
+
+bool GenElementwiseOP(ge::Graph& graph) {
+    // input x1: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_x1(ge::Shape({ 2L, 3L, 4L, 5L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x1 = ge::op::Data("input_x1");//.set_attr_index(0);
+    input_x1.update_input_desc_x(input_desc_x1);
+    input_x1.update_output_desc_y(input_desc_x1);
+
+    // input x2: A 4D tensor of input images - NCHW
+    ge::TensorDesc input_desc_x2(ge::Shape({ 1L, 3L, 1L, 1L }), ge::FORMAT_ND, ge::DT_FLOAT);
+    auto input_x2 = ge::op::Data("input_filter");//.set_attr_index(1);
+    input_x2.update_input_desc_x(input_desc_x2);
+    input_x2.update_output_desc_y(input_desc_x2);
+
+    // Add OP
+    auto out_op = ge::op::RealDiv( GetGlobalIndex( "div" ) )
+                  .set_input_x1( input_x1 )
+                  .set_input_x2( input_x2 );
+    TENSOR_UPDATE_INPUT(out_op, x1, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_INPUT(out_op, x2, ge::FORMAT_NCHW, ge::DT_FLOAT);
+    TENSOR_UPDATE_OUTPUT(out_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+
+    // Set inputs and outputs
+    std::vector<ge::Operator> input_nodes{ input_x1, input_x2 };
+    // std::vector<ge::Operator> outputs{ net_reshape2 };
+    std::vector<ge::Operator> output_nodes{ out_op };
+    // set input node attr index is node size > 1
+    if (input_nodes.size() > 1) {
+      int idx = 0;
+      for (auto node : input_nodes) {
+        node.SetAttr("index", idx);
+        idx++;
+      }
+    }
+    graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+}
+
+bool GenBNGraph(ge::Graph& graph) {
+
+  // input x: A 4D tensor of input images - bs, ic, h, w
+  ge::TensorDesc input_desc_x(ge::Shape({ 1L, 2L, 3L, 3L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_x = ge::op::Data("input_x");//.set_attr_index(0);
+  input_x.update_input_desc_x(input_desc_x);
+  input_x.update_output_desc_y(input_desc_x);
+
+  // input bias
+  ge::TensorDesc input_desc_bias(ge::Shape({ 2L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_bias = ge::op::Data("input_bias");//.set_attr_index(0);
+  input_bias.update_input_desc_x(input_desc_bias);
+  input_bias.update_output_desc_y(input_desc_bias);
+
+  // input mean
+  ge::TensorDesc input_desc_mean(ge::Shape({ 2L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_mean = ge::op::Data("input_mean");//.set_attr_index(0);
+  input_mean.update_input_desc_x(input_desc_mean);
+  input_mean.update_output_desc_y(input_desc_mean);
+
+  // input scale
+  ge::TensorDesc input_desc_scale(ge::Shape({ 2L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_scale = ge::op::Data("input_scale");//.set_attr_index(0);
+  input_scale.update_input_desc_x(input_desc_scale);
+  input_scale.update_output_desc_y(input_desc_scale);
+
+  // input variance
+  ge::TensorDesc input_desc_variance(ge::Shape({ 2L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_variance = ge::op::Data("input_variance");//.set_attr_index(0);
+  input_variance.update_input_desc_x(input_desc_variance);
+  input_variance.update_output_desc_y(input_desc_variance);
+
+  // batch norm op
+  auto batch_norm_op = ge::op::BatchNorm("y__1");
+  batch_norm_op.set_input_x(input_x);
+  batch_norm_op.set_input_scale(input_scale);
+  batch_norm_op.set_input_offset(input_bias);
+  batch_norm_op.set_input_mean(input_mean);
+  batch_norm_op.set_input_variance(input_variance);
+  batch_norm_op.set_attr_epsilon(0);
+  batch_norm_op.set_attr_data_format("NCHW");
+  batch_norm_op.set_attr_is_training(false);
+  TENSOR_UPDATE_INPUT(batch_norm_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_INPUT(batch_norm_op, scale, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_INPUT(batch_norm_op, offset, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_INPUT(batch_norm_op, mean, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_INPUT(batch_norm_op, variance, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_OUTPUT(batch_norm_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  // TENSOR_UPDATE_OUTPUT(batch_norm_op, batch_mean, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  // TENSOR_UPDATE_OUTPUT(batch_norm_op, batch_variance, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  // TENSOR_UPDATE_OUTPUT(batch_norm_op, reserve_space_1, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  // TENSOR_UPDATE_OUTPUT(batch_norm_op, reserve_space_2, ge::FORMAT_NCHW, ge::DT_FLOAT);
+
+  // // Relu OP
+  // auto relu_op = ge::op::Relu("relu1");
+  // relu_op.set_input_x(batch_norm_op, "y");
+  // TENSOR_UPDATE_INPUT(relu_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  // TENSOR_UPDATE_OUTPUT(relu_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+
+  // Data OP
+  auto data_op = ge::op::Identity("y_out");
+  data_op.set_input_x(batch_norm_op, "y");
+  TENSOR_UPDATE_INPUT(data_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_OUTPUT(data_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+
+  // // Softmax op
+  // auto softmax_op = ge::op::SoftmaxV2("softmax");
+
+  // // Dropout op
+  // auto dropout_op = ge::op::Dropout("dropout");
+
+  // // Scale op
+  // auto scale_op = ge::op::Scale("scale");
+
+  // // Max OP
+  // auto max_op = ge::op::RealDiv("max");
+
+  // ge::op::DropOutGenMask("2");
+  // ge::op::DropOutDoMask("1");
+  // ge::op::Scale("test");
+
+  // ge::op::ScaleAndTranslate
+
+  // Set inputs and outputs
+  std::vector<ge::Operator> input_nodes{ input_x, input_scale, input_bias, input_mean, input_variance };
+  // std::vector<ge::Operator> outputs{ net_reshape2 };
+  std::vector<ge::Operator> output_nodes{ data_op };
+  // set input node attr index is node size > 1
+  if (input_nodes.size() > 1) {
+    int idx = 0;
+    for (auto node : input_nodes) {
+      node.SetAttr("index", idx);
+      idx++;
+    }
+  }
+  graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+}
+
+bool GenScaleGraph(ge::Graph& graph) {
+
+  // input x: A 4D tensor of input images - bs, ic, h, w
+  ge::TensorDesc input_desc_x(ge::Shape({ 1L, 2L, 3L, 3L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_x = ge::op::Data("input_x");//.set_attr_index(0);
+  input_x.update_input_desc_x(input_desc_x);
+  input_x.update_output_desc_y(input_desc_x);
+
+  // input bias
+  ge::TensorDesc input_desc_scale(ge::Shape({ 1L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_scale = ge::op::Data("input_scale");//.set_attr_index(0);
+  input_scale.update_input_desc_x(input_desc_scale);
+  input_scale.update_output_desc_y(input_desc_scale);
+
+  // scale op
+  auto scale_op = ge::op::Scale("scale_1");
+  scale_op.set_input_x(input_x);
+  scale_op.set_input_scale(input_scale);
+  TENSOR_UPDATE_INPUT(scale_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_INPUT(scale_op, scale, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_OUTPUT(scale_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+
+  // Set inputs and outputs
+  std::vector<ge::Operator> input_nodes{ input_x, input_scale };
+  // std::vector<ge::Operator> outputs{ net_reshape2 };
+  std::vector<ge::Operator> output_nodes{ scale_op };
+  // set input node attr index is node size > 1
+  if (input_nodes.size() > 1) {
+    int idx = 0;
+    for (auto node : input_nodes) {
+      node.SetAttr("index", idx);
+      idx++;
+    }
+  }
+  graph.SetInputs(input_nodes).SetOutputs(output_nodes);
 }
