@@ -42,13 +42,18 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-inline double GetCurrentUS() {
+double GetCurrentUS() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
-void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
+bool hasEnding(std::string const &fullString, std::string const &ending) {
+    if (fullString.length() < ending.length()) return false;
+    return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+}
+
+void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const int model_version) {
     // 1. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(INPUT_SHAPE);
@@ -71,13 +76,25 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
             << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
   // 4. Get results
+  LOG(INFO) << "Checking model results with model verison: " << model_version;
   std::vector<std::vector<float>> ref;
-  ref.emplace_back(std::vector<float>(
-      {0.00019130898f, 9.467885e-05f,  0.00015971427f, 0.0003650665f,
-       0.00026431272f, 0.00060884043f, 0.0002107942f,  0.0015819625f,
-       0.0010323516f,  0.00010079765f, 0.00011006987f, 0.0017364529f,
-       0.0048292773f,  0.0013995157f,  0.0018453331f,  0.0002428986f,
-       0.00020211363f, 0.00013668182f, 0.0005855956f,  0.00025901722f}));
+  if (model_version == 1) {
+    ref.emplace_back(std::vector<float>(
+        {0.00019130898f, 9.467885e-05f,  0.00015971427f, 0.0003650665f,
+        0.00026431272f, 0.00060884043f, 0.0002107942f,  0.0015819625f,
+        0.0010323516f,  0.00010079765f, 0.00011006987f, 0.0017364529f,
+        0.0048292773f,  0.0013995157f,  0.0018453331f,  0.0002428986f,
+        0.00020211363f, 0.00013668182f, 0.0005855956f,  0.00025901722f}));
+  } else if (model_version == 2) {
+    ref.emplace_back(std::vector<float>(
+      {0.00017082224f, 5.699624e-05f,  0.000260885f,   0.00016412718f,
+       0.00034818667f, 0.00015230637f, 0.00032959113f, 0.0014772735f,
+       0.0009059976f,  9.5378724e-05f, 5.386537e-05f,  0.0006427285f,
+       0.0070957416f,  0.0016094646f,  0.0018807327f,  0.00010506048f,
+       6.823785e-05f,  0.00012269315f, 0.0007806194f,  0.00022354358f}));
+  } else {
+    LOG(ERROR) << "Unsupported mobilenet model version: " << model_version;
+  }
   auto output_tensor = predictor->GetOutput(0);
   const auto* output_data = output_tensor->data<float>();
 
@@ -105,7 +122,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   }
 }
 
-void RunModel(const std::string model_dir) {
+void RunModel(const std::string model_dir, const int model_version) {
   // 1. Create MobileConfig
   MobileConfig mobile_config;
   mobile_config.set_model_from_file(model_dir+".nb");
@@ -123,10 +140,10 @@ void RunModel(const std::string model_dir) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
   // 3. Run model
-  process(predictor);
+  process(predictor, model_version);
 }
 
-void SaveModel(const std::string model_dir, const int model_type) {
+void SaveModel(const std::string model_dir, const int model_type, const int model_version) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -156,28 +173,37 @@ void SaveModel(const std::string model_dir, const int model_type) {
   }
 
   // 3. Run model
-  // process(predictor);
+  process(predictor, model_version);
 
   // 4. Save kNaiveBuffer model
-  // predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
-  // std::cout << "Save optimized native buffer model to " << (model_dir+".nb") << std::endl;
+  predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
+  std::cout << "Save optimized native buffer model to " << (model_dir+".nb") << std::endl;
 
   // 5. Save kProtobuf model
-  predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
-  std::cout << "Save optimized protobuf model to " << (model_dir+"_opt") << std::endl;
+  // predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
+  // std::cout << "Save optimized protobuf model to " << (model_dir+"_opt") << std::endl;
 }
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir model_type\n";
+    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir model_version\n";
     exit(1);
   }
   std::string model_dir = argv[1];
   int model_type = atoi(argv[2]); // 0 for uncombined, 1 for combined model
+  // get model version based on model dir string
+  int model_version = 0;
+  std::string model_version_str = model_dir.substr(model_dir.length()-2, model_dir.length());
+  if ("v1" == model_version_str) {
+    model_version = 1;
+  } else if ("v2" == model_version_str) {
+    model_version = 2;
+  }
+  LOG(INFO) << "model_version is: " << model_version;
 
 #ifdef USE_FULL_API
-  //SaveModel(model_dir, model_type);
+  SaveModel(model_dir, model_type, model_version);
 #endif
-  RunModel(model_dir);
+  //RunModel(model_dir, model_version);
   return 0;
 }

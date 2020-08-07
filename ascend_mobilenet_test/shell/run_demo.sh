@@ -53,9 +53,10 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 
 # set model dir
 MODEL_DIR=$(readlinkf ../assets/models)
-MODEL_NAME=mobilenet_v1
+# MODEL_NAME=mobilenet_v1
+MODEL_NAME=mobilenet_v2
 MODEL_TYPE=0 # 0 uncombined; 1 combined paddle fluid model
 
 # run demo
 export GLOG_v=5
-./build/mobilenet_v1_test $MODEL_DIR/$MODEL_NAME $MODEL_TYPE
+./build/mobilenet_test $MODEL_DIR/$MODEL_NAME $MODEL_TYPE

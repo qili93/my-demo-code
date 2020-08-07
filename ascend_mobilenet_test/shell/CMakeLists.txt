@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
-project(mobilenet_v1_test)
+project(mobilenet_test)
 
-set(TARGET_EXE mobilenet_v1_test)
+set(TARGET_EXE mobilenet_test)
 
 # 1. path to Paddle-Lite lib
 if(${PADDLE_LITE_DIR} STREQUAL "")
