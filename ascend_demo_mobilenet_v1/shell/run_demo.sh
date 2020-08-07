@@ -58,4 +58,4 @@ MODEL_TYPE=0 # 0 uncombined; 1 combined paddle fluid model
 
 # run demo
 export GLOG_v=5
-./build/mobilenet_v1_demo $MODEL_DIR/$MODEL_NAME $MODEL_TYPE
+./build/mobilenet_v1_test $MODEL_DIR/$MODEL_NAME $MODEL_TYPE

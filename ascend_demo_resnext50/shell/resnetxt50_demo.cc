@@ -70,7 +70,7 @@ void RunModel(const std::string model_dir, std::shared_ptr<paddle::lite_api::Pad
   // 2. Create PaddlePredictor by MobileConfig
   try {
     predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
-    std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
+    std::cout << "============== PaddlePredictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
@@ -104,7 +104,7 @@ void SaveRunModel(const std::string model_dir, const int model_type, std::shared
   }
 
   // 3. Run model
-  process(predictor);
+  // process(predictor);
   // 4. Save optimized model
   predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
   // predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
 
 #ifdef USE_FULL_API
-  //SaveRunModel(model_dir, model_type, predictor);
+  SaveRunModel(model_dir, model_type, predictor);
 #endif
   RunModel(model_dir, predictor);
   return 0;

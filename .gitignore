@@ -11,6 +11,7 @@ test**
 *.om
 kernel_meta/
 data/
+core.*
 # not ignore
 !build.sh
 !test*.sh
