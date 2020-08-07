@@ -90,6 +90,9 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
     for (int j = 0; j < ref[i].size(); ++j) {
       auto result = output_data[j * step + (output_tensor->shape()[1] * i)];
       auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
+      VLOG(3) << "expected[" << i <<"][" << j <<"] = " << ref[i][j]; 
+      VLOG(3) << "results[" << i <<"][" << j <<"] = " << result; 
+      VLOG(3) << "diff[" << i <<"][" << j <<"] = " << diff;
       CHECK_LT(diff, eps) << "diff is not less than eps, diff is: " << diff << ", eps is: " << eps;
     }
   }

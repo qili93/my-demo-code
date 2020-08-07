@@ -119,13 +119,3 @@ int main() {
     return 0;
 }
 
-// int main(int argc, char **argv) {
-//   std::thread thread1(RunModel, "../assets/models/mnist_model1", 1);
-//   std::thread thread2(RunModel, "../assets/models/mnist_model2", 2);
-//   thread1.join();
-//   thread2.join();
-
-//   std::this_thread::sleep_for(std::chrono::milliseconds{5000});
-//   return 0;
-// }
-
