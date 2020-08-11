@@ -40,11 +40,14 @@ def RunModel(args):
     else:
         config.set_model_dir(args.model_dir)
     # For arm platform (armlinux), you can set places = [Place(TargetType.ARM, PrecisionType.FP32)]
-    places = [Place(TargetType.X86, PrecisionType.FP32), Place(TargetType.Host, PrecisionType.FP32)]
+    places = [Place(TargetType.HUAWEI_ASCEND_NPU, PrecisionType.FP32), 
+              Place(TargetType.X86, PrecisionType.FP32), 
+              Place(TargetType.Host, PrecisionType.FP32)]
     config.set_valid_places(places)
 
     # 2. Create paddle predictor
     predictor = create_paddle_predictor(config)
+    print("============== PaddlePredictor Version: {}==============".format(predictor.get_version()))
 
     # 3. Set input data
     input_tensor = predictor.get_input(0)
@@ -58,6 +61,9 @@ def RunModel(args):
     output_tensor = predictor.get_output(0)
     print(output_tensor.shape())
     print(output_tensor.float_data()[:10])
+
+    # 6. Save optimized model
+    predictor.save_optimized_model(args.model_dir)
 
 if __name__ == '__main__':
     args = parser.parse_args()

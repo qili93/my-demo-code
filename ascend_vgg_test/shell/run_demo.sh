@@ -42,8 +42,8 @@ echo "export SOC_VERSION=$SOC_VERSION"
 #######################################
 
 # set paddle-lite environment
-# BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-BASE_REPO_PATH=/workspace/temp_repo/Paddle-Lite
+BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
+# BASE_REPO_PATH=/workspace/temp_repo/Paddle-Lite
 PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
@@ -53,10 +53,10 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 
 # set model dir
 MODEL_DIR=$(readlinkf ../assets/models)
-MODEL_NAME=mobilenet_v1
-# MODEL_NAME=mobilenet_v2
-MODEL_TYPE=0 # 0 uncombined; 1 combined paddle fluid model
+# MODEL_NAME=vgg16
+MODEL_NAME=vgg19
+MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 
 # run demo
 export GLOG_v=5
-./build/mobilenet_test $MODEL_DIR/$MODEL_NAME $MODEL_TYPE
+./build/vgg_test $MODEL_DIR/$MODEL_NAME $MODEL_TYPE

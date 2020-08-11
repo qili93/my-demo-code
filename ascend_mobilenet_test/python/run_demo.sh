@@ -59,4 +59,5 @@ MODEL_TYPE=0 # 0 uncombined; 1 combined paddle fluid model
 
 # run demo
 export GLOG_v=5
-./build/mobilenet_test $MODEL_DIR/$MODEL_NAME $MODEL_TYPE
+# python3.7.5 mobilenetv1_full_api.py --model_dir=$MODEL_DIR/$MODEL_NAME
+python3.7.5 mobilenetv1_light_api.py --model_dir=$MODEL_DIR/$MODEL_NAME.nb

@@ -41,22 +41,9 @@ echo "export SOC_VERSION=$SOC_VERSION"
 # Local Settings: paddle-lite envs
 #######################################
 
-# set paddle-lite environment
-# BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-BASE_REPO_PATH=/workspace/temp_repo/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
-export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
-
-# BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-# PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu_test
-# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/third_party/install/mklml/lib:$LD_LIBRARY_PATH
-
 # set model dir
-MODEL_DIR=$(readlinkf ../assets/models)
-MODEL_NAME=mobilenet_v1
-# MODEL_NAME=mobilenet_v2
-MODEL_TYPE=0 # 0 uncombined; 1 combined paddle fluid model
+MODEL_DIR=$(readlinkf ./models)
+MODEL_NAME=ebf3a8a1981c0c22588ee92c02b38971
 
-# run demo
-export GLOG_v=5
-./build/mobilenet_test $MODEL_DIR/$MODEL_NAME $MODEL_TYPE
+# Run mode. 0(default): model => framework model; 1: framework model => json; 3: only pre-check; 5: pbtxt => json
+atc --mode=1 --om=$MODEL_DIR/$MODEL_NAME.om  --json=$MODEL_DIR/$MODEL_NAME.json

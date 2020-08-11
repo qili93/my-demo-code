@@ -66,7 +66,9 @@ bool Device::Build(std::vector<char>* model_buffer, const std::string model_cach
   // Build IR model
   ge::ModelBufferData om_buffer;
   std::map<std::string, std::string> options;
-  options.insert(std::make_pair(ge::ir_option::LOG_LEVEL, "info"));
+  options.insert({ge::ir_option::EXEC_DISABLE_REUSED_MEMORY, "0"});
+  options.insert({ge::ir_option::SOC_VERSION, "Ascend310"});
+  options.insert({ge::ir_option::LOG_LEVEL, "info"});
 
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
 

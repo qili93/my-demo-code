@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
-project(mobilenet_test)
+project(vgg_test)
 
-set(TARGET_EXE mobilenet_test)
+set(TARGET_EXE vgg_test)
 
 # 1. path to Paddle-Lite lib
 if(${PADDLE_LITE_DIR} STREQUAL "")
@@ -40,8 +40,8 @@ set_property(TARGET acl_runtime PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_D
 add_library(atc_register SHARED IMPORTED GLOBAL)
 set_property(TARGET atc_register PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/libregister.so)
 
-# add_library(atc_protobuf SHARED IMPORTED GLOBAL)
-# set_property(TARGET atc_protobuf PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/libprotobuf.so.19)
+add_library(atc_protobuf SHARED IMPORTED GLOBAL)
+set_property(TARGET atc_protobuf PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/libprotobuf.so.19)
 
 add_library(atc_graph SHARED IMPORTED GLOBAL)
 set_property(TARGET atc_graph PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/libgraph.so)
@@ -52,8 +52,8 @@ set_property(TARGET atc_ge_compiler PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_N
 add_library(atc_ge_common SHARED IMPORTED GLOBAL)
 set_property(TARGET atc_ge_common PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/libge_common.so)
 
-# add_library(atc_resource SHARED IMPORTED GLOBAL)
-# set_property(TARGET atc_resource PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/libresource.so)
+add_library(atc_resource SHARED IMPORTED GLOBAL)
+set_property(TARGET atc_resource PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/libresource.so)
 
 # OPP libs
 add_library(opp_ops_proto SHARED IMPORTED GLOBAL)
@@ -62,10 +62,8 @@ set_property(TARGET opp_ops_proto PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU
 add_library(atc_error_manager SHARED IMPORTED GLOBAL)
 set_property(TARGET atc_error_manager PROPERTY IMPORTED_LOCATION ${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/lib64/liberror_manager.so)
 
-# set(ascend_builder_libs atc_register atc_graph opp_ops_proto atc_error_manager 
-#     atc_ge_compiler atc_ge_common atc_resource CACHE INTERNAL "ascend atc builder libs")
-
-set(ascend_builder_libs atc_register atc_graph opp_ops_proto atc_ge_compiler atc_ge_common atc_error_manager CACHE INTERNAL "ascend atc builder libs")
+set(ascend_builder_libs atc_register atc_protobuf atc_graph opp_ops_proto atc_error_manager 
+    atc_ge_compiler atc_ge_common atc_resource CACHE INTERNAL "ascend atc builder libs")
 
 set(ascend_runtime_libs acl_ascendcl acl_runtime CACHE INTERNAL "ascend acllib runtime libs")
 

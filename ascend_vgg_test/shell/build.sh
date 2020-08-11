@@ -11,8 +11,8 @@ function readlinkf() {
 export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
 echo "export HUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT"
 
-# BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-BASE_REPO_PATH=/workspace/temp_repo/Paddle-Lite
+BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
+# BASE_REPO_PATH=/workspace/temp_repo/Paddle-Lite
 PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
 
 USE_FULL_API=TRUE
