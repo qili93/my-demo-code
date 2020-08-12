@@ -4,13 +4,7 @@
 
 #include "device.h"
 
-extern bool GenYoloV3Graph(ge::Graph& graph);
-extern bool GenConcatGraph(ge::Graph& graph);
-extern bool GenConcatDGraph(ge::Graph& graph);
-extern bool GenConv2DGraph(ge::Graph& graph);
-extern bool GenDepthwiseConv2DGraph(ge::Graph& graph);
-extern bool GenElementwiseOP(ge::Graph& graph);
-extern bool GenScaleGraph(ge::Graph& graph);
+extern bool GenFlattenGraph(ge::Graph& graph);
 
 namespace my_lite_demo {
 
@@ -56,7 +50,7 @@ bool Device::Build(std::vector<char>* model_buffer, const std::string model_cach
   std::lock_guard<std::mutex> lock(device_mutex_);
 
   ge::Graph ir_graph("graph");
-  if (GenScaleGraph(ir_graph)) {
+  if (GenFlattenGraph(ir_graph)) {
     LOG(INFO) << "[HUAWEI_ASCEND_NPU] GenGGenerate YoloV3 IR graph succees";
   } else {
     LOG(ERROR) << "[HUAWEI_ASCEND_NPU] GenGGenerate YoloV3 IR graph failed!";
@@ -66,9 +60,9 @@ bool Device::Build(std::vector<char>* model_buffer, const std::string model_cach
   // Build IR model
   ge::ModelBufferData om_buffer;
   std::map<std::string, std::string> options;
-  options.insert({ge::ir_option::EXEC_DISABLE_REUSED_MEMORY, "0"});
-  options.insert({ge::ir_option::SOC_VERSION, "Ascend310"});
-  options.insert({ge::ir_option::LOG_LEVEL, "info"});
+  // options.insert({ge::ir_option::EXEC_DISABLE_REUSED_MEMORY, "0"});
+  // options.insert({ge::ir_option::SOC_VERSION, "Ascend310"});
+  options.insert({ge::ir_option::LOG_LEVEL, "error"});
 
   ATC_CALL(aclgrphBuildModel(ir_graph, options, om_buffer));
 

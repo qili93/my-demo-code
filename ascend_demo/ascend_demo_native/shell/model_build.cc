@@ -486,6 +486,7 @@ bool GenConv2DGraph(ge::Graph& graph) {
       }
     }
     graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+    return true;
 }
 
 
@@ -539,6 +540,7 @@ bool GenDepthwiseConv2DGraph(ge::Graph& graph) {
       }
     }
     graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+    return true;
 }
 
 bool GenElementwiseOP(ge::Graph& graph) {
@@ -575,6 +577,7 @@ bool GenElementwiseOP(ge::Graph& graph) {
       }
     }
     graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+    return true;
 }
 
 bool GenBNGraph(ge::Graph& graph) {
@@ -625,40 +628,12 @@ bool GenBNGraph(ge::Graph& graph) {
   TENSOR_UPDATE_INPUT(batch_norm_op, mean, ge::FORMAT_NCHW, ge::DT_FLOAT);
   TENSOR_UPDATE_INPUT(batch_norm_op, variance, ge::FORMAT_NCHW, ge::DT_FLOAT);
   TENSOR_UPDATE_OUTPUT(batch_norm_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  // TENSOR_UPDATE_OUTPUT(batch_norm_op, batch_mean, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  // TENSOR_UPDATE_OUTPUT(batch_norm_op, batch_variance, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  // TENSOR_UPDATE_OUTPUT(batch_norm_op, reserve_space_1, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  // TENSOR_UPDATE_OUTPUT(batch_norm_op, reserve_space_2, ge::FORMAT_NCHW, ge::DT_FLOAT);
-
-  // // Relu OP
-  // auto relu_op = ge::op::Relu("relu1");
-  // relu_op.set_input_x(batch_norm_op, "y");
-  // TENSOR_UPDATE_INPUT(relu_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  // TENSOR_UPDATE_OUTPUT(relu_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
 
   // Data OP
   auto data_op = ge::op::Identity("y_out");
   data_op.set_input_x(batch_norm_op, "y");
   TENSOR_UPDATE_INPUT(data_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
   TENSOR_UPDATE_OUTPUT(data_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
-
-  // // Softmax op
-  // auto softmax_op = ge::op::SoftmaxV2("softmax");
-
-  // // Dropout op
-  // auto dropout_op = ge::op::Dropout("dropout");
-
-  // // Scale op
-  // auto scale_op = ge::op::Scale("scale");
-
-  // // Max OP
-  // auto max_op = ge::op::RealDiv("max");
-
-  // ge::op::DropOutGenMask("2");
-  // ge::op::DropOutDoMask("1");
-  // ge::op::Scale("test");
-
-  // ge::op::ScaleAndTranslate
 
   // Set inputs and outputs
   std::vector<ge::Operator> input_nodes{ input_x, input_scale, input_bias, input_mean, input_variance };
@@ -673,34 +648,27 @@ bool GenBNGraph(ge::Graph& graph) {
     }
   }
   graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+  return true;
 }
 
-bool GenScaleGraph(ge::Graph& graph) {
-
+bool GenFlattenGraph(ge::Graph& graph) {
   // input x: A 4D tensor of input images - bs, ic, h, w
-  ge::TensorDesc input_desc_x(ge::Shape({ 1L, 2L, 3L, 3L }), ge::FORMAT_ND, ge::DT_FLOAT);
-  auto input_x = ge::op::Data("input_x");//.set_attr_index(0);
+  ge::TensorDesc input_desc_x(ge::Shape({ 2L, 3L, 4L, 5L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_x = ge::op::Data("input_x");
   input_x.update_input_desc_x(input_desc_x);
   input_x.update_output_desc_y(input_desc_x);
 
-  // input bias
-  ge::TensorDesc input_desc_scale(ge::Shape({ 1L }), ge::FORMAT_ND, ge::DT_FLOAT);
-  auto input_scale = ge::op::Data("input_scale");//.set_attr_index(0);
-  input_scale.update_input_desc_x(input_desc_scale);
-  input_scale.update_output_desc_y(input_desc_scale);
-
-  // scale op
-  auto scale_op = ge::op::Scale("scale_1");
-  scale_op.set_input_x(input_x);
-  scale_op.set_input_scale(input_scale);
-  TENSOR_UPDATE_INPUT(scale_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  TENSOR_UPDATE_INPUT(scale_op, scale, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  TENSOR_UPDATE_OUTPUT(scale_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  // Flatten OP
+  auto net = ge::op::FlattenV2( GetGlobalIndex( "FlattenV2" ) )
+               .set_input_x(input_x)
+               .set_attr_axis(0);
+  TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
 
   // Set inputs and outputs
-  std::vector<ge::Operator> input_nodes{ input_x, input_scale };
+  std::vector<ge::Operator> input_nodes{ input_x };
   // std::vector<ge::Operator> outputs{ net_reshape2 };
-  std::vector<ge::Operator> output_nodes{ scale_op };
+  std::vector<ge::Operator> output_nodes{ net };
   // set input node attr index is node size > 1
   if (input_nodes.size() > 1) {
     int idx = 0;
@@ -710,4 +678,5 @@ bool GenScaleGraph(ge::Graph& graph) {
     }
   }
   graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+  return true;
 }
