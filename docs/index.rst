@@ -13,8 +13,19 @@ Contents:
    :glob:
 
    *
+.. toctree::
+  :maxdepth: 2
+  :caption: Demo Guides
+  :name: sec-user-guides
 
+  user_guides/npu
 
+.. toctree::
+  :maxdepth: 2
+  :caption: User Guides
+  :name: sec-user-guides
+
+  demo_guides/npu
 
 Indices and tables
 ==================
