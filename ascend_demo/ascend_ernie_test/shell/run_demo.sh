@@ -44,6 +44,7 @@ echo "export SOC_VERSION=$SOC_VERSION"
 # set paddle-lite environment
 BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
 # BASE_REPO_PATH=/workspace/temp_repo/Paddle-Lite
+
 PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
