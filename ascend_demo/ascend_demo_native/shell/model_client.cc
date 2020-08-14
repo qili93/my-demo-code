@@ -91,14 +91,17 @@ bool AclModelClient::GetTensorFromDataset(
     return false;
   }
   for (size_t i = 0; i < device_output_num; i++) {
+    VLOG(3) << "Printing output num " << i;
     aclDataBuffer* buffer_device = aclmdlGetDatasetBuffer(output_dataset_, i);
     void* device_data = aclGetDataBufferAddr(buffer_device);
     uint32_t device_size = aclGetDataBufferSize(buffer_device);
+    VLOG(3) << "device size is " << device_size;
 
     void* tensor_data = nullptr;
     ACL_CALL(aclrtMallocHost(&tensor_data, device_size));
     ACL_CALL(aclrtMemcpy(tensor_data, device_size, device_data, device_size, ACL_MEMCPY_DEVICE_TO_HOST));
     ATC_CALL(output_tensor->at(i)->SetData(reinterpret_cast<uint8_t*>(tensor_data), device_size));
+    VLOG(3) << "size of output tensor is " << output_tensor->at(i)->GetSize();
   }
   VLOG(3) << "[HUAWEI_ASCEND_NPU] Get output tensor from dataset succeed.";
   return true;

@@ -3,8 +3,7 @@
 #include <fstream>
 
 #include "device.h"
-
-extern bool GenFlattenGraph(ge::Graph& graph);
+#include "graph.h"
 
 namespace my_lite_demo {
 
@@ -50,7 +49,7 @@ bool Device::Build(std::vector<char>* model_buffer, const std::string model_cach
   std::lock_guard<std::mutex> lock(device_mutex_);
 
   ge::Graph ir_graph("graph");
-  if (GenFlattenGraph(ir_graph)) {
+  if (GenGraph(ir_graph)) {
     LOG(INFO) << "[HUAWEI_ASCEND_NPU] GenGGenerate YoloV3 IR graph succees";
   } else {
     LOG(ERROR) << "[HUAWEI_ASCEND_NPU] GenGGenerate YoloV3 IR graph failed!";
