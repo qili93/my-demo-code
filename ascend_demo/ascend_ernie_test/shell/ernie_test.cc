@@ -55,25 +55,16 @@ bool hasEnding(std::string const &fullString, std::string const &ending) {
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   // 1. Prepare input data
-  std::array<std::unique_ptr<Tensor>, 4> input_tensors;
+  std::array<std::unique_ptr<Tensor>, 4> input_tensors{};
   for (int i = 0; i < 4; i++)
   {
-    input_tensors[i] = std::move(predictor->GetInput(i);
+    input_tensors[i] = std::move(predictor->GetInput(i));
     input_tensors[i]->Resize(INPUT_SHAPE);
-    auto* input_data = input_tensor[i]->mutable_data<int64_t>();
-    for (int i = 0; i < ShapeProduction(nput_tensor[i]->shape()); ++i) {
-      input_data[i] = 1;
+    auto* input_data = input_tensors[i]->mutable_data<int64_t>();
+    for (int j = 0; j < ShapeProduction(input_tensors[i]->shape()); ++j) {
+      input_data[j] = 1;
     }
   }
-  // std::unique_ptr<Tensor> input_tensor_0(std::move(predictor->GetInput(0)));
-  // std::unique_ptr<Tensor> input_tensor_0(std::move(predictor->GetInput(1)));
-  // std::unique_ptr<Tensor> input_tensor_0(std::move(predictor->GetInput(2)));
-  // std::unique_ptr<Tensor> input_tensor_0(std::move(predictor->GetInput(3)));
-  // input_tensor_0->Resize(INPUT_SHAPE);
-  // auto* input_data = input_tensor->mutable_data<float>();
-  // for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-  //   input_data[i] = 1;
-  // }
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor->Run();

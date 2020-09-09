@@ -18,6 +18,20 @@
  * This file contains some Huawei Ascend NPU specific uitls.
  */
 
+
+#define TENSOR_UPDATE_INPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_input_desc_##attr(ge::Shape(), format, dtype); \
+  op.update_input_desc_##attr(_##op##_input_desc_##attr);
+#define TENSOR_UPDATE_OUTPUT(op, attr, format, dtype)                    \
+  ge::TensorDesc _##op##_output_desc_##attr(ge::Shape(), format, dtype); \
+  op.update_output_desc_##attr(_##op##_output_desc_##attr);
+#define TENSOR_UPDATE_DYNAMIC_INPUT(op, attr, idx, format, dtype)               \
+  ge::TensorDesc _##op##_input_desc_##attr##_##idx(ge::Shape(), format, dtype); \
+  op.update_dynamic_input_desc_##attr(idx, _##op##_input_desc_##attr##_##idx);
+#define TENSOR_UPDATE_DYNAMIC_OUTPUT(op, attr, idx, format, dtype)               \
+  ge::TensorDesc _##op##_output_desc_##attr##_##idx(ge::Shape(), format, dtype); \
+  op.update_dynamic_output_desc_##attr(idx, _##op##_output_desc_##attr##_##idx);
+
 std::string to_string(int index);
 
 const std::string& CvtFormat(ge::Format format);

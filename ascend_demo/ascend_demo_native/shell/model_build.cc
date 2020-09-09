@@ -581,7 +581,6 @@ bool GenElementwiseOP(ge::Graph& graph) {
 }
 
 bool GenBNGraph(ge::Graph& graph) {
-
   // input x: A 4D tensor of input images - bs, ic, h, w
   ge::TensorDesc input_desc_x(ge::Shape({ 1L, 2L, 3L, 3L }), ge::FORMAT_ND, ge::DT_FLOAT);
   auto input_x = ge::op::Data("input_x");//.set_attr_index(0);
@@ -651,24 +650,129 @@ bool GenBNGraph(ge::Graph& graph) {
   return true;
 }
 
-bool GenFlattenGraph(ge::Graph& graph) {
+// bool GenReshapeGraph(ge::Graph& graph) {
+//     // input x: A 4D tensor of input images - bs, ic, h, w
+//     ge::TensorDesc input_desc_x(ge::Shape({ 1L, 2L, 1L, 2L }), ge::FORMAT_ND, ge::DT_FLOAT);
+//     auto input_x = ge::op::Data("input_x");
+//     input_x.update_input_desc_x(input_desc_x);
+//     input_x.update_output_desc_y(input_desc_x);
+
+//     // create out size const tensor
+//     auto out_size_shape = ge::Shape( {2L} );
+//     ge::TensorDesc out_size_desc( out_size_shape, ge::FORMAT_ND, ge::DT_INT32 );
+//     ge::Tensor out_size_tensor( out_size_desc );
+//     uint32_t out_size_length = out_size_shape.GetShapeSize();
+//     int *pdata = new( std::nothrow ) int[2];
+//     pdata[0] = 2;
+//     pdata[1] = 2;
+//     ATC_CALL(out_size_tensor.SetData( reinterpret_cast<uint8_t *>( pdata ), out_size_length * sizeof(int) ));
+//     // create out size const op
+//     auto out_size_op = ge::op::Const( GetGlobalIndex( "Const/out_size" ) )
+//                        .set_attr_value( out_size_tensor );
+
+//     // Reshape OP
+//     auto reshape_op = ge::op::Reshape( GetGlobalIndex( "Reshape" ) )
+//                       .set_input_x(input_x)
+//                       .set_input_shape(out_size_op)
+//                       .set_attr_axis(0)
+//                       .set_attr_num_axes(-1);
+//     TENSOR_UPDATE_INPUT(reshape_op, x, ge::FORMAT_ND, ge::DT_FLOAT);
+//     TENSOR_UPDATE_INPUT(reshape_op, shape, ge::FORMAT_ND, ge::DT_INT32);
+//     TENSOR_UPDATE_OUTPUT(reshape_op, y, ge::FORMAT_ND, ge::DT_FLOAT);
+
+//     // Set inputs and outputs
+//     std::vector<ge::Operator> input_nodes{ input_x };
+//     // std::vector<ge::Operator> outputs{ net_reshape2 };
+//     std::vector<ge::Operator> output_nodes{ reshape_op };
+//     // set input node attr index is node size > 1
+//     if (input_nodes.size() > 1) {
+//       int idx = 0;
+//       for (auto node : input_nodes) {
+//         node.SetAttr("index", idx);
+//         idx++;
+//       }
+//     }
+//     graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+//     return true;
+// }
+
+
+bool GenReshapeGraph(ge::Graph& graph) {
   // input x: A 4D tensor of input images - bs, ic, h, w
-  ge::TensorDesc input_desc_x(ge::Shape({ 2L, 3L, 4L, 5L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  ge::TensorDesc input_desc_x(ge::Shape({ 2L, 4L }), ge::FORMAT_ND, ge::DT_FLOAT);
   auto input_x = ge::op::Data("input_x");
   input_x.update_input_desc_x(input_desc_x);
   input_x.update_output_desc_y(input_desc_x);
 
-  // Flatten OP
-  auto net = ge::op::FlattenV2( GetGlobalIndex( "FlattenV2" ) )
-               .set_input_x(input_x)
-               .set_attr_axis(0);
-  TENSOR_UPDATE_INPUT(net, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
-  TENSOR_UPDATE_OUTPUT(net, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  // Const Tensor of new shape
+  auto new_shape = ge::Shape( {3L} );
+  ge::TensorDesc new_shape_desc( new_shape, ge::FORMAT_ND, ge::DT_INT32);
+  ge::Tensor new_shape_tensor( new_shape_desc );
+  uint32_t out_size_length = new_shape.GetShapeSize();
+  int *pdata = new( std::nothrow ) int[out_size_length];
+  pdata[0] = 2;
+  pdata[1] = 2;
+  pdata[2] = 2;
+  ATC_CALL(new_shape_tensor.SetData( reinterpret_cast<uint8_t *>( pdata ), out_size_length * sizeof(int) ));
+  // Const OP of new shape
+  auto new_shape_op = ge::op::Const( GetGlobalIndex( "Const/new_size") );
+  new_shape_op.set_attr_value( new_shape_tensor );
+  TENSOR_UPDATE_OUTPUT(new_shape_op, y, ge::FORMAT_ND, ge::DT_INT32);
+
+  // Reshape OP
+  auto reshape_op = ge::op::Reshape( GetGlobalIndex( "Reshape") );
+  reshape_op.set_input_x(input_x);
+  reshape_op.set_input_shape(new_shape_op);
+  TENSOR_UPDATE_INPUT(reshape_op, x, ge::FORMAT_ND, ge::DT_FLOAT);
+  TENSOR_UPDATE_INPUT(reshape_op, shape, ge::FORMAT_ND, ge::DT_INT32);
+  TENSOR_UPDATE_OUTPUT(reshape_op, y, ge::FORMAT_ND, ge::DT_FLOAT);
+
+  // Identity OP
+  auto identity_op = ge::op::Identity("y_out");
+  identity_op.set_input_x(reshape_op, "y");
+  TENSOR_UPDATE_INPUT(identity_op, x, ge::FORMAT_ND, ge::DT_FLOAT);
+  TENSOR_UPDATE_OUTPUT(identity_op, y, ge::FORMAT_ND, ge::DT_FLOAT);
+
+  // Set inputs and outputs
+  std::vector<ge::Operator> input_nodes{ input_x };
+  std::vector<ge::Operator> output_nodes{ reshape_op, identity_op};
+
+  // set input node attr index is node size > 1
+  if (input_nodes.size() > 1) {
+    int idx = 0;
+    for (auto node : input_nodes) {
+      node.SetAttr("index", idx);
+      idx++;
+    }
+  }
+  graph.SetInputs(input_nodes).SetOutputs(output_nodes);
+  return true;
+}
+
+bool GenAddGraph(ge::Graph& graph) {
+  // input x: A 4D tensor of input images - bs, ic, h, w
+  ge::TensorDesc input_desc_x(ge::Shape({ 1L, 2L, 3L, 3L }), ge::FORMAT_ND, ge::DT_FLOAT);
+  auto input_x = ge::op::Data("input_x");//.set_attr_index(0);
+  input_x.update_input_desc_x(input_desc_x);
+  input_x.update_output_desc_y(input_desc_x);
+
+  // batch norm op
+  auto adds_op = ge::op::Adds("Adds");
+  adds_op.set_input_x(input_x);
+  adds_op.set_attr_value(1.0);
+  TENSOR_UPDATE_INPUT(adds_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_OUTPUT(adds_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
+
+  // Data OP
+  auto data_op = ge::op::Identity("y_out");
+  data_op.set_input_x(adds_op, "y");
+  TENSOR_UPDATE_INPUT(data_op, x, ge::FORMAT_NCHW, ge::DT_FLOAT);
+  TENSOR_UPDATE_OUTPUT(data_op, y, ge::FORMAT_NCHW, ge::DT_FLOAT);
 
   // Set inputs and outputs
   std::vector<ge::Operator> input_nodes{ input_x };
   // std::vector<ge::Operator> outputs{ net_reshape2 };
-  std::vector<ge::Operator> output_nodes{ net };
+  std::vector<ge::Operator> output_nodes{ adds_op, data_op };
   // set input node attr index is node size > 1
   if (input_nodes.size() > 1) {
     int idx = 0;

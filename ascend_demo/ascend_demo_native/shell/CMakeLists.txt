@@ -191,7 +191,7 @@ endif()
 set(ascend_builder_libs atc_graph atc_ge_compiler CACHE INTERNAL "ascend atc builder libs")
 set(ascend_runtime_libs acl_ascendcl CACHE INTERNAL "ascend atc runtime libs")
 
-add_executable(${TARGET_EXE} ${TARGET_EXE}.cc device.cc subgraph_compute.cc model_build.cc model_client.cc logging.cc utility.cc)
+add_executable(${TARGET_EXE} ${TARGET_EXE}.cc device.cc subgraph_compute.cc model_client.cc logging.cc utility.cc)
 
 target_link_libraries(main ${ascend_runtime_libs} ${ascend_builder_libs})
 

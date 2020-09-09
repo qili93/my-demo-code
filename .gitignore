@@ -12,6 +12,7 @@ test**
 kernel_meta/
 data/
 core.*
+_build/
 # not ignore
 !build.sh
 !test*.sh
