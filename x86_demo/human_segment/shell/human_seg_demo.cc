@@ -10,8 +10,23 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 
 const int CPU_THREAD_NUM = 1;
+// align150-customized-pa-v3_ar46.model.float32-1.0.2.1
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 1000, 1000};
+
+// angle-customized-pa-ar4_4.model.float32-1.0.0.1
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 64, 64};
+
+// detect_rgb-customized-pa-faceid4_0.model.int8-0.0.6.1
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 1000, 1000};
+
+// eyes_position-customized-pa-eye_ar46.model.float32-1.0.2.1
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 32, 32};
+
+// iris_position-customized-pa-iris_ar46.model.float32-1.0.2.1
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 24, 24};
+
+// mouth_position-customized-pa-ar_4_4.model.float32-1.0.0.1
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
 
 struct RESULT {
   int class_id;
@@ -62,21 +77,23 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     predictor->Run();
   }
   // 3. Repeat Run
-  auto start = GetCurrentUS();
+  auto start_time = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor->Run();
   }
+  auto end_time = GetCurrentUS();
+  // 4. Speed Report
   LOG(INFO) << "================== Speed Report ===================";
   LOG(INFO) << "Model: " << model_name;
   LOG(INFO) << "Warmup: " << FLAGS_warmup
             << ", repeats: " << FLAGS_repeats << ", spend "
-            << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
+            << (end_time - start_time) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
-  // 4. Get output
+  // 5. Get output
   std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
   const float *output_data = output_tensor->data<float>();
-  // 4. Print output
+  // 6. Print output
   std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
   printf("results: %du\n", results.size());
   for (int i = 0; i < results.size(); i++) {
@@ -103,57 +120,50 @@ void RunModel(std::string model_name) {
   process(predictor, model_name);
 }
 
-void SaveModel(std::string model_dir, const int model_type) {
-  // 1. Create CxxConfig
-  CxxConfig cxx_config;
-  if (model_type) { // combined model
-    cxx_config.set_model_file(model_dir + "/model");
-    cxx_config.set_param_file(model_dir + "/params");
-  } else {
-    cxx_config.set_model_dir(model_dir);
-  }
-  cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                           Place{TARGET(kHost), PRECISION(kFloat)}});
-  // cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+// void SaveModel(std::string model_dir, const int model_type) {
+//   // 1. Create CxxConfig
+//   CxxConfig cxx_config;
+//   if (model_type) { // combined model
+//     cxx_config.set_model_file(model_dir + "/model");
+//     cxx_config.set_param_file(model_dir + "/params");
+//   } else {
+//     cxx_config.set_model_dir(model_dir);
+//   }
+//   cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
+//                            Place{TARGET(kHost), PRECISION(kFloat)}});
+//   // cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
 
-  // 2. Create PaddlePredictor by CxxConfig
-  std::shared_ptr<PaddlePredictor> predictor = nullptr;
-  try {
-    predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "============== PaddlePredictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
-  } catch (std::exception e) {
-    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
-  }
+//   // 2. Create PaddlePredictor by CxxConfig
+//   std::shared_ptr<PaddlePredictor> predictor = nullptr;
+//   try {
+//     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
+//     std::cout << "============== PaddlePredictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+//   } catch (std::exception e) {
+//     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
+//   }
 
-  // 3. Run model
-  // process(predictor, model_dir);
+//   // 3. Run model
+//   process(predictor, model_dir);
 
-  // 4. Save optimized model
-  // predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
-  predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
-  std::cout << "Load model from " << model_dir << std::endl;
-  std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
-}
+//   // 4. Save optimized model
+//   predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
+//   // predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
+//   std::cout << "Load model from " << model_dir << std::endl;
+//   std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
+// }
 
 int main(int argc, char **argv) {
-  if (argc < 4) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir [0|1] [save|run]\n";
+  if (argc < 3) {
+    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir model_type\n";
     exit(1);
   }
   std::string model_dir = argv[1];
   // 0 for uncombined, 1 for combined model
-  int model_type = atoi(argv[2]); 
-  std::string exe_mode = argv[3];
-  if (exe_mode == "save") {
-#ifdef USE_FULL_API
-      SaveModel(model_dir, model_type);
-#else
-    std::cerr << "[ERROR] mode " << argv[2] << " is NOT supported on tiny publish\n";
-    exit(1);
-#endif
-  }
-  if (exe_mode == "run") {
-    RunModel(model_dir);
-  }
+  int model_type = atoi(argv[2]);
+
+  // SaveModel(model_dir, model_type);
+
+  RunModel(model_dir);
+
   return 0;
 }
