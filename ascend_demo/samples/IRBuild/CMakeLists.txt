@@ -1,5 +1,3 @@
-# Copyright (c) Huawei Technologies Co., Ltd. 2019. All rights reserved.
-
 # CMake lowest version requirement
 cmake_minimum_required(VERSION 3.5.1)
 
@@ -17,17 +15,17 @@ if(NOT DEFINED HUAWEI_ASCEND_NPU_DDK_ROOT)
 endif()
 message(STATUS "HUAWEI_ASCEND_NPU_DDK_ROOT: ${HUAWEI_ASCEND_NPU_DDK_ROOT}")
 
-# 2. Huawei Ascend include directory
-set(ATC_INCLUDE_DIR "${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/include")
-set(OPP_INCLUDE_DIR "${HUAWEI_ASCEND_NPU_DDK_ROOT}/opp")
-include_directories(${ATC_INCLUDE_DIR})
-include_directories(${OPP_INCLUDE_DIR})
-
-# 3.  Add compile options
+# 2.  Add compile options
 add_compile_options(-std=c++11)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GLIBCXX_USE_CXX11_ABI=0")
+
+# 3. Huawei Ascend include directory
+set(ATC_INCLUDE_DIR "${HUAWEI_ASCEND_NPU_DDK_ROOT}/atc/include")
+set(OPP_INCLUDE_DIR "${HUAWEI_ASCEND_NPU_DDK_ROOT}/opp")
+include_directories(${ATC_INCLUDE_DIR})
+include_directories(${OPP_INCLUDE_DIR})
 
 # 4.1 find ATC libs - libregister.so
 find_library(ATC_REGISTER_FILE NAMES register
