@@ -8,8 +8,11 @@ function readlinkf() {
 #######################################
 # Local Settings: please change accrodingly
 #######################################
-export DDK_PATH=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
-export NPU_HOST_LIB=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5/acllib/lib64/stub
+# export DDK_PATH=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
+# export NPU_HOST_LIB=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5/acllib/lib64/stub
+
+export DDK_PATH=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc7.3.0
+export NPU_HOST_LIB=${DDK_PATH}/acllib/lib64/stub
 
 #######################################
 # Build commands, do not change them
