@@ -10,7 +10,6 @@ test**
 *.log
 *.om
 kernel_meta/
-data/
 core.*
 _build/
 # not ignore
