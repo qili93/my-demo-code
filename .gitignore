@@ -9,6 +9,7 @@ models**
 test**
 *.log
 *.om
+*.bin
 kernel_meta/
 core.*
 _build/

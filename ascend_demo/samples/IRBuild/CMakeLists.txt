@@ -4,7 +4,9 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 # project information
-project(IRBUILD)
+project(ir_build)
+
+set(TARGET_EXE main)
 
 # 1. path to Huawei Ascend Install Path
 if(NOT DEFINED HUAWEI_ASCEND_NPU_DDK_ROOT)
@@ -148,5 +150,5 @@ set(huawei_ascend_npu_builder_libs atc_register atc_protobuf atc_graph opp_ops_p
     atc_ge_compiler atc_ge_common atc_resource CACHE INTERNAL "huawei_ascend_npu atc builder libs")
 set(huawei_ascend_npu_runtime_libs atc_runtime_compile CACHE INTERNAL "huawei_ascend_npu atc runtime libs")
 
-add_executable(main main.cpp)
-target_link_libraries(main ${huawei_ascend_npu_builder_libs} ${huawei_ascend_npu_runtime_libs} stdc++)
+add_executable(${TARGET_EXE} ${TARGET_EXE}.cpp)
+target_link_libraries(${TARGET_EXE} ${huawei_ascend_npu_builder_libs} ${huawei_ascend_npu_runtime_libs} stdc++)
