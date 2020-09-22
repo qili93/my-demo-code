@@ -51,6 +51,6 @@ MODEL_NAME=mobilenet_v1_fp32_224_fluid
 LABEL_NAME=synset_words.txt
 IMAGE_NAME=tabby_cat.raw
 
-export GLOG_v=2
+export GLOG_v=0
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/${TARGET_ARCH_ABI}/lib:$LD_LIBRARY_PATH
 ./build/image_classification_demo ../assets/models/${MODEL_NAME} ../assets/labels/${LABEL_NAME} ../assets/images/${IMAGE_NAME}

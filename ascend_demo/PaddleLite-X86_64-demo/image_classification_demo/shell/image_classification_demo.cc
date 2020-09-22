@@ -191,13 +191,6 @@ int main(int argc, char **argv) {
   config.set_model_dir(model_dir);
   config.set_threads(CPU_THREAD_NUM);
   config.set_power_mode(CPU_POWER_MODE);
-
-  // std::vector<paddle::lite_api::Place> valid_places({
-  //     paddle::lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
-  //     paddle::lite_api::Place{TARGET(kX86), PRECISION(kFloat)}
-  // });
-  // cxx_config.set_valid_places(valid_places);
-
   config.set_valid_places({paddle::lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)}});
   config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
   // Set to use device id 1, default is 0
