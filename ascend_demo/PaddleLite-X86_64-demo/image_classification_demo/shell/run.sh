@@ -1,3 +1,4 @@
+
 #!/bin/bash
 cur_dir=$(pwd)
 
@@ -5,12 +6,15 @@ function readlinkf() {
     perl -MCwd -e 'print Cwd::abs_path shift' "$1";
 }
 
-#######################################
-# Local Settings: ascend environements
-#######################################
+TARGET_ARCH_ABI=x86_64-linux_gcc7.3.0 # x86_64-linux_gcc7.3.0 or x86_64-linux_gcc4.8.5
+if [ "x$1" != "x" ]; then
+    TARGET_ARCH_ABI=$1
+fi
 
-# export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
-export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc7.3.0
+#######################################
+# Huawei Ascend NPU DDK Environments
+#######################################
+export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/${TARGET_ARCH_ABI}
 echo "export HUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT"
 
 export PATH=/usr/local/python3.7.5/bin:$PATH
@@ -39,24 +43,14 @@ export SOC_VERSION=Ascend310
 echo "export SOC_VERSION=$SOC_VERSION"
 
 #######################################
-# Local Settings: paddle-lite envs
+# Paddle-Lite Demo Run Scripts Settings
 #######################################
+PADDLE_LITE_DIR="$(readlinkf ../../libs/PaddleLite)"
 
-# set paddle-lite environment
-BASE_REPO_PATH=/workspace/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
-export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
+MODEL_NAME=mobilenet_v1_fp32_224_fluid
+LABEL_NAME=synset_words.txt
+IMAGE_NAME=tabby_cat.raw
 
-# PADDLE_LITE_DIR=/workspace/Paddle-Lite/build.lite.huawei_ascend_npu_test
-# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/third_party/install/mklml/lib:$LD_LIBRARY_PATH
-
-# set model dir
-MODEL_DIR=$(readlinkf ../assets/models)
-echo "MODEL_DIR is $MODEL_DIR"
-MODEL_NAME=mnist_model
-rm -rf $MODEL_DIR/*.om
-rm -rf $MODEL_DIR/*.cfg
-
-# run demo
-export GLOG_v=5
-./build/mnist_demo $MODEL_DIR/$MODEL_NAME
+export GLOG_v=2
+export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/${TARGET_ARCH_ABI}/lib:$LD_LIBRARY_PATH
+./build/image_classification_demo ../assets/models/${MODEL_NAME} ../assets/labels/${LABEL_NAME} ../assets/images/${IMAGE_NAME}

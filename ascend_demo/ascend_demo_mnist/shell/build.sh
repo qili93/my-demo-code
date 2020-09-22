@@ -8,10 +8,12 @@ function readlinkf() {
 #######################################
 # Local Settings: please change accrodingly
 #######################################
-export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
+# export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc4.8.5
+export HUAWEI_ASCEND_NPU_DDK_ROOT=/usr/local/Ascend/ascend-toolkit/latest/x86_64-linux_gcc7.3.0
 echo "export HUAWEI_ASCEND_NPU_DDK_ROOT=$HUAWEI_ASCEND_NPU_DDK_ROOT"
 
-BASE_REPO_PATH=/workspace/Paddle-Lite
+# BASE_REPO_PATH=/workspace/Paddle-Lite
+BASE_REPO_PATH=/home/HwHiAiUser/Github-qili93/Paddle-Lite
 PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
 
 USE_FULL_API=TRUE
