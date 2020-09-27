@@ -10,6 +10,7 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 
 const int CPU_THREAD_NUM = 1;
+
 // align150-customized-pa-v3_ar46.model.float32-1.0.2.1
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
 
@@ -29,10 +30,10 @@ const int CPU_THREAD_NUM = 1;
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
 
 // PC-quant-seg-model
-// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
+const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
 
 // Mobilenet_v1
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 224, 224};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 224, 224};
 
 struct RESULT {
   int class_id;
@@ -100,11 +101,11 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
   const float *output_data = output_tensor->data<float>();
   // 6. Print output
-  std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
-  printf("results: %du\n", results.size());
-  for (int i = 0; i < results.size(); i++) {
-    printf("Top%d: %d - %f\n", i, results[i].class_id, results[i].score);
-  }
+  // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
+  // printf("results: %du\n", results.size());
+  // for (size_t i = 0; i < results.size(); i++) {
+  //   printf("Top%d: %d - %f\n", i, results[i].class_id, results[i].score);
+  // }
 }
 
 void RunModel(std::string model_name) {
@@ -130,8 +131,8 @@ void SaveModel(std::string model_dir, const int model_type) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
-    cxx_config.set_model_file(model_dir + "/model");
-    cxx_config.set_param_file(model_dir + "/params");
+    cxx_config.set_model_file(model_dir + "/__model__");
+    cxx_config.set_param_file(model_dir + "/__params__");
   } else {
     cxx_config.set_model_dir(model_dir);
   }

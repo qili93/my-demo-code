@@ -10,7 +10,7 @@ function readlinkf() {
 #######################################
 
 BASE_REPO_PATH=/workspace/Github-qili93/Paddle
-PADDLE_LIB_DIR=${BASE_REPO_PATH}/build-infer/fluid_inference_install_dir
+PADDLE_LIB_DIR=${BASE_REPO_PATH}/build/paddle_inference_install_dir/
 
 #######################################
 # Build commands, do not change them
