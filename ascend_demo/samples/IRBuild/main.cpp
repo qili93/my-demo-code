@@ -12,13 +12,13 @@
 #include <fstream>
 #include <algorithm>
 #include <string.h>
-#include "graph.h"
-#include "types.h"
-#include "tensor.h"
-#include "ge_error_codes.h"
-#include "ge_api_types.h"
-#include "ge_ir_build.h"
-#include "all_ops.h"
+#include "graph/graph.h"
+#include "graph/types.h"
+#include "graph/tensor.h"
+#include "graph/ge_error_codes.h"
+#include "ge/ge_api_types.h"
+#include "ge/ge_ir_build.h"
+#include "op_proto/built-in/inc/all_ops.h"  // opp/op_proto/built-in/inc
 #include <dlfcn.h>
 #include <unistd.h>
 //#include "add.h" // custom op ,if you have one new or different op defination with frame's,please

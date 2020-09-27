@@ -9,8 +9,8 @@ models**
 test**
 *.log
 *.om
+*.bin
 kernel_meta/
-data/
 core.*
 _build/
 # not ignore
