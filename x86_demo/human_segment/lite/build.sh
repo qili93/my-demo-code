@@ -9,12 +9,14 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-# BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
+# BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
+# PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+
+BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
 PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
-# PADDLE_LITE_DIR=$BASE_REPO_PATH/log-off-build.lite.x86/inference_lite_lib
 
 USE_FULL_API=TRUE # x86 is always TRUE to use full api
+# USE_FULL_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################

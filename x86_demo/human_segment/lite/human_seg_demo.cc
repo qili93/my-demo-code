@@ -26,7 +26,13 @@ const int CPU_THREAD_NUM = 1;
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 24, 24};
 
 // mouth_position-customized-pa-ar_4_4.model.float32-1.0.0.1
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
+
+// PC-quant-seg-model
+// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
+
+// Mobilenet_v1
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 224, 224};
 
 struct RESULT {
   int class_id;
@@ -120,37 +126,37 @@ void RunModel(std::string model_name) {
   process(predictor, model_name);
 }
 
-// void SaveModel(std::string model_dir, const int model_type) {
-//   // 1. Create CxxConfig
-//   CxxConfig cxx_config;
-//   if (model_type) { // combined model
-//     cxx_config.set_model_file(model_dir + "/model");
-//     cxx_config.set_param_file(model_dir + "/params");
-//   } else {
-//     cxx_config.set_model_dir(model_dir);
-//   }
-//   cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-//                            Place{TARGET(kHost), PRECISION(kFloat)}});
-//   // cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+void SaveModel(std::string model_dir, const int model_type) {
+  // 1. Create CxxConfig
+  CxxConfig cxx_config;
+  if (model_type) { // combined model
+    cxx_config.set_model_file(model_dir + "/model");
+    cxx_config.set_param_file(model_dir + "/params");
+  } else {
+    cxx_config.set_model_dir(model_dir);
+  }
+  cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
+                           Place{TARGET(kHost), PRECISION(kFloat)}});
+  // cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
 
-//   // 2. Create PaddlePredictor by CxxConfig
-//   std::shared_ptr<PaddlePredictor> predictor = nullptr;
-//   try {
-//     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-//     std::cout << "============== PaddlePredictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
-//   } catch (std::exception e) {
-//     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
-//   }
+  // 2. Create PaddlePredictor by CxxConfig
+  std::shared_ptr<PaddlePredictor> predictor = nullptr;
+  try {
+    predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
+    std::cout << "============== PaddlePredictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+  } catch (std::exception e) {
+    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
+  }
 
-//   // 3. Run model
-//   process(predictor, model_dir);
+  // 3. Run model
+  process(predictor, model_dir);
 
-//   // 4. Save optimized model
-//   predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
-//   // predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
-//   std::cout << "Load model from " << model_dir << std::endl;
-//   std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
-// }
+  // 4. Save optimized model
+  predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
+  // predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
+  std::cout << "Load model from " << model_dir << std::endl;
+  std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
+}
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -161,7 +167,7 @@ int main(int argc, char **argv) {
   // 0 for uncombined, 1 for combined model
   int model_type = atoi(argv[2]);
 
-  // SaveModel(model_dir, model_type);
+  SaveModel(model_dir, model_type);
 
   RunModel(model_dir);
 

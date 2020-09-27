@@ -35,6 +35,10 @@ else(APPLE)
   set(LITE_MKLML_LIB_NAME "libiomp5.so")
 endif(APPLE)
 
+message(STATUS "LITE_FULL_LIB_NAME=${LITE_FULL_LIB_NAME}")
+message(STATUS "LITE_TINY_LIB_NAME=${LITE_TINY_LIB_NAME}")
+message(STATUS "LITE_MKLML_LIB_NAME=${LITE_MKLML_LIB_NAME}")
+
 if(USE_FULL_API)
   add_definitions(-DUSE_FULL_API)
   add_library(paddle_api_shared SHARED IMPORTED GLOBAL)
@@ -44,10 +48,8 @@ else()
   set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/cxx/lib/${LITE_TINY_LIB_NAME})
 endif()
 
-
 add_library(mkl_iomp5 SHARED IMPORTED GLOBAL)
 set_property(TARGET mkl_iomp5 PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/third_party/mklml/lib/${LITE_MKLML_LIB_NAME})
-
 
 # 5.add executable output
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
