@@ -13,6 +13,8 @@ test**
 kernel_meta/
 core.*
 _build/
+*.so
+*.dylib
 # not ignore
 !build.sh
 !test*.sh
