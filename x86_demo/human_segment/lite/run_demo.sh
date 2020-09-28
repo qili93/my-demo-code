@@ -9,13 +9,12 @@ function readlinkf() {
 # Local Settings: paddle-lite envs
 #######################################
 
-# set paddle-lite environment
 # BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
-# PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
-PADDLE_LITE_DIR=$BASE_REPO_PATH/log-off-build.lite.x86/inference_lite_lib
-export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
-# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:$LD_LIBRARY_PATH
+# PADDLE_LITE_DIR=$BASE_REPO_PATH/log-off-build.lite.x86/inference_lite_lib
+# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
+
+PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
 # set model dir
 MODEL_DIR=$(readlinkf ../assets/models)

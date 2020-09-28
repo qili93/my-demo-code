@@ -1,8 +1,11 @@
 #!/bin/bash
 
 # paddle repo dir
-BASE_REPO_PATH=/Users/liqi27/Documents/Github-qilibj/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86-log-on-debug/inference_lite_lib
+BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
+PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+
+# BASE_REPO_PATH=/Users/liqi27/Documents/Github-qilibj/Paddle-Lite
+# PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86-log-on-debug/inference_lite_lib
 
 # define lib name
 if [[ "$OSTYPE" == "darwin"*  ]]; then
@@ -14,7 +17,7 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   LITE_FULL_LIB_NAME="libpaddle_full_api_shared.so"
   LITE_TINY_LIB_NAME="libpaddle_light_api_shared.so"
   LITE_IOMP5_LIB_NAME="libiomp5.so"
-  LITE_MKLML_LIB_NAME="libmklml.so"
+  LITE_MKLML_LIB_NAME="libmklml*.so"
 fi
 
 # paddle full lib

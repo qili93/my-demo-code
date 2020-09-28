@@ -29,12 +29,10 @@ if(APPLE)
   set(LITE_FULL_LIB_NAME "libpaddle_full_api_shared.dylib")
   set(LITE_TINY_LIB_NAME "libpaddle_light_api_shared.dylib")
   set(LITE_IOMP5_LIB_NAME "libiomp5.dylib")
-  set(LITE_MKLML_LIB_NAME "libmklml.dylib")
 else(APPLE)
   set(LITE_FULL_LIB_NAME "libpaddle_full_api_shared.so")
   set(LITE_TINY_LIB_NAME "libpaddle_light_api_shared.so")
   set(LITE_IOMP5_LIB_NAME "libiomp5.so")
-  set(LITE_MKLML_LIB_NAME "libmklml.so")
 endif(APPLE)
 
 message(STATUS "LITE_FULL_LIB_NAME=${LITE_FULL_LIB_NAME}")
@@ -54,11 +52,8 @@ endif()
 add_library(mkl_iomp5 SHARED IMPORTED GLOBAL)
 set_property(TARGET mkl_iomp5 PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/${LITE_IOMP5_LIB_NAME})
 
-add_library(mkl_ml SHARED IMPORTED GLOBAL)
-set_property(TARGET mkl_ml PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/${LITE_MKLML_LIB_NAME})
-
 # 5.add executable output
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
 
 # 6. link libraries
-target_link_libraries(${TARGET_EXE} paddle_api_shared mkl_iomp5 mkl_ml)
+target_link_libraries(${TARGET_EXE} paddle_api_shared mkl_iomp5)
