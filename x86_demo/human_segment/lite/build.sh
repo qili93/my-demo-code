@@ -12,10 +12,9 @@ function readlinkf() {
 # BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
 # PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
 
-BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 
-USE_FULL_API=TRUE # x86 is always TRUE to use full api
+USE_FULL_API=TRUE
 # USE_FULL_API=FALSE
 #######################################
 # Build commands, do not change them
@@ -28,7 +27,7 @@ cd $build_dir
 cmake -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_BUILD_TYPE=Debug \
       ..
 make
 

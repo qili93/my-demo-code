@@ -11,29 +11,31 @@ const int FLAGS_repeats = 10;
 
 const int CPU_THREAD_NUM = 1;
 
-// align150-customized-pa-v3_ar46.model.float32-1.0.2.1
+
+// // MODEL_NAME=align150-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
 
-// angle-customized-pa-ar4_4.model.float32-1.0.0.1
+// // MODEL_NAME=angle-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 64, 64};
 
-// detect_rgb-customized-pa-faceid4_0.model.int8-0.0.6.1
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 1000, 1000};
+// // MODEL_NAME=detect_rgb-fp16
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
 
-// eyes_position-customized-pa-eye_ar46.model.float32-1.0.2.1
+// // MODEL_NAME=detect_rgb-int8
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
+
+// // MODEL_NAME=eyes_position-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 32, 32};
 
-// iris_position-customized-pa-iris_ar46.model.float32-1.0.2.1
+// // MODEL_NAME=iris_position-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 24, 24};
 
-// mouth_position-customized-pa-ar_4_4.model.float32-1.0.0.1
+// // MODEL_NAME=mouth_position-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
 
-// PC-quant-seg-model
+// MODEL_NAME=seg-model-fp16
 const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
 
-// Mobilenet_v1
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 224, 224};
 
 struct RESULT {
   int class_id;
@@ -127,6 +129,7 @@ void RunModel(std::string model_name) {
   process(predictor, model_name);
 }
 
+#ifdef USE_FULL_API
 void SaveModel(std::string model_dir, const int model_type) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
@@ -158,6 +161,7 @@ void SaveModel(std::string model_dir, const int model_type) {
   std::cout << "Load model from " << model_dir << std::endl;
   std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
 }
+#endif
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -168,7 +172,9 @@ int main(int argc, char **argv) {
   // 0 for uncombined, 1 for combined model
   int model_type = atoi(argv[2]);
 
+#ifdef USE_FULL_API
   SaveModel(model_dir, model_type);
+#endif
 
   RunModel(model_dir);
 

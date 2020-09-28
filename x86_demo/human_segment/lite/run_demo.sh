@@ -21,14 +21,14 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 MODEL_DIR=$(readlinkf ../assets/models)
 MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 
-# MODEL_NAME=align150-customized-pa-v3_ar46.model.float32-1.0.2.1
-# MODEL_NAME=angle-customized-pa-ar4_4.model.float32-1.0.0.1
-# MODEL_NAME=detect_rgb-customized-pa-faceid4_0.model.int8-0.0.6.1
-# MODEL_NAME=eyes_position-customized-pa-eye_ar46.model.float32-1.0.2.1
-# MODEL_NAME=iris_position-customized-pa-iris_ar46.model.float32-1.0.2.1
-# MODEL_NAME=mouth_position-customized-pa-ar_4_4.model.float32-1.0.0.1
-MODEL_NAME=PC-quant-seg-model
-# MODEL_NAME=mobilenet_v1
+# MODEL_NAME=align150-fp32
+# MODEL_NAME=angle-fp32
+# MODEL_NAME=detect_rgb-fp16
+# MODEL_NAME=detect_rgb-int8
+# MODEL_NAME=eyes_position-fp32
+# MODEL_NAME=iris_position-fp32
+# MODEL_NAME=mouth_position-fp32
+MODEL_NAME=seg-model-fp16
 
 # run demo
 export GLOG_v=0
