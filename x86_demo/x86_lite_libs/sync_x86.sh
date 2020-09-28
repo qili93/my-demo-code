@@ -1,11 +1,13 @@
 #!/bin/bash
 
 # paddle repo dir
-BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
-
-# BASE_REPO_PATH=/Users/liqi27/Documents/Github-qilibj/Paddle-Lite
-# PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86-log-on-debug/inference_lite_lib
+if [[ "$OSTYPE" == "darwin"*  ]]; then
+  BASE_REPO_PATH=/Users/liqi27/Documents/Github-qilibj/Paddle-Lite
+  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86-log-on-debug/inference_lite_lib
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
+  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+fi
 
 # define lib name
 if [[ "$OSTYPE" == "darwin"*  ]]; then
@@ -69,3 +71,7 @@ echo "copy from == $LITE_MKLML_LIB"
 echo "copy to ==== $target_lib"
 cp $LITE_IOMP5_LIB $target_lib
 cp $LITE_MKLML_LIB $target_lib
+
+
+echo "---------------List Files-----------------"
+tree ${target_dir}
