@@ -30,5 +30,5 @@ MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 MODEL_NAME=seg-model-fp16
 
 # run demo
-export GLOG_v=0
+export GLOG_v=5
 ./build/human_seg_demo $MODEL_DIR/$MODEL_NAME $MODEL_TYPE

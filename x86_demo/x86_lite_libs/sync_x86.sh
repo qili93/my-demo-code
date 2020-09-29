@@ -2,8 +2,8 @@
 
 # paddle repo dir
 if [[ "$OSTYPE" == "darwin"*  ]]; then
-  BASE_REPO_PATH=/Users/liqi27/Documents/Github-qilibj/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86-log-on-debug/inference_lite_lib
+  BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
+  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
   BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
   PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
