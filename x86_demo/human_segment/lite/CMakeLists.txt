@@ -11,14 +11,24 @@ if(${PADDLE_LITE_DIR} STREQUAL "")
 endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR})
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR})
+set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx)
+set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml)
+message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
+message(STATUS "MKLML_LIB_DIR=${MKLML_LIB_DIR}")
+
 # 2. compile options
 add_definitions(-std=c++11 -g -O3 -pthread)
 # add_compile_options(-std=c++11)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
 
+
+
+
 # 3. include Paddle-Lite directory
-include_directories(${PADDLE_LITE_DIR}/include)
+include_directories(${PADDLE_LIB_DIR}/include)
 
 # 4. link paddle-lite libraries
 if(NOT DEFINED USE_FULL_API)
@@ -43,14 +53,14 @@ message(STATUS "LITE_MKLML_LIB_NAME=${LITE_MKLML_LIB_NAME}")
 if(USE_FULL_API)
   add_definitions(-DUSE_FULL_API)
   add_library(paddle_api_shared SHARED IMPORTED GLOBAL)
-  set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/${LITE_FULL_LIB_NAME})
+  set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LIB_DIR}/lib/${LITE_FULL_LIB_NAME})
 else()
   add_library(paddle_api_shared SHARED IMPORTED GLOBAL)
-  set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/${LITE_TINY_LIB_NAME})
+  set_property(TARGET paddle_api_shared PROPERTY IMPORTED_LOCATION ${PADDLE_LIB_DIR}/lib/${LITE_TINY_LIB_NAME})
 endif()
 
 add_library(mkl_iomp5 SHARED IMPORTED GLOBAL)
-set_property(TARGET mkl_iomp5 PROPERTY IMPORTED_LOCATION ${PADDLE_LITE_DIR}/lib/${LITE_IOMP5_LIB_NAME})
+set_property(TARGET mkl_iomp5 PROPERTY IMPORTED_LOCATION ${MKLML_LIB_DIR}/lib/${LITE_IOMP5_LIB_NAME})
 
 # 5.add executable output
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)

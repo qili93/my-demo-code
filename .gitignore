@@ -1,18 +1,17 @@
 # ignoree files
 .DS_Store
 .vscode
-# ignore npu lib
-lib**
-include**
-build**
-models**
-test**
+# ignore dirs
+assets/
+build/
+kernel_meta/
+include/
+lib/
+# ignore files
 *.log
 *.om
 *.bin
-kernel_meta/
 core.*
-_build/
 *.so
 *.dylib
 # not ignore
