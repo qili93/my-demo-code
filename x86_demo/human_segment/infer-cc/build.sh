@@ -9,7 +9,7 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-PADDLE_LIB_DIR=$(readlinkf ../../fluid_inference)
+PADDLE_LIB_DIR=$(readlinkf ../../fluid_inference/fluid_inference_install_dir)
 
 #######################################
 # Build commands, do not change them
@@ -29,9 +29,16 @@ cd $build_dir
 
 # make -j
 
+# mkl is disabled on MAC
+if [[ "$OSTYPE" == "darwin"*  ]]; then
+  WITH_MKL=OFF
+elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+  WITH_MKL=ON
+fi
+
 
 cmake -DPADDLE_LIB=${PADDLE_LIB_DIR} \
-      -DWITH_MKL=ONN \
+      -DWITH_MKL=${WITH_MKL} \
       -DWITH_GPU=OFF \
       -DWITH_STATIC_LIB=OFF \
       -DUSE_TENSORRT=OFF \

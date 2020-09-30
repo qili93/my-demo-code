@@ -74,7 +74,12 @@ else()
       ${PADDLE_LIB}/paddle/lib/libpaddle_fluid${CMAKE_SHARED_LIBRARY_SUFFIX})
 endif()
 
-set(EXTERNAL_LIB "-lrt -ldl -lpthread")
+if(APPLE)
+  set(EXTERNAL_LIB "-ldl -lpthread")
+else(APPLE)
+  set(EXTERNAL_LIB "-lrt -ldl -lpthread")
+endif(APPLE)
+
 set(DEPS ${DEPS}
     ${MATH_LIB} ${MKLDNN_LIB}
     glog gflags protobuf z xxhash

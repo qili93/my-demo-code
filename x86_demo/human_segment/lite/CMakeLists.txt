@@ -24,9 +24,6 @@ add_definitions(-std=c++11 -g -O3 -pthread)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
 
-
-
-
 # 3. include Paddle-Lite directory
 include_directories(${PADDLE_LIB_DIR}/include)
 
