@@ -5,40 +5,35 @@
 #include <algorithm>
 #include <memory>
 #include <sys/time.h>
-#include "paddle/include/paddle_inference_api.h"
-#include "paddle/include/paddle_analysis_config.h"
+#include <paddle_inference_api.h>
 
 const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-// align150-customized-pa-v3_ar46.model.float32-1.0.2.1
+// // MODEL_NAME=align150-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 128, 128};
 
-// angle-customized-pa-ar4_4.model.float32-1.0.0.1
+// // MODEL_NAME=angle-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 64, 64};
 
-// detect_rgb-customized-pa-faceid4_0.model.int8-0.0.6.1
-const std::vector<int> INPUT_SHAPE = {1, 3, 320, 240};
+// // MODEL_NAME=detect_rgb-fp16
+// const std::vector<int> INPUT_SHAPE = {1, 3, 320, 240};
 
-// eyes_position-customized-pa-eye_ar46.model.float32-1.0.2.1
+// // MODEL_NAME=detect_rgb-int8
+// const std::vector<int> INPUT_SHAPE = {1, 3, 320, 240};
+
+// // MODEL_NAME=eyes_position-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 32, 32};
 
-// iris_position-customized-pa-iris_ar46.model.float32-1.0.2.1
+// // MODEL_NAME=iris_position-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 24, 24};
 
-// mouth_position-customized-pa-ar_4_4.model.float32-1.0.0.1
+// // MODEL_NAME=mouth_position-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 48, 48};
 
-// PC-quant-seg-model
-// const std::vector<int> INPUT_SHAPE = {1, 4, 192, 192};
-
-// Mobilenet_v1
-// const std::vector<int> INPUT_SHAPE = {1, 3, 224, 224};
-
-namespace paddle {
-
-using paddle::AnalysisConfig;
+// MODEL_NAME=seg-model-int8
+const std::vector<int> INPUT_SHAPE = {1, 4, 192, 192};
 
 struct RESULT {
   int class_id;
@@ -70,47 +65,42 @@ double GetCurrentUS() {
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
+int ShapeProduction(const std::vector<int>& shape) {
+  int res = 1;
+  for (auto i : shape) res *= i;
+  return res;
+}
+
 void RunModel(const std::string model_dir, const int model_type) {
   // 1. Create AnalysisConfig
-  AnalysisConfig config;
-
-  if (model_type) { // combined model
-    config.SetProgFile(model_dir + "/model");
-    config.SetParamsFile(model_dir + "/params");
-    LOG(INFO) << "model_type=combined";
+  paddle::AnalysisConfig config;
+  if (model_type) {
+    config.SetModel(model_dir + "/__model__",
+                    model_dir + "/__params__");
   } else {
     config.SetModel(model_dir);
-    LOG(INFO) << "model_type=uncombined";
   }
-  LOG(INFO) << "config.prog_file() is " << config.prog_file();
-  config.SetModel(model_dir);
-  config.DisableGpu();
-  config.SwitchIrOptim();
-  config.SwitchSpecifyInputNames();
-  config.SetCpuMathLibraryNumThreads(1);
-  config.EnableMKLDNN();
-  // We use ZeroCopyTensor here, so we set config->SwitchUseFeedFetchOps(false)
+  // use ZeroCopyTensor, Must be set to false
   config.SwitchUseFeedFetchOps(false);
-  // Enable int8
-  // config.EnableMkldnnQuantizer();
-  // create mkldnn_quantizer_config
-  // std::shared_ptr<std::vector<PaddleTensor>> warmup_data = GetDummyWarmupData();
-  // config.mkldnn_quantizer_config()->SetWarmupData(warmup_data);
-  // config.mkldnn_quantizer_config()->SetWarmupBatchSize(1);
+  config.SetCpuMathLibraryNumThreads(CPU_THREAD_NUM);
+  // turn off for int8 model
+  config.SwitchIrOptim(false);
 
   // 2. Create PaddlePredictor by AnalysisConfig
-  auto predictor = CreatePaddlePredictor(config);
-  if (!predictor) {
+  auto predictor = paddle::CreatePaddlePredictor(config);
+  if (predictor == nullptr) {
     std::cout << "An internal error occurred in PaddlePredictor(AnalysisConfig)." << std::endl;
   }
+  int nums = ShapeProduction(INPUT_SHAPE);
+  float* input = new float[nums];
+  for (int i = 0; i < nums; ++i) input[i] = 1.f;
+
   // 3. Prepare input data
   auto input_names = predictor->GetInputNames();
   auto input_tensor = predictor->GetInputTensor(input_names[0]);
   input_tensor->Reshape(INPUT_SHAPE);
-  int input_size = std::accumulate(INPUT_SHAPE.begin(), INPUT_SHAPE.end(), 1, std::multiplies<int>());
-  float *input_data = new float[input_size];
-  memset(input_data, 1, input_size * sizeof(float));
-  input_tensor->copy_from_cpu(input_data);
+  input_tensor->copy_from_cpu(input);
+
   // 4. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor->ZeroCopyRun();
@@ -136,14 +126,10 @@ void RunModel(const std::string model_dir, const int model_type) {
   int output_size = std::accumulate(output_shape.begin(), output_shape.end(), 1, std::multiplies<int>());
   output_data.resize(output_size);
   output_tensor->copy_to_cpu(output_data.data());
-  // 8. Print output
-  // std::vector<RESULT> results = postprocess(output_data.data(), output_size);
-  // printf("results: %lu\n", results.size());
-  // for (int i = 0; i < results.size(); i++) {
-  //   printf("Top%d: %d - %f\n", i, results[i].class_id, results[i].score);
-  // }
+
+  // 8. free memory
+  delete[] input;
 }
-}  // namespace paddle
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -156,6 +142,6 @@ int main(int argc, char **argv) {
 
   LOG(INFO) << "model_type=" << model_type;
 
-  paddle::RunModel(model_dir, model_type);
+  RunModel(model_dir, model_type);
   return 0;
 }

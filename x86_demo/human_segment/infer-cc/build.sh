@@ -9,8 +9,7 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-BASE_REPO_PATH=/workspace/Github-qili93/Paddle
-PADDLE_LIB_DIR=${BASE_REPO_PATH}/build-infer/fluid_inference_install_dir
+PADDLE_LIB_DIR=$(readlinkf ../../fluid_inference)
 
 #######################################
 # Build commands, do not change them
@@ -20,18 +19,27 @@ rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
-cmake .. -DPADDLE_LIB=${PADDLE_LIB_DIR} \
-  -DWITH_MKL=ONN \
-  -DWITH_GPU=OFF \
-  -DWITH_STATIC_LIB=OFF \
-  -DUSE_TENSORRT=OFF \
-  -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-  
-  # -DCUDNN_LIB=${CUDNN_LIB} \
-  # -DCUDA_LIB=${CUDA_LIB} \
-  # -DTENSORRT_ROOT=${TENSORRT_ROOT}
+# cmake .. -DPADDLE_LIB=${PADDLE_LIB_DIR} \
+#   -DWITH_MKL=ONN \
+#   -DWITH_GPU=OFF \
+#   -DWITH_STATIC_LIB=OFF \
+#   -DUSE_TENSORRT=OFF \
+#   -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+#   -DCMAKE_BUILD_TYPE=Debug
 
-make -j
+# make -j
+
+
+cmake -DPADDLE_LIB=${PADDLE_LIB_DIR} \
+      -DWITH_MKL=ONN \
+      -DWITH_GPU=OFF \
+      -DWITH_STATIC_LIB=OFF \
+      -DUSE_TENSORRT=OFF \
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+      -DCMAKE_BUILD_TYPE=Debug \
+      ..
+make
+
 
 cd -
 echo "ls -l $build_dir"
