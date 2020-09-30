@@ -13,7 +13,7 @@ function readlinkf() {
 # BASE_REPO_PATH=/workspace/Github-qili93/Paddle/build-infer-mkl
 # PADDLE_LIB_DIR=${BASE_REPO_PATH}/paddle_inference_install_dir/
 
-PADDLE_LIB_DIR=$(readlinkf ../../fluid_inference)
+PADDLE_LIB_DIR=$(readlinkf ../../fluid_inference/fluid_inference_install_dir)
 export LD_LIBRARY_PATH=${PADDLE_LIB_DIR}/paddle/lib:${PADDLE_LIB_DIR}/third_party/install/mklml/lib:$LD_LIBRARY_PATH
 
 # set model dir
