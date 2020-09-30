@@ -9,17 +9,15 @@ from paddle.fluid import core
 
 paddle.enable_static()
 
+# change all depthwise_conv2d => conv2d
 def _prepare_for_fp32_mkldnn(graph):
     ops = graph.all_op_nodes()
     for op_node in ops:
         name = op_node.name()
         if name in ['depthwise_conv2d']:
-            input_var_node = graph._find_node_by_name(
-                op_node.inputs, op_node.input("Input")[0])
-            weight_var_node = graph._find_node_by_name(
-                op_node.inputs, op_node.input("Filter")[0])
-            output_var_node = graph._find_node_by_name(
-                graph.all_var_nodes(), op_node.output("Output")[0])
+            input_var_node = graph._find_node_by_name(op_node.inputs, op_node.input("Input")[0])
+            weight_var_node = graph._find_node_by_name(op_node.inputs, op_node.input("Filter")[0])
+            output_var_node = graph._find_node_by_name(graph.all_var_nodes(), op_node.output("Output")[0])
             attrs = {
                 name: op_node.op().attr(name)
                 for name in op_node.op().attr_names()
@@ -53,7 +51,8 @@ def infer_model(model_path):
 
       inference_program = graph.to_program()
 
-      images = np.ones([1,4,192,192]).astype('float32')
+      # change the input shape based on models
+      images = np.ones([1, 4, 192, 192]).astype('float32')
       out = exe.run(inference_program,
                     feed={feed_target_names[0]: images},
                     fetch_list=fetch_targets)
