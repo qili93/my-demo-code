@@ -17,7 +17,7 @@ const int CPU_THREAD_NUM = 1;
 // // MODEL_NAME=angle-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 64, 64};
 
-// // MODEL_NAME=detect_rgb-fp16
+// // MODEL_NAME=detect_rgb-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 320, 240};
 
 // // MODEL_NAME=detect_rgb-int8
