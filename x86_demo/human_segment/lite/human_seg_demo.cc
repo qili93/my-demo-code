@@ -18,7 +18,7 @@ const int CPU_THREAD_NUM = 1;
 // // MODEL_NAME=angle-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 64, 64};
 
-// // MODEL_NAME=detect_rgb-fp16
+// // MODEL_NAME=detect_rgb-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
 
 // // MODEL_NAME=detect_rgb-int8
@@ -33,7 +33,7 @@ const int CPU_THREAD_NUM = 1;
 // // MODEL_NAME=mouth_position-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
 
-// MODEL_NAME=seg-model-fp16
+// MODEL_NAME=seg-model-int8
 const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
 
 
@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
   SaveModel(model_dir, model_type);
 #endif
 
-  RunModel(model_dir);
+  // RunModel(model_dir);
 
   return 0;
 }

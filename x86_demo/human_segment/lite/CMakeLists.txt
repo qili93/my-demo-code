@@ -11,8 +11,8 @@ if(${PADDLE_LITE_DIR} STREQUAL "")
 endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
-# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR})
-# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR})
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}) # for local lib
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}) # for local lib
 set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx)
 set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml)
 message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
@@ -24,11 +24,9 @@ add_definitions(-std=c++11 -g -O3 -pthread)
 set(CMAKE_CXX_FLAGS_DEBUG "-fPIC -O0 -g -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
 
-
-
-
 # 3. include Paddle-Lite directory
-include_directories(${PADDLE_LIB_DIR}/include)
+# include_directories(${PADDLE_LITE_DIR}/include) # for local lib
+include_directories(${PADDLE_LITE_DIR}/cxx/include)
 
 # 4. link paddle-lite libraries
 if(NOT DEFINED USE_FULL_API)
