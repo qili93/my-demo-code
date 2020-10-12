@@ -90,7 +90,11 @@ inline void gen_log(std::ostream& log_stream_, const char* file, const char* fun
   std::string time_str;
   struct tm tm_time;  // Time of creation of LogMessage
   time_t timestamp = time(NULL);
+#if !defined(_WIN32)
   localtime_r(&timestamp, &tm_time);
+#else
+  localtime_s(&tm_time, &timestamp);
+#endif
 
   // print date / time
   log_stream_ << '[' << level << ' ' << std::setw(2) << 1 + tm_time.tm_mon
