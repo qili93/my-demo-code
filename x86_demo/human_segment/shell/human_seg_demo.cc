@@ -33,8 +33,11 @@ const int CPU_THREAD_NUM = 1;
 // // MODEL_NAME=mouth_position-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
 
-// MODEL_NAME=seg-model-int8
+// // MODEL_NAME=seg-model-int8
 const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
+
+// MODEL_NAME=pc-seg-float-model
+// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
 
 
 struct RESULT {

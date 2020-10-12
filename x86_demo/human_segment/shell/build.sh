@@ -12,7 +12,7 @@ function readlinkf() {
 # paddle repo dir
 if [[ "$OSTYPE" == "darwin"*  ]]; then # MACOS
   BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-relse/build.lite.x86/inference_lite_lib
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then # Linux
   BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
   PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.6/build.lite.x86/inference_lite_lib
@@ -30,11 +30,12 @@ rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
-cmake -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
+cmake .. \
+      -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-      -DCMAKE_BUILD_TYPE=Debug \
-      ..
+      -DCMAKE_BUILD_TYPE=Release
+
 make
 
 cd -

@@ -33,7 +33,10 @@ const int CPU_THREAD_NUM = 1;
 // const std::vector<int> INPUT_SHAPE = {1, 3, 48, 48};
 
 // MODEL_NAME=seg-model-int8
-const std::vector<int> INPUT_SHAPE = {1, 4, 192, 192};
+// const std::vector<int> INPUT_SHAPE = {1, 4, 192, 192};
+
+// MODEL_NAME=pc-seg-float-model
+const std::vector<int> INPUT_SHAPE = {1, 4, 192, 256};
 
 struct RESULT {
   int class_id;
