@@ -1,6 +1,4 @@
 #include <iostream>
-#include <algorithm>
-#include <sys/time.h>
 #include "paddle_api.h"
 #include "logging.h"
 
