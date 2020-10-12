@@ -30,7 +30,6 @@ IF NOT EXIST "!vcvarsall_dir!" (
 )
 
 :cmake
-D:
 cd "%build_directory%"
 
 set BASE_REPO_PATH=C:\Users\liqi27\Downloads\Paddle-Lite
@@ -44,7 +43,7 @@ cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 ^
 
 call "%vcvarsall_dir%" amd64
 
-msbuild /maxcpucount:8 /p:Configuration=Release  mobilenet_light_api.vcxproj
+msbuild /maxcpucount:8 /p:Configuration=Release  human_seg_demo.vcxproj
 
 goto:eof
 
