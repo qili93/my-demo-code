@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 #include "paddle_api.h"
 #include "logging.h"
 
@@ -32,10 +33,10 @@ const int CPU_THREAD_NUM = 1;
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
 
 // // MODEL_NAME=seg-model-int8
-const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
 
 // MODEL_NAME=pc-seg-float-model
-// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
+const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
 
 
 struct RESULT {
@@ -177,7 +178,7 @@ int main(int argc, char **argv) {
   SaveModel(model_dir, model_type);
 #endif
 
-  // RunModel(model_dir);
+  RunModel(model_dir);
 
   return 0;
 }
