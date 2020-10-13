@@ -7,37 +7,7 @@ using namespace paddle::lite_api;  // NOLINT
 
 const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
-
 const int CPU_THREAD_NUM = 1;
-
-
-// // MODEL_NAME=align150-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
-
-// // MODEL_NAME=angle-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 64, 64};
-
-// // MODEL_NAME=detect_rgb-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
-
-// // MODEL_NAME=detect_rgb-int8
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
-
-// // MODEL_NAME=eyes_position-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 32, 32};
-
-// // MODEL_NAME=iris_position-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 24, 24};
-
-// // MODEL_NAME=mouth_position-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
-
-// // MODEL_NAME=seg-model-int8
-// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
-
-// MODEL_NAME=pc-seg-float-model
-const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
-
 
 struct RESULT {
   int class_id;
@@ -75,10 +45,10 @@ double GetCurrentUS() {
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
-void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::string model_name) {
+void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> input_shape_vec) {
   // 1. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-  input_tensor->Resize(INPUT_SHAPE);
+  input_tensor->Resize(input_shape_vec);
   auto* input_data = input_tensor->mutable_data<float>();
   for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
     input_data[i] = 1;
@@ -95,7 +65,6 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   auto end_time = GetCurrentUS();
   // 4. Speed Report
   LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Model: " << model_name;
   LOG(INFO) << "Warmup: " << FLAGS_warmup
             << ", repeats: " << FLAGS_repeats << ", spend "
             << (end_time - start_time) / FLAGS_repeats / 1000.0
@@ -112,7 +81,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   // }
 }
 
-void RunModel(std::string model_name) {
+void RunModel(std::string model_name, const std::vector<int64_t> input_shape_vec) {
   // 1. Create MobileConfig
   MobileConfig mobile_config;
   mobile_config.set_model_from_file(model_name+".nb");
@@ -128,11 +97,11 @@ void RunModel(std::string model_name) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
   // 3. Run model
-  process(predictor, model_name);
+  process(predictor, input_shape_vec);
 }
 
 #ifdef USE_FULL_API
-void SaveModel(std::string model_dir, const int model_type) {
+void SaveModel(std::string model_dir, const int model_type, const std::vector<int64_t> input_shape_vec) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -155,7 +124,7 @@ void SaveModel(std::string model_dir, const int model_type) {
   }
 
   // 3. Run model
-  process(predictor, model_dir);
+  process(predictor, input_shape_vec);
 
   // 4. Save optimized model
   predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
@@ -167,18 +136,83 @@ void SaveModel(std::string model_dir, const int model_type) {
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_dir model_type\n";
+    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_name model_type\n";
     exit(1);
   }
-  std::string model_dir = argv[1];
+  std::string model_name = argv[1];
   // 0 for uncombined, 1 for combined model
   int model_type = atoi(argv[2]);
 
+  // set input shape based on model name
+  std::vector<int64_t> input_shape_vec(4);
+  if (model_name == "align150-fp32") {
+    int64_t input_shape[] = {1, 3, 128, 128};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "angle-fp32") {
+    int64_t input_shape[] = {1, 3, 64, 64};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "detect_rgb-fp32") {
+    int64_t input_shape[] = {1, 3, 320, 240};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "detect_rgb-int8") {
+    int64_t input_shape[] = {1, 3, 320, 240};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "eyes_position-fp32") {
+    int64_t input_shape[] = {1, 3, 32, 32};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "iris_position-fp32") {
+    int64_t input_shape[] = {1, 3, 24, 24};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "mouth_position-fp32") {
+    int64_t input_shape[] = {1, 3, 48, 48};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "pc-seg-float-model") {
+    int64_t input_shape[] = {1, 4, 192, 256};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else {
+    LOG(ERROR) << "NOT supported model name!";
+    return 0;
+  }
+
+  LOG(INFO) << "Model Name is <" << model_name << ">, Input Shape is {" 
+    << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
+    << input_shape_vec[2] << ", " << input_shape_vec[3] << "}";
+
+  std::string model_dir = "../assets/models/" + model_name;
+
 #ifdef USE_FULL_API
-  SaveModel(model_dir, model_type);
+  SaveModel(model_dir, model_type, input_shape_vec);
 #endif
 
-  RunModel(model_dir);
+  RunModel(model_dir, input_shape_vec);
 
   return 0;
 }
+
+
+// // MODEL_NAME=align150-fp32
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
+
+// // MODEL_NAME=angle-fp32
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 64, 64};
+
+// // MODEL_NAME=detect_rgb-fp32
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
+
+// // MODEL_NAME=detect_rgb-int8
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
+
+// // MODEL_NAME=eyes_position-fp32
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 32, 32};
+
+// // MODEL_NAME=iris_position-fp32
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 24, 24};
+
+// // MODEL_NAME=mouth_position-fp32
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
+
+// // MODEL_NAME=seg-model-int8
+// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
+
+// MODEL_NAME=pc-seg-float-model
+// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
