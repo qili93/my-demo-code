@@ -10,21 +10,21 @@ function readlinkf() {
 #######################################
 
 # paddle repo dir
-if [[ "$OSTYPE" == "darwin"*  ]]; then # MACOS
-  BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then # Linux
-  BASE_REPO_PATH=/workspace/Github-origin/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7/build.lite.x86/inference_lite_lib
-fi
-export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
+# if [[ "$OSTYPE" == "darwin"*  ]]; then # MACOS
+#   BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
+#   PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-relse/build.lite.x86/inference_lite_lib
+# elif [[ "$OSTYPE" == "linux-gnu"* ]]; then # Linux
+#   BASE_REPO_PATH=/workspace/Github-origin/Paddle-Lite
+#   PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-relse/build.lite.x86/inference_lite_lib
+# fi
+# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
 # for local lib
-# PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
-# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
+PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
 # set model dir
-# MODEL_DIR=$(readlinkf ../assets/models)
+MODEL_DIR=$(readlinkf ../assets/models)
 MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 
 # MODEL_NAME=align150-fp32
@@ -39,4 +39,4 @@ MODEL_NAME=pc-seg-float-model
 
 # run demo
 export GLOG_v=0
-./build/human_seg_demo $MODEL_NAME $MODEL_TYPE
+./build/human_seg_demo $MODEL_DIR $MODEL_NAME $MODEL_TYPE

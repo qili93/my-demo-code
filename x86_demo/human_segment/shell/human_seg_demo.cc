@@ -81,10 +81,10 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   // }
 }
 
-void RunModel(std::string model_name, const std::vector<int64_t> input_shape_vec) {
+void RunModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
   // 1. Create MobileConfig
   MobileConfig mobile_config;
-  mobile_config.set_model_from_file(model_name+".nb");
+  mobile_config.set_model_from_file(model_path+".nb");
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
   // 2. Create PaddlePredictor by MobileConfig
@@ -101,18 +101,18 @@ void RunModel(std::string model_name, const std::vector<int64_t> input_shape_vec
 }
 
 #ifdef USE_FULL_API
-void SaveModel(std::string model_dir, const int model_type, const std::vector<int64_t> input_shape_vec) {
+void SaveModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
-    cxx_config.set_model_file(model_dir + "/__model__");
-    cxx_config.set_param_file(model_dir + "/__params__");
+    cxx_config.set_model_file(model_path + "/__model__");
+    cxx_config.set_param_file(model_path + "/__params__");
   } else {
-    cxx_config.set_model_dir(model_dir);
+    cxx_config.set_model_dir(model_path);
   }
   cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
                            Place{TARGET(kHost), PRECISION(kFloat)}});
-  // cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
 
   // 2. Create PaddlePredictor by CxxConfig
   std::shared_ptr<PaddlePredictor> predictor = nullptr;
@@ -127,10 +127,11 @@ void SaveModel(std::string model_dir, const int model_type, const std::vector<in
   process(predictor, input_shape_vec);
 
   // 4. Save optimized model
-  predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
-  // predictor->SaveOptimizedModel(model_dir+"_opt", LiteModelType::kProtobuf);
-  std::cout << "Load model from " << model_dir << std::endl;
-  std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
+  // predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
+  // std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
+
+  predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
+  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 
@@ -166,6 +167,9 @@ int main(int argc, char **argv) {
     std::copy (input_shape, input_shape+4, input_shape_vec.begin());
   } else if (model_name == "mouth_position-fp32") {
     int64_t input_shape[] = {1, 3, 48, 48};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "seg-model-int8") {
+    int64_t input_shape[] = {1, 4, 192, 192};
     std::copy (input_shape, input_shape+4, input_shape_vec.begin());
   } else if (model_name == "pc-seg-float-model") {
     int64_t input_shape[] = {1, 4, 192, 256};
