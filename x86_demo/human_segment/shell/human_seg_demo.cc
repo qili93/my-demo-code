@@ -136,12 +136,13 @@ void SaveModel(std::string model_dir, const int model_type, const std::vector<in
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_name model_type\n";
+    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_dir model_name model_type\n";
     exit(1);
   }
-  std::string model_name = argv[1];
+  std::string model_dir = argv[1];
+  std::string model_name = argv[2];
   // 0 for uncombined, 1 for combined model
-  int model_type = atoi(argv[2]);
+  int model_type = atoi(argv[3]);
 
   // set input shape based on model name
   std::vector<int64_t> input_shape_vec(4);
@@ -178,13 +179,13 @@ int main(int argc, char **argv) {
     << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
     << input_shape_vec[2] << ", " << input_shape_vec[3] << "}";
 
-  std::string model_dir = "../assets/models/" + model_name;
+  std::string model_path = model_dir + "/" + model_name;
 
 #ifdef USE_FULL_API
-  SaveModel(model_dir, model_type, input_shape_vec);
+  SaveModel(model_path, model_type, input_shape_vec);
 #endif
 
-  RunModel(model_dir, input_shape_vec);
+  RunModel(model_path, input_shape_vec);
 
   return 0;
 }

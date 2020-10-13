@@ -11,12 +11,19 @@ if(${PADDLE_LITE_DIR} STREQUAL "")
 endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
-# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}) # for local lib
-# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}) # for local lib
-set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
-set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
-# message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
-# message(STATUS "MKLML_LIB_DIR=${MKLML_LIB_DIR}")
+# set PADDLE_LIB_DIR to LOCAL LIB DIR
+set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
+set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+
+# set PADDLE_LIB_DIR to PADDLE BUILD DIR
+# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
+
+message(STATUS "PADDLE_INC_DIR=${PADDLE_INC_DIR}")
+message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
+message(STATUS "MKLML_LIB_DIR=${MKLML_LIB_DIR}")
 
 
 # 2. compile options
@@ -41,8 +48,7 @@ endif()
 # set(CMAKE_CXX_FLAGS_RELEASE "-fPIC -O2 -Wall")
 
 # 3. include Paddle-Lite directory
-# include_directories(${PADDLE_LITE_DIR}/include) # for local lib
-include_directories(${PADDLE_LITE_DIR}/cxx/include)
+include_directories(${PADDLE_INC_DIR})
 
 # 4. link paddle-lite libraries
 if(NOT DEFINED USE_FULL_API)

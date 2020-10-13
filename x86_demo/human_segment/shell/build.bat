@@ -32,9 +32,14 @@ IF NOT EXIST "!vcvarsall_dir!" (
 :cmake
 cd "%build_directory%"
 
-set BASE_REPO_PATH=C:\Users\liqi27\Downloads\Paddle-Lite
-set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
+@REM set BASE_REPO_PATH=C:\Users\liqi27\Downloads\Paddle-Lite
+@REM set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
+@REM echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
+
+call :getabsolute "..\..\..\x86_lite_libs"
+set PADDLE_LITE_DIR=%absolute%
 echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
+
 set USE_FULL_API=TRUE
 
 cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 ^
@@ -65,3 +70,7 @@ if "%tmp_var:~-1%"==" " (
     goto remove_left_space
 )
 goto:eof
+
+:getabsolute
+set absolute=%~f1
+goto :eof
