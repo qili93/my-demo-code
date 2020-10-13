@@ -3,6 +3,10 @@
 #include "paddle_api.h"
 #include "logging.h"
 
+#if defined(_WIN32)
+#include<sys/timeb.h>
+#endif
+
 using namespace paddle::lite_api;  // NOLINT
 
 const int FLAGS_warmup = 5;
@@ -39,11 +43,19 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
+#if !defined(_WIN32)
 double GetCurrentUS() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
+#else
+double GetCurrentUS() {
+  struct timeb cur_time;
+  ftime(&cur_time);
+  return (cur_time.time * 1e+6) + cur_time.millitm * 1e+3;
+}
+#endif
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> input_shape_vec) {
   // 1. Prepare input data
@@ -92,7 +104,7 @@ void RunModel(std::string model_path, const std::vector<int64_t> input_shape_vec
   // 2. Create PaddlePredictor by MobileConfig
   try {
     predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
-    std::cout << "============== PaddlePredictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "==============MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
@@ -118,7 +130,7 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   std::shared_ptr<PaddlePredictor> predictor = nullptr;
   try {
     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "============== PaddlePredictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "============== CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
@@ -130,8 +142,8 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   // predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
   // std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
-  predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
-  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+  // predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
+  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 

@@ -32,15 +32,15 @@ IF NOT EXIST "!vcvarsall_dir!" (
 :cmake
 cd "%build_directory%"
 
-@REM set BASE_REPO_PATH=C:\Users\liqi27\Downloads\Paddle-Lite
-@REM set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
-@REM echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
+rem set BASE_REPO_PATH=C:\Users\liqi27\Downloads\Paddle-Lite
+rem set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
+rem echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
 
 call :getabsolute "..\..\..\x86_lite_libs"
 set PADDLE_LITE_DIR=%absolute%
 echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
 
-set USE_FULL_API=TRUE
+set USE_FULL_API=FALSE
 
 cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 ^
                 -DPADDLE_LITE_DIR=%PADDLE_LITE_DIR%   ^
