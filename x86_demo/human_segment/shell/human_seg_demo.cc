@@ -139,8 +139,8 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   process(predictor, input_shape_vec);
 
   // 4. Save optimized model
-  // predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
-  // std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
+  predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
+  std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
   // predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
   // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
