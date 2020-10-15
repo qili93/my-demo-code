@@ -7,6 +7,12 @@
 #include<sys/timeb.h>
 #endif
 
+#ifdef WIN32
+#define OS_SEP '\\'
+#else
+#define OS_SEP '/'
+#endif
+
 using namespace paddle::lite_api;  // NOLINT
 
 const int FLAGS_warmup = 5;
@@ -114,6 +120,7 @@ void RunModel(std::string model_path, const std::vector<int64_t> input_shape_vec
 
 #ifdef USE_FULL_API
 void SaveModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
+  LOG(INFO) << "entering cxx_config";
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -124,6 +131,7 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   }
   cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
                            Place{TARGET(kHost), PRECISION(kFloat)}});
+  LOG(INFO) << "finish cxx_config";
   // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
 
   // 2. Create PaddlePredictor by CxxConfig
@@ -134,9 +142,10 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
+  LOG(INFO) << "finish predictor";
 
   // 3. Run model
-  process(predictor, input_shape_vec);
+  //process(predictor, input_shape_vec);
 
   // 4. Save optimized model
   predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
@@ -195,13 +204,15 @@ int main(int argc, char **argv) {
     << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
     << input_shape_vec[2] << ", " << input_shape_vec[3] << "}";
 
-  std::string model_path = model_dir + "/" + model_name;
+  std::string model_path = model_dir + OS_SEP + model_name;
+
+  LOG(INFO) << "Model Path is <" << model_path << ">";
 
 #ifdef USE_FULL_API
   SaveModel(model_path, model_type, input_shape_vec);
 #endif
 
-  RunModel(model_path, input_shape_vec);
+  //RunModel(model_path, input_shape_vec);
 
   return 0;
 }
