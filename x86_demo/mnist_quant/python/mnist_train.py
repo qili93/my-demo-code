@@ -37,7 +37,7 @@ exe = fluid.Executor(place)
 exe.run(startup_prog)
 
 # Save the inference model
-path = './mnist_quant'
+path = './mnist_infer'
 # path = '../assets/models/mnist_quant'
 fluid.io.save_inference_model(dirname=path, feeded_var_names=['img'],
                 target_vars=[out], executor=exe, main_program=main_prog)
