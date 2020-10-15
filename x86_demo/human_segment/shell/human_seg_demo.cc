@@ -99,8 +99,9 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   // }
 }
 
-void RunModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
   // 1. Create MobileConfig
+  auto start_time = GetCurrentUS();
   MobileConfig mobile_config;
   mobile_config.set_model_from_file(model_path+".nb");
   mobile_config.set_threads(CPU_THREAD_NUM);
@@ -114,13 +115,42 @@ void RunModel(std::string model_path, const std::vector<int64_t> input_shape_vec
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
+  auto end_time = GetCurrentUS();
+
   // 3. Run model
   process(predictor, input_shape_vec);
+  LOG(INFO) << "MobileConfig preprosss: " 
+            << (end_time - start_time) / 1000.0
+            << " ms.";
 }
 
 #ifdef USE_FULL_API
+void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+  // 1. Create CxxConfig
+  auto start_time = GetCurrentUS();
+  CxxConfig cxx_config;
+  cxx_config.set_model_file(model_path + "_opt/model");
+  cxx_config.set_param_file(model_path + "_opt/params");
+  cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
+                               Place{TARGET(kHost), PRECISION(kFloat)}});
+  // 2. Create PaddlePredictor by MobileConfig
+  std::shared_ptr<PaddlePredictor> predictor = nullptr;
+  // 2. Create PaddlePredictor by MobileConfig
+  try {
+    predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
+    std::cout << "==============CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+  } catch (std::exception e) {
+    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
+  }
+  auto end_time = GetCurrentUS();
+  // 3. Run model
+  process(predictor, input_shape_vec);
+  LOG(INFO) << "CXXConfig preprosss: " 
+            << (end_time - start_time) / 1000.0
+            << " ms.";
+}
+
 void SaveModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
-  LOG(INFO) << "entering cxx_config";
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -130,8 +160,7 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
     cxx_config.set_model_dir(model_path);
   }
   cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                           Place{TARGET(kHost), PRECISION(kFloat)}});
-  LOG(INFO) << "finish cxx_config";
+                               Place{TARGET(kHost), PRECISION(kFloat)}});
   // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
 
   // 2. Create PaddlePredictor by CxxConfig
@@ -142,17 +171,13 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
-  LOG(INFO) << "finish predictor";
 
-  // 3. Run model
-  //process(predictor, input_shape_vec);
-
-  // 4. Save optimized model
+  // 3. Save optimized model
   predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
   std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
-  // predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
-  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+  predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
+  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 
@@ -210,13 +235,13 @@ int main(int argc, char **argv) {
 
 #ifdef USE_FULL_API
   SaveModel(model_path, model_type, input_shape_vec);
+  RunFullModel(model_path, input_shape_vec);
 #endif
 
-  //RunModel(model_path, input_shape_vec);
+  RunLiteModel(model_path, input_shape_vec);
 
   return 0;
 }
-
 
 // // MODEL_NAME=align150-fp32
 // const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};

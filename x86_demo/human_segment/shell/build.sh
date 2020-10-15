@@ -12,10 +12,10 @@ function readlinkf() {
 # paddle repo dir
 if [[ "$OSTYPE" == "darwin"*  ]]; then # MACOS
   BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-tailed/build.lite.x86/inference_lite_lib
+  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then # Linux
   BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-relse/build.lite.x86/inference_lite_lib
+  PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
 fi
 
 # PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
