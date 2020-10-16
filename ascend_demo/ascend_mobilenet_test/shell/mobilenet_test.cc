@@ -77,7 +77,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
             << (GetCurrentUS() - start) / FLAGS_repeats / 1000.0
             << " ms in average.";
   // 4. Get results
-  LOG(INFO) << "Checking model results with model verison: " << model_version;
+  // LOG(INFO) << "Checking model results with model verison: " << model_version;
   std::vector<std::vector<float>> ref;
   if (model_version == 1) {
     ref.emplace_back(std::vector<float>(
@@ -108,9 +108,9 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     for (int j = 0; j < ref[i].size(); ++j) {
       auto result = output_data[j * step + (output_tensor->shape()[1] * i)];
       auto diff = std::fabs((result - ref[i][j]) / ref[i][j]);
-      VLOG(3) << "expected[" << i <<"][" << j <<"] = " << ref[i][j]; 
-      VLOG(3) << "results[" << i <<"][" << j <<"] = " << result; 
-      VLOG(3) << "diff[" << i <<"][" << j <<"] = " << diff;
+      // VLOG(3) << "expected[" << i <<"][" << j <<"] = " << ref[i][j]; 
+      // VLOG(3) << "results[" << i <<"][" << j <<"] = " << result; 
+      // VLOG(3) << "diff[" << i <<"][" << j <<"] = " << diff;
       CHECK_LT(diff, eps) << "diff is not less than eps, diff is: " << diff << ", eps is: " << eps;
     }
   }
@@ -129,7 +129,7 @@ void RunModel(const std::string model_dir, const int model_version) {
   mobile_config.set_model_from_file(model_dir+".nb");
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-  // mobile_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
+  mobile_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
   // mobile_config.set_huawei_ascend_device_id(1);
 
   // 2. Create PaddlePredictor by MobileConfig
@@ -177,15 +177,15 @@ void SaveModel(const std::string model_dir, const int model_type, const int mode
   process(predictor, model_version);
 
   // 4. Save kNaiveBuffer model
-  std::string save_optimized_model_file = model_dir + ".nb";
-  int ret = system(string_format("rm -rf %s", save_optimized_model_file.c_str()).c_str());
-  if (ret == 0) {
-    LOG(INFO) << "Delete old optimized model " << save_optimized_model_file;
-  }
-  predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer, /*record_info*/true);
-  std::cout << "Save optimized native buffer model to " << (model_dir+".nb") << std::endl;
+  // std::string save_optimized_model_file = model_dir + ".nb";
+  // int ret = system(string_format("rm -rf %s", save_optimized_model_file.c_str()).c_str());
+  // if (ret == 0) {
+  //   LOG(INFO) << "Delete old optimized model " << save_optimized_model_file;
+  // }
+  // predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer, /*record_info*/true);
+  // std::cout << "Save optimized native buffer model to " << (model_dir+".nb") << std::endl;
 
-  // // 5. Save kProtobuf model
+  // 5. Save kProtobuf model
   // std::string save_optimized_model_dir = model_dir + "_opt";
   // int ret = system(string_format("rm -rf %s", save_optimized_model_dir.c_str()).c_str());
   // if (ret == 0) {
@@ -213,8 +213,8 @@ int main(int argc, char **argv) {
   LOG(INFO) << "model_version is: " << model_version;
 
 #ifdef USE_FULL_API
-  // SaveModel(model_dir, model_type, model_version);
+  SaveModel(model_dir, model_type, model_version);
 #endif
-  RunModel(model_dir, model_version);
+  // RunModel(model_dir, model_version);
   return 0;
 }
