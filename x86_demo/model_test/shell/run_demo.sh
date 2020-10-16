@@ -10,16 +10,11 @@ function readlinkf() {
 #######################################
 
 # paddle repo dir
-if [[ "$OSTYPE" == "darwin"*  ]]; then # MACOS
-  BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-tailed/build.lite.x86/inference_lite_lib
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then # Linux
-  BASE_REPO_PATH=/workspace/Github-origin/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-relse/build.lite.x86/inference_lite_lib
-fi
+BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
+PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
-# for local lib
+# local sync lib dir
 # PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 # export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
@@ -35,7 +30,7 @@ MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 # MODEL_NAME=iris_position-fp32
 # MODEL_NAME=mouth_position-fp32
 # MODEL_NAME=seg-model-int8
-MODEL_NAME=pc-seg-float-model
+# MODEL_NAME=pc-seg-float-model
 
 # run demo
 export GLOG_v=0

@@ -49,7 +49,7 @@ cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 ^
 
 call "%vcvarsall_dir%" amd64
 
-msbuild /maxcpucount /p:Configuration=Release  human_seg_demo.vcxproj
+msbuild /maxcpucount /p:Configuration=Release  model_test.vcxproj
 
 goto:eof
 

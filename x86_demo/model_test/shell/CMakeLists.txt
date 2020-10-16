@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(human_seg_demo)
+project(model_test)
 
-set(TARGET_EXE human_seg_demo)
+set(TARGET_EXE model_test)
 
 # 1. path to Paddle-Lite lib
 if(${PADDLE_LITE_DIR} STREQUAL "")
