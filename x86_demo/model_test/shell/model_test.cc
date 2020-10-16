@@ -189,7 +189,8 @@ int main(int argc, char **argv) {
   std::string model_dir = argv[1];
   std::string model_name = argv[2];
   // 0 for uncombined, 1 for combined model
-  int model_type = atoi(argv[3]);
+  // int model_type = atoi(argv[3]);
+  int model_type = 1;
 
   // set input shape based on model name
   std::vector<int64_t> input_shape_vec(4);
