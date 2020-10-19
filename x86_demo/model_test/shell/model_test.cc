@@ -100,6 +100,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
 }
 
 void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+  std::cout << "Entering RunLiteModel ..." << std::endl;
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
   MobileConfig mobile_config;

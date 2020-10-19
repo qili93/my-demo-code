@@ -3,7 +3,7 @@ setlocal
 setlocal enabledelayedexpansion
 
 rem paddle repo dir
-set BASE_REPO_PATH=C:\Users\liqi27\Downloads\Paddle-Lite
+set BASE_REPO_PATH=D:\Paddle-Lite
 set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
 echo PADDLE_LITE_DIR is %PADDLE_LITE_DIR%
 
