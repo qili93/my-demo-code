@@ -69,7 +69,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   input_tensor->Resize(input_shape_vec);
   auto* input_data = input_tensor->mutable_data<float>();
   for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-    input_data[i] = 1;
+    input_data[i] = 1.0 + i;
   }
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -92,6 +92,9 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
   const float *output_data = output_tensor->data<float>();
   // 6. Print output
+  // for (int i = 0; i < ShapeProduction(output_tensor->shape()); ++i) {
+  //   std::cout << "output_data[" << i << "]=" << output_data[i] << std::endl;
+  // }
   // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
   // printf("results: %du\n", results.size());
   // for (size_t i = 0; i < results.size(); i++) {
@@ -221,6 +224,9 @@ int main(int argc, char **argv) {
   } else if (model_name == "pc-seg-float-model") {
     int64_t input_shape[] = {1, 4, 192, 256};
     std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  } else if (model_name == "softmax_infer") {
+    int64_t input_shape[] = {1, 2, 3, 1};
+    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
   } else {
     LOG(ERROR) << "NOT supported model name!";
     return 0;
@@ -243,30 +249,3 @@ int main(int argc, char **argv) {
 
   return 0;
 }
-
-// // MODEL_NAME=align150-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
-
-// // MODEL_NAME=angle-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 64, 64};
-
-// // MODEL_NAME=detect_rgb-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
-
-// // MODEL_NAME=detect_rgb-int8
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 240};
-
-// // MODEL_NAME=eyes_position-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 32, 32};
-
-// // MODEL_NAME=iris_position-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 24, 24};
-
-// // MODEL_NAME=mouth_position-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 48, 48};
-
-// // MODEL_NAME=seg-model-int8
-// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 192};
-
-// MODEL_NAME=pc-seg-float-model
-// const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};

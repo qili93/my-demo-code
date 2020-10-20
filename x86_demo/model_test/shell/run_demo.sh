@@ -39,6 +39,7 @@ MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 # MODEL_NAME=mouth_position-fp32
 # MODEL_NAME=seg-model-int8
 MODEL_NAME=pc-seg-float-model
+# MODEL_NAME=softmax_infer
 
 # run demo
 export GLOG_v=5
