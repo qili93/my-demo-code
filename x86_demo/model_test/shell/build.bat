@@ -32,16 +32,16 @@ IF NOT EXIST "!vcvarsall_dir!" (
 :cmake
 cd "%build_directory%"
 
-set BASE_REPO_PATH=D:\Paddle-Lite
-set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
-echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
-
-rem call :getabsolute "..\..\..\x86_lite_libs"
-rem set PADDLE_LITE_DIR=%absolute%
+rem set BASE_REPO_PATH=D:\Paddle-Lite
+rem set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
 rem echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
 
-set USE_FULL_API=TRUE
-rem set USE_FULL_API=FALSE
+call :getabsolute "..\..\..\x86_lite_libs"
+set PADDLE_LITE_DIR=%absolute%
+echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
+
+rem set USE_FULL_API=TRUE
+set USE_FULL_API=FALSE
 
 cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 ^
                 -DPADDLE_LITE_DIR=%PADDLE_LITE_DIR%   ^
@@ -49,7 +49,7 @@ cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 ^
 
 call "%vcvarsall_dir%" amd64
 
-msbuild /maxcpucount /p:Configuration=Release  model_test.vcxproj
+msbuild /maxcpucount /p:Configuration=Release /p:Platform=x64 model_test.vcxproj
 
 goto:eof
 

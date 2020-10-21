@@ -9,9 +9,13 @@ function readlinkf() {
 # Local Settings: paddle-lite envs
 #######################################
 
+# change together with build.sh
+BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
+
 # paddle repo dir
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.x86/inference_lite_lib
+PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
 # local sync lib dir
@@ -31,6 +35,7 @@ MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 # MODEL_NAME=mouth_position-fp32
 # MODEL_NAME=seg-model-int8
 MODEL_NAME=pc-seg-float-model
+# MODEL_NAME=softmax_infer
 
 # run demo
 export GLOG_v=5
