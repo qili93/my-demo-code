@@ -23,7 +23,7 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 # export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
 # set model dir
-MODEL_DIR=$(readlinkf ../assets)
+MODEL_DIR=$(readlinkf ../assets/models)
 MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 
 # MODEL_NAME=align150-fp32

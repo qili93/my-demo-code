@@ -2,20 +2,21 @@
 .DS_Store
 .vscode
 # ignore dirs
-assets/
+models/
 build/
 kernel_meta/
 include/
 lib/
 fluid_inference/
 # ignore files
+core*
 *.log
 *.om
 *.bin
-core.*
 *.so
 *.dylib
+*.lib
+*.tar.gz
 # not ignore
-!build.sh
-!test*.sh
-!test*.py
+!*.sh
+!*.py

@@ -12,8 +12,6 @@ function readlinkf() {
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
 PADDLE_LITE_DIR=$BASE_REPO_PATH/build.lite.huawei_ascend_npu/inference_lite_lib
 
-# PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
-
 USE_FULL_API=TRUE
 # USE_FULL_API=FALSE
 #######################################
@@ -24,6 +22,7 @@ rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
+export CXX=/usr/local/gcc-7.3.0/bin/g++
 cmake .. \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \

@@ -3,16 +3,6 @@
 #include "paddle_api.h"
 #include "logging.h"
 
-#if defined(_WIN32)
-#include<sys/timeb.h>
-#endif
-
-#ifdef WIN32
-#define OS_SEP '\\'
-#else
-#define OS_SEP '/'
-#endif
-
 using namespace paddle::lite_api;  // NOLINT
 
 const int FLAGS_warmup = 5;
@@ -20,7 +10,7 @@ const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
 struct RESULT {
-  int class_id;
+  int64_t class_id;
   float score;
 };
 
@@ -29,14 +19,14 @@ bool topk_compare_func(std::pair<float, int> a, std::pair<float, int> b) {
 }
 
 std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
-  const int TOPK = 3;
+  const int64_t TOPK = std::min(static_cast<int64_t>(3), output_size);
   std::vector<std::pair<float, int>> vec;
-  for (int i = 0; i < output_size; i++) {
+  for (int64_t i = 0; i < output_size; ++i) {
       vec.push_back(std::make_pair(output_data[i], i));
   }
   std::partial_sort(vec.begin(), vec.begin() + TOPK, vec.end(), topk_compare_func);
   std::vector<RESULT> results(TOPK);
-  for (int i = 0; i < TOPK; i++) {
+  for (int64_t i = 0; i < TOPK; ++i) {
       results[i].score = vec[i].first;
       results[i].class_id = vec[i].second;
   }
@@ -49,19 +39,11 @@ int64_t ShapeProduction(const shape_t& shape) {
   return res;
 }
 
-#if !defined(_WIN32)
 double GetCurrentUS() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
-#else
-double GetCurrentUS() {
-  struct timeb cur_time;
-  ftime(&cur_time);
-  return (cur_time.time * 1e+6) + cur_time.millitm * 1e+3;
-}
-#endif
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> input_shape_vec) {
   // 1. Prepare input data
@@ -92,37 +74,35 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
   const float *output_data = output_tensor->data<float>();
   // 6. Print output
-  // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
-  // printf("results: %du\n", results.size());
-  // for (size_t i = 0; i < results.size(); i++) {
-  //   printf("Top%d: %d - %f\n", i, results[i].class_id, results[i].score);
-  // }
+  std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
+  printf("results: %lu\n", results.size());
+  for (size_t i = 0; i < results.size(); i++) {
+    printf("Top%lu: %lu - %f\n", i, results[i].class_id, results[i].score);
+  }
 }
 
-// void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
-//   // 1. Create MobileConfig
-//   auto start_time = GetCurrentUS();
-//   MobileConfig mobile_config;
-//   mobile_config.set_model_from_file(model_path+".nb");
-//   mobile_config.set_threads(CPU_THREAD_NUM);
-//   mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-//   // 2. Create PaddlePredictor by MobileConfig
-//   std::shared_ptr<PaddlePredictor> predictor = nullptr;
-//   // 2. Create PaddlePredictor by MobileConfig
-//   try {
-//     predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
-//     std::cout << "==============MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
-//   } catch (std::exception e) {
-//     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
-//   }
-//   auto end_time = GetCurrentUS();
+void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+  // 1. Create MobileConfig
+  auto start_time = GetCurrentUS();
+  MobileConfig mobile_config;
+  mobile_config.set_model_from_file(model_path+".nb");
+  mobile_config.set_threads(CPU_THREAD_NUM);
+  mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
+  // 2. Create PaddlePredictor by MobileConfig
+  std::shared_ptr<PaddlePredictor> predictor = nullptr;
+  // 2. Create PaddlePredictor by MobileConfig
+  try {
+    predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
+    std::cout << "==============MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+  } catch (std::exception e) {
+    std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
+  }
+  auto end_time = GetCurrentUS();
 
-//   // 3. Run model
-//   process(predictor, input_shape_vec);
-//   LOG(INFO) << "MobileConfig preprosss: " 
-//             << (end_time - start_time) / 1000.0
-//             << " ms.";
-// }
+  // 3. Run model
+  process(predictor, input_shape_vec);
+  LOG(INFO) << "MobileConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms.";
+}
 
 #ifdef USE_FULL_API
 void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
@@ -150,9 +130,7 @@ void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape
   auto end_time = GetCurrentUS();
   // 3. Run model
   process(predictor, input_shape_vec);
-  LOG(INFO) << "CXXConfig preprosss: " 
-            << (end_time - start_time) / 1000.0
-            << " ms.";
+  LOG(INFO) << "CXXConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms.";
 }
 
 void SaveModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
@@ -182,11 +160,11 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   }
 
   // 3. Save optimized model
-  predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
-  std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
+  // predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
+  // std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
-  // predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
-  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+  predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
+  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 
@@ -200,23 +178,36 @@ int main(int argc, char **argv) {
   // 0 for uncombined, 1 for combined model
   int model_type = atoi(argv[3]);
 
+  std::vector<int64_t> input_shape_vec = {1, 3, 224, 224};
+
   // set input shape based on model name
-  std::vector<int64_t> input_shape_vec = {1, 3, 608, 608};
+  // std::vector<int64_t> input_shape_vec(4);
+  // if (model_name == "mobilenet_v1") {
+  //   int64_t input_shape[] = {1, 3, 224, 224};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } (model_name == "mobilenet_v2") {
+  //   int64_t input_shape[] = {1, 3, 224, 224};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "resnet50") {
+  //   int64_t input_shape[] = {1, 3, 224, 224};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else {
+  //   LOG(ERROR) << "NOT supported model name!";
+  //   return 0;
+  // }
 
   LOG(INFO) << "Model Name is <" << model_name << ">, Input Shape is {" 
     << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
     << input_shape_vec[2] << ", " << input_shape_vec[3] << "}";
 
-  std::string model_path = model_dir + OS_SEP + model_name;
-
-  LOG(INFO) << "Model Path is: " << model_path << ">";
+  std::string model_path = model_dir + '/' + model_name;
 
 #ifdef USE_FULL_API
   SaveModel(model_path, model_type, input_shape_vec);
   RunFullModel(model_path, input_shape_vec);
 #endif
 
-  //RunLiteModel(model_path, input_shape_vec);
+  RunLiteModel(model_path, input_shape_vec);
 
   return 0;
 }

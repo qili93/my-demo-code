@@ -13,7 +13,7 @@ echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
 set LD_LIBRARY_PATH=%PADDLE_LITE_DIR%\lib:%LD_LIBRARY_PATH%
 
 @REM set model dir
-call :getabsolute "..\assets"
+call :getabsolute "..\assets\models"
 set MODEL_DIR=%absolute%
 echo "------------MODEL_DIR is %MODEL_DIR%------------"
 set MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
