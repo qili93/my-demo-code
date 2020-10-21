@@ -12,14 +12,14 @@ endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
 # set PADDLE_LIB_DIR to LOCAL LIB DIR
-# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
-# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
-# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
+set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
 
 # set PADDLE_LIB_DIR to PADDLE BUILD DIR
-set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
-set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
-set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
+# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
 
 message(STATUS "PADDLE_INC_DIR=${PADDLE_INC_DIR}")
 message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
@@ -51,26 +51,25 @@ endif()
 include_directories(${PADDLE_INC_DIR})
 
 # 4. link paddle-lite libraries
-if(NOT DEFINED USE_FULL_API)
-  set(USE_FULL_API TRUE)
-endif()
-
 if(APPLE)
   set(LITE_FULL_LIB_NAME "paddle_full_api_shared")
   set(LITE_TINY_LIB_NAME "paddle_light_api_shared")
   # set(LITE_MKLML_LIB_NAME "mklml")
   set(LITE_IOMP5_LIB_NAME "iomp5")
 elseif(WIN32)
-  set(LITE_FULL_LIB_NAME "paddle_api_full_bundled")
-  set(LITE_TINY_LIB_NAME "paddle_api_light_bundled")
+  set(LITE_FULL_LIB_NAME "libpaddle_api_full_bundled")
+  set(LITE_TINY_LIB_NAME "libpaddle_api_light_bundled")
   # set(LITE_MKLML_LIB_NAME "mklml")
-  set(LITE_IOMP5_LIB_NAME "iomp5md")
+  set(LITE_IOMP5_LIB_NAME "libiomp5md")
 else()
   set(LITE_FULL_LIB_NAME "paddle_full_api_shared")
   set(LITE_TINY_LIB_NAME "paddle_light_api_shared")
   # set(LITE_MKLML_LIB_NAME "mklml")
   set(LITE_IOMP5_LIB_NAME "iomp5")
 endif()
+
+# message("prefix: ${CMAKE_FIND_LIBRARY_PREFIXES}")
+# message("suffix: ${CMAKE_FIND_LIBRARY_SUFFIXES}")
 
 # message(STATUS "LITE_FULL_LIB_NAME=${LITE_FULL_LIB_NAME}")
 # message(STATUS "LITE_TINY_LIB_NAME=${LITE_TINY_LIB_NAME}")
@@ -83,7 +82,7 @@ set(dep_libs CACHE INTERNAL "dependent libraries")
 function(demo_deps_library TARGET_NAME PATH_DIR)
   find_library(${TARGET_NAME}_FILE NAMES ${TARGET_NAME} PATHS "${PATH_DIR}" NO_DEFAULT_PATH)
   if(NOT ${TARGET_NAME}_FILE)
-    message(FATAL_ERROR "Can not find ${TARGET_NAME}_FILE Library in ${PATH_DIR}")
+    message(FATAL_ERROR "Can not find ${TARGET_NAME} Library in ${PATH_DIR}")
   else()
     message(STATUS "Found ${TARGET_NAME}: ${${TARGET_NAME}_FILE}")
     if(WIN32)
@@ -97,6 +96,9 @@ function(demo_deps_library TARGET_NAME PATH_DIR)
   endif()
 endfunction()
 
+if(NOT DEFINED USE_FULL_API)
+  set(USE_FULL_API TRUE)
+endif()
 if(USE_FULL_API)
   add_definitions(-DUSE_FULL_API)
   demo_deps_library(${LITE_FULL_LIB_NAME} ${PADDLE_LIB_DIR})
@@ -104,6 +106,9 @@ else()
   demo_deps_library(${LITE_TINY_LIB_NAME} ${PADDLE_LIB_DIR})
 endif()
 
+if(NOT DEFINED WITH_MKL)
+  set(WITH_MKL TRUE)
+endif()
 if(WITH_MKL)
   demo_deps_library(${LITE_IOMP5_LIB_NAME} ${MKLML_LIB_DIR})
 endif()
