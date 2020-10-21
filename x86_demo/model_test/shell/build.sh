@@ -9,12 +9,8 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-# Debug
-BUILD_DIR_NAME=build-v2.7-mkl-off-log-on-debug
-
-# Release
-# BUILD_DIR_NAME=build-v2.7-mkl-on-log-of
-# BUILD_DIR_NAME=build-v2.7-mkl-of-log-of
+# change together with run_demo.sh
+BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
 
 # paddle repo dir
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
@@ -23,8 +19,8 @@ PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lit
 # local sync lib dir
 # PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 
-USE_FULL_API=TRUE
-# USE_FULL_API=FALSE
+# USE_FULL_API=TRUE
+USE_FULL_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################
@@ -33,7 +29,7 @@ rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
-cmake .. -DWITH_MKL=OFF \
+cmake .. -DWITH_MKL=ON \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \

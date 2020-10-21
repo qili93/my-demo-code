@@ -1,13 +1,16 @@
 #!/bin/bash
+cur_dir=$(pwd)
+
+function readlinkf() {
+    perl -MCwd -e 'print Cwd::abs_path shift' "$1";
+}
+
+# change together with run_demo.sh
+BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
 
 # paddle repo dir
-if [[ "$OSTYPE" == "darwin"*  ]]; then
-  BASE_REPO_PATH=/Users/liqi27/Documents/Github-qili93/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-relse/build.lite.x86/inference_lite_lib
-elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-  BASE_REPO_PATH=/workspace/Github-qili93/Paddle-Lite
-  PADDLE_LITE_DIR=$BASE_REPO_PATH/build-v2.7-relse/build.lite.x86/inference_lite_lib
-fi
+BASE_REPO_PATH=$(readlinkf ../../../Paddle-Lite)
+PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
 # define lib name
 if [[ "$OSTYPE" == "darwin"*  ]]; then

@@ -9,18 +9,14 @@ function readlinkf() {
 # Local Settings: paddle-lite envs
 #######################################
 
-# Debug
-BUILD_DIR_NAME=build-v2.7-mkl-off-log-on-debug
-
-# Release
-# BUILD_DIR_NAME=build-v2.7-mkl-on-log-of
-# BUILD_DIR_NAME=build-v2.7-mkl-of-log-of
+# change together with build.sh
+BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
 
 # paddle repo dir
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
 PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
-export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${LD_LIBRARY_PATH}
-# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
+# export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
 # local sync lib dir
 # PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
