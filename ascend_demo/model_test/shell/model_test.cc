@@ -88,12 +88,14 @@ void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape
   mobile_config.set_model_from_file(model_path+".nb");
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
+  // mobile_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
+  mobile_config.set_device_id(1);
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor = nullptr;
   // 2. Create PaddlePredictor by MobileConfig
   try {
     predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
-    std::cout << "==============MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "============== RunLiteModel MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
@@ -116,14 +118,15 @@ void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape
   cxx_config.set_valid_places({Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
                              Place{TARGET(kX86), PRECISION(kFloat)},
                              Place{TARGET(kHost), PRECISION(kFloat)}});
-  cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
+  // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
   cxx_config.set_device_id(1);
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor = nullptr;
   // 2. Create PaddlePredictor by MobileConfig
   try {
     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "==============CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "============== RunFullModel CxxConfig Predictor Version: " << predictor->GetVersion() 
+              << " ==============" << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
@@ -133,7 +136,7 @@ void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape
   LOG(INFO) << "CXXConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms.";
 }
 
-void SaveModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
+void SaveOptModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -154,17 +157,18 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
   std::shared_ptr<PaddlePredictor> predictor = nullptr;
   try {
     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "============== CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "============== SaveOptModel CxxConfig Predictor Version: " << predictor->GetVersion() 
+              << " ==============" << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
 
   // 3. Save optimized model
-  // predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
-  // std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
+  predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
+  std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
-  predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
-  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+  // predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
+  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 
@@ -203,7 +207,7 @@ int main(int argc, char **argv) {
   std::string model_path = model_dir + '/' + model_name;
 
 #ifdef USE_FULL_API
-  SaveModel(model_path, model_type, input_shape_vec);
+  SaveOptModel(model_path, model_type, input_shape_vec);
   RunFullModel(model_path, input_shape_vec);
 #endif
 
