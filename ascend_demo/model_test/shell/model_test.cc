@@ -207,8 +207,8 @@ int main(int argc, char **argv) {
   std::string model_path = model_dir + '/' + model_name;
 
 #ifdef USE_FULL_API
-  SaveOptModel(model_path, model_type, input_shape_vec);
-  RunFullModel(model_path, input_shape_vec);
+  //SaveOptModel(model_path, model_type, input_shape_vec);
+  // RunFullModel(model_path, input_shape_vec);
 #endif
 
   RunLiteModel(model_path, input_shape_vec);
