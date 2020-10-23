@@ -4,6 +4,12 @@ project(model_test)
 
 set(TARGET_EXE model_test)
 
+if(WITH_OPENCV)
+  find_package(OpenCV REQUIRED PATHS /usr/local/opt/opencv@2 NO_DEFAULT_PATH)
+  message(STATUS "OpenCV_FOUND: " ${OpenCV_FOUND})
+  include_directories(${OpenCV_INCLUDE_DIRS})
+endif()
+
 # 1. path to Paddle-Lite lib
 if(${PADDLE_LITE_DIR} STREQUAL "")
   message(FATAL_ERROR "PADDLE_LITE_DIR not set.")
@@ -24,7 +30,6 @@ set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
 message(STATUS "PADDLE_INC_DIR=${PADDLE_INC_DIR}")
 message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
 message(STATUS "MKLML_LIB_DIR=${MKLML_LIB_DIR}")
-
 
 # 2. compile options
 if (WIN32)
@@ -164,7 +169,7 @@ add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
 
 # 6. link libraries
 message(STATUS "dep_libs=${dep_libs}")
-target_link_libraries(${TARGET_EXE} ${dep_libs})
+target_link_libraries(${TARGET_EXE} ${dep_libs} ${OpenCV_LIBS})
 
 if(WIN32)
   target_link_libraries(${TARGET_EXE} shlwapi.lib)

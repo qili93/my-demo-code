@@ -37,6 +37,44 @@ static int gettimeofday(struct timeval *tp, void *tzp) {
 }
 #endif  // !_WIN32
 
+#if defined(_WIN32)
+#include<sys/timeb.h>
+#endif
+
+#if !defined(_WIN32)
+double GetCurrentUS() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1e+6 * time.tv_sec + time.tv_usec;
+}
+#else
+double GetCurrentUS() {
+  struct timeb cur_time;
+  ftime(&cur_time);
+  return (cur_time.time * 1e+6) + cur_time.millitm * 1e+3;
+}
+#endif
+
+#ifdef WIN32
+#define OS_SEP '\\'
+#else
+#define OS_SEP '/'
+#endif
+
+struct RESULT {
+  int class_id;
+  float score;
+};
+
+bool topk_compare_func(std::pair<float, int> a, std::pair<float, int> b) {
+  return (a.first > b.first);
+}
+
+int64_t ShapeProduction(const std::vector<int64_t>& shape) {
+  int64_t res = 1;
+  for (auto i : shape) res *= i;
+  return res;
+}
 
 #define LOG(status) LOG_##status.stream()
 #define LOG_INFO LogMessage(__FILE__, __FUNCTION__, __LINE__, "I")

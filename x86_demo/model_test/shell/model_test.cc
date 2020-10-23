@@ -1,17 +1,8 @@
 #include <iostream>
 #include <algorithm>
+#include <opencv2/opencv.hpp>
 #include "paddle_api.h"
 #include "logging.h"
-
-#if defined(_WIN32)
-#include<sys/timeb.h>
-#endif
-
-#ifdef WIN32
-#define OS_SEP '\\'
-#else
-#define OS_SEP '/'
-#endif
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -19,13 +10,77 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-struct RESULT {
-  int class_id;
-  float score;
-};
+void preprocess(const std::string image_path) {
+  float data[24];
+  for (int i = 0; i < 8; i ++) {
+    data[i * 3] = i;
+    data[i * 3 + 1] = i;
+    data[i * 3 + 2] = i;
+  }
+  // cv::Mat input_image = cv::imread(image_path, 1);
+  cv::Mat input_image(4, 2, CV_32FC3, data); // height, width, channel=3
+  LOG(INFO) << "input_image.channels()=" << input_image.channels();
+  LOG(INFO) << "input_image.size().height=" << input_image.size().height;
+  LOG(INFO) << "input_image.size().width=" << input_image.size().width;
+  std::cout << "input_image = " << std::endl <<  input_image << std::endl;
 
-bool topk_compare_func(std::pair<float, int> a, std::pair<float, int> b) {
-  return (a.first > b.first);
+  // resize to 320, 160, 3
+  cv::Mat resize_image;
+  float scale = 320.0 / input_image.size().height;
+  int resize_height = static_cast<int>(input_image.size().height * scale);
+  int resize_width = static_cast<int>(input_image.size().width * scale);
+  cv::resize(input_image, resize_image, cv::Size(resize_width, resize_height), 0, 0); // width, height
+
+  LOG(INFO) << "resize_image.channels()=" << resize_image.channels();
+  LOG(INFO) << "resize_image.size().height=" << resize_image.size().height;
+  LOG(INFO) << "resize_image.size().width=" << resize_image.size().width;
+
+  cv::subtract(input_image, cv::Scalar(1., 2., 3.), input_image);
+
+  std::cout << "input_image = " << std::endl <<  input_image << std::endl;
+
+  //copy the channels from the source image to the destination # HWC to CHW
+  cv::Size input_size = input_image.size();
+  cv::Size newsize(input_size.width,input_size.height*3);
+  cv::Mat destination(newsize,CV_32FC1);
+  for (int i = 0; i < input_image.channels(); ++i) {
+    cv::extractChannel(input_image, cv::Mat(input_size.height, input_size.width, CV_32FC1, 
+                       &(destination.at<float>(input_size.height*input_size.width*i))),i);
+  }
+  LOG(INFO) << "destination.channels()=" << destination.channels();
+  LOG(INFO) << "destination.size().height=" << destination.size().height;
+  LOG(INFO) << "destination.size().width=" << destination.size().width;
+
+  std::cout << "destination = " << std::endl <<  destination << std::endl;
+  // const std::vector<float> INPUT_MEAN = {104., 117., 123.};
+  // const float INPUT_SCALE = 0.007843;
+
+  
+  // cv::mul(destination, 3);
+  cv::multiply(destination, cv::Scalar(0.1), destination);
+
+  std::cout << "destination = " << std::endl <<  destination << std::endl;
+
+  const float *image_data = reinterpret_cast<const float *>(destination.data);
+
+  for (int i = 0; i < 24; ++i) {
+    std::cout << "image_data[" << i << "] = " << image_data[i] << std::endl;
+  }
+
+  // for (int i = 0; i < destination.channels(); ++i) {
+
+  // }
+  
+
+  // cv::Mat resize_image;
+  // cv::resize(input_image, resize_image, cv::Size(input_width, input_height), 0, 0);
+  // if (resize_image.channels() == 4) {
+  //   cv::cvtColor(resize_image, resize_image, cv::COLOR_BGRA2RGB);
+  // }
+  // cv::Mat norm_image;
+  // resize_image.convertTo(norm_image, CV_32FC3, 1 / 255.f);
+  // // NHWC->NCHW
+
 }
 
 std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
@@ -41,40 +96,6 @@ std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
       results[i].class_id = vec[i].second;
   }
   return results;
-}
-
-int64_t ShapeProduction(const shape_t& shape) {
-  int64_t res = 1;
-  for (auto i : shape) res *= i;
-  return res;
-}
-
-#if !defined(_WIN32)
-double GetCurrentUS() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
-#else
-double GetCurrentUS() {
-  struct timeb cur_time;
-  ftime(&cur_time);
-  return (cur_time.time * 1e+6) + cur_time.millitm * 1e+3;
-}
-#endif
-
-void print_output(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
-int output_num = static_cast<int>(predictor->GetOutputNames().size());
-  for (int i = 0; i < output_num; ++i) {
-    std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
-    const float *output_data = output_tensor->data<float>();
-    LOG(INFO) << "Printing Output Index: <" << i << ">, shape is " << shape_to_string(output_tensor->shape());
-    // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
-    // for (size_t j = 0; j < results.size(); j++) {
-    //   LOG(INFO) << "Top "<< j <<": " << results[j].class_id << " - " << results[j].score;
-    // }
-    LOG(INFO) << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape()));
-  }
 }
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> input_shape_vec) {
@@ -93,7 +114,6 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   auto start_time = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor->Run();
-    print_output(predictor);
   }
   auto end_time = GetCurrentUS();
   // 4. Speed Report
@@ -103,10 +123,20 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
             << (end_time - start_time) / FLAGS_repeats / 1000.0
             << " ms in average.";
   // 5. Get all output
-  print_output(predictor);
+  int output_num = static_cast<int>(predictor->GetOutputNames().size());
+  for (int i = 0; i < output_num; ++i) {
+    std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
+    const float *output_data = output_tensor->data<float>();
+    LOG(INFO) << "Printing Output Index: <" << i << ">, shape is " << shape_to_string(output_tensor->shape());
+    // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
+    // for (size_t j = 0; j < results.size(); j++) {
+    //   LOG(INFO) << "Top "<< j <<": " << results[j].class_id << " - " << results[j].score;
+    // }
+    LOG(INFO) << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape()));
+  }
 }
 
-void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+void RunLiteModel(const std::string model_path, const std::vector<int64_t> input_shape_vec) {
   std::cout << "Entering RunLiteModel ..." << std::endl;
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
@@ -136,7 +166,7 @@ void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape
 }
 
 #ifdef USE_FULL_API
-void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+void RunFullModel(const std::string model_path, const std::vector<int64_t> input_shape_vec) {
   // 1. Create CxxConfig
   auto start_time = GetCurrentUS();
   CxxConfig cxx_config;
@@ -161,7 +191,7 @@ void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape
             << " ms.";
 }
 
-void SaveModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
+void SaveModel(const std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -194,11 +224,12 @@ void SaveModel(std::string model_path, const int model_type, const std::vector<i
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_dir model_name model_type\n";
+    std::cerr << "[ERROR] usage: ./" << argv[0] << "assets_dir model_name image_name\n";
     exit(1);
   }
-  std::string model_dir = argv[1];
+  std::string assets_dir = argv[1];
   std::string model_name = argv[2];
+  std::string image_name = argv[3];
   // 0 for uncombined, 1 for combined model
   // int model_type = atoi(argv[3]);
   int model_type = 1;
@@ -244,16 +275,19 @@ int main(int argc, char **argv) {
     << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
     << input_shape_vec[2] << ", " << input_shape_vec[3] << "}";
 
-  std::string model_path = model_dir + OS_SEP + model_name;
+  std::string model_path = assets_dir + "/models/" + model_name;
+  std::string image_path = assets_dir + "/images/" + image_name;
 
   LOG(INFO) << "Model Path is <" << model_path << ">";
 
-#ifdef USE_FULL_API
-  SaveModel(model_path, model_type, input_shape_vec);
-  RunFullModel(model_path, input_shape_vec);
-#endif
+// #ifdef USE_FULL_API
+//   SaveModel(model_path, model_type, input_shape_vec);
+//   RunFullModel(model_path, input_shape_vec);
+// #endif
 
-  RunLiteModel(model_path, input_shape_vec);
+//   RunLiteModel(model_path, input_shape_vec);
+
+  preprocess(image_path);
 
   return 0;
 }

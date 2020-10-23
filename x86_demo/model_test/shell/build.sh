@@ -29,7 +29,11 @@ rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
-cmake .. -DWITH_MKL=ON \
+export LDFLAGS="-L/usr/local/opt/opencv@2/lib"
+export CPPFLAGS="-I/usr/local/opt/opencv@2/include"
+export PKG_CONFIG_PATH="/usr/local/opt/opencv@2/lib/pkgconfig"
+
+cmake .. -DWITH_MKL=ON -DWITH_OPENCV=ON \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
