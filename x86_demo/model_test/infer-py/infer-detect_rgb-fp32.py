@@ -52,12 +52,13 @@ def infer_model(model_path):
       inference_program = graph.to_program()
 
       # change the input shape based on models
-      images = np.ones([1, 3, 320, 240]).astype('float32')
-      out = exe.run(inference_program,
+    #   images = np.ones([1, 3, 320, 240]).astype('float32')
+      images = np.ones([1, 3, 320, 479]).astype('float32')
+      out, = exe.run(inference_program,
                     feed={feed_target_names[0]: images},
                     fetch_list=fetch_targets,
                     return_numpy=False)
-      print(out[0])
+      print(np.array(out))
 
 if __name__ == '__main__':
     infer_model(model_path='../assets/models/detect_rgb-fp32')
