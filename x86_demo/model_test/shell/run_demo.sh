@@ -29,14 +29,11 @@ MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 # MODEL_NAME=align150-fp32
 # MODEL_NAME=angle-fp32
 # MODEL_NAME=detect_rgb-fp32
-# MODEL_NAME=detect_rgb-int8
 # MODEL_NAME=eyes_position-fp32
 # MODEL_NAME=iris_position-fp32
 # MODEL_NAME=mouth_position-fp32
-# MODEL_NAME=seg-model-int8
 MODEL_NAME=pc-seg-float-model
-# MODEL_NAME=softmax_infer
 
 # run demo
-export GLOG_v=5
+export GLOG_v=0
 ./build/model_test $MODEL_DIR $MODEL_NAME $MODEL_TYPE

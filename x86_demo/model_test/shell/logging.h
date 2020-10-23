@@ -63,6 +63,20 @@ static std::string to_string(const T& v) {
   return ss.str();
 }
 
+static std::string shape_to_string(const std::vector<int64_t>& shape) {
+  std::stringstream ss;
+  if (shape.empty()) {
+    ss << "{}";
+    return ss.str();
+  }
+  ss << "{";
+  for (size_t i = 0; i < shape.size() - 1; ++i) {
+    ss << shape[i] << ",";
+  }
+  ss << shape[shape.size() - 1] << "}";
+  return ss.str();
+}
+
 static std::string string_format(const std::string fmt_str, ...) {
   /* Reserve two times as much as the length of the fmt_str */
   int final_n, n = (static_cast<int>(fmt_str.size())) * 2;

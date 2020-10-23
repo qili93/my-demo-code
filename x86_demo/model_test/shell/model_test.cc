@@ -29,7 +29,7 @@ bool topk_compare_func(std::pair<float, int> a, std::pair<float, int> b) {
 }
 
 std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
-  const int TOPK = 3;
+  const int TOPK = std::min(10, static_cast<int>(output_size));
   std::vector<std::pair<float, int>> vec;
   for (int i = 0; i < output_size; i++) {
       vec.push_back(std::make_pair(output_data[i], i));
@@ -88,18 +88,17 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
             << (end_time - start_time) / FLAGS_repeats / 1000.0
             << " ms in average.";
 
-  // 5. Get output
-  std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
-  const float *output_data = output_tensor->data<float>();
-  // 6. Print output
-  // for (int i = 0; i < ShapeProduction(output_tensor->shape()); ++i) {
-  //   std::cout << "output_data[" << i << "]=" << output_data[i] << std::endl;
-  // }
-  // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
-  // printf("results: %du\n", results.size());
-  // for (size_t i = 0; i < results.size(); i++) {
-  //   printf("Top%d: %d - %f\n", i, results[i].class_id, results[i].score);
-  // }
+  // 5. Get all output
+  int output_num = static_cast<int>(predictor->GetOutputNames().size());
+  for (int i = 0; i < output_num; ++i) {
+    std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
+    const float *output_data = output_tensor->data<float>();
+    std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
+    LOG(INFO) << "Printing Output Index: <" << i << ">, shape is " << shape_to_string(output_tensor->shape());
+    for (size_t j = 0; j < results.size(); j++) {
+      LOG(INFO) << "Top "<< j <<": " << results[j].class_id << " - " << results[j].score;
+    }
+  }
 }
 
 void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
