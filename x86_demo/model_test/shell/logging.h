@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include <iomanip>
+#include <fstream>
 #include <sstream>
 #include <stdarg.h>
 
@@ -60,6 +61,17 @@ template <typename T>
 static std::string to_string(const T& v) {
   std::stringstream ss;
   ss << v;
+  return ss.str();
+}
+
+template <typename T>
+static std::string data_to_string(const T* data, const int64_t size) {
+  std::stringstream ss;
+  ss << "{";
+  for (int64_t i = 0; i < size - 1; ++i) {
+    ss << data[i] << ",";
+  }
+  ss << data[size - 1] << "}";
   return ss.str();
 }
 
@@ -200,3 +212,17 @@ class VLogMessage {
   VLogMessage(const VLogMessage&) = delete;
   void operator=(const VLogMessage&) = delete;
 };
+
+
+// read buffer from file
+static std::string ReadFile(const std::string& filename) {
+  std::ifstream ifile(filename.c_str());
+  if (!ifile.is_open()) {
+    LOG(FATAL) << "Open file: [" << filename << "] failed.";
+  }
+  std::ostringstream buf;
+  char ch;
+  while (buf && ifile.get(ch)) buf.put(ch);
+  ifile.close();
+  return buf.str();
+}

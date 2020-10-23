@@ -63,6 +63,20 @@ double GetCurrentUS() {
 }
 #endif
 
+void print_output(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
+int output_num = static_cast<int>(predictor->GetOutputNames().size());
+  for (int i = 0; i < output_num; ++i) {
+    std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
+    const float *output_data = output_tensor->data<float>();
+    LOG(INFO) << "Printing Output Index: <" << i << ">, shape is " << shape_to_string(output_tensor->shape());
+    // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
+    // for (size_t j = 0; j < results.size(); j++) {
+    //   LOG(INFO) << "Top "<< j <<": " << results[j].class_id << " - " << results[j].score;
+    // }
+    LOG(INFO) << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape()));
+  }
+}
+
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> input_shape_vec) {
   // 1. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
@@ -79,6 +93,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   auto start_time = GetCurrentUS();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor->Run();
+    print_output(predictor);
   }
   auto end_time = GetCurrentUS();
   // 4. Speed Report
@@ -87,18 +102,8 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
             << ", repeats: " << FLAGS_repeats << ", spend "
             << (end_time - start_time) / FLAGS_repeats / 1000.0
             << " ms in average.";
-
   // 5. Get all output
-  int output_num = static_cast<int>(predictor->GetOutputNames().size());
-  for (int i = 0; i < output_num; ++i) {
-    std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
-    const float *output_data = output_tensor->data<float>();
-    std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
-    LOG(INFO) << "Printing Output Index: <" << i << ">, shape is " << shape_to_string(output_tensor->shape());
-    for (size_t j = 0; j < results.size(); j++) {
-      LOG(INFO) << "Top "<< j <<": " << results[j].class_id << " - " << results[j].score;
-    }
-  }
+  print_output(predictor);
 }
 
 void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
@@ -106,7 +111,10 @@ void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
   MobileConfig mobile_config;
-  mobile_config.set_model_from_file(model_path+".nb");
+  // mobile_config.set_model_from_file(model_path+".nb");
+  // Load model from buffer
+  std::string model_buffer = ReadFile(model_path+".nb");
+  mobile_config.set_model_from_buffer(model_buffer);
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
   // 2. Create PaddlePredictor by MobileConfig
