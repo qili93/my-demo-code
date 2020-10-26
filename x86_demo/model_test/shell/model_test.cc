@@ -10,79 +10,17 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-void preprocess(const std::string image_path) {
-  // float data[24];
-  // for (int i = 0; i < 8; i ++) {
-  //   data[i * 3] = i;
-  //   data[i * 3 + 1] = i;
-  //   data[i * 3 + 2] = i;
-  // }
-  cv::Mat input_image = cv::imread(image_path, 1);
-  // cv::Mat input_image(4, 2, CV_32FC3, data); // height, width, channel=3
-  LOG(INFO) << "input_image.channels()=" << input_image.channels();
-  LOG(INFO) << "input_image.size().height=" << input_image.size().height;
-  LOG(INFO) << "input_image.size().width=" << input_image.size().width;
-  // std::cout << "input_image = " << std::endl <<  input_image << std::endl;
-
-  // resize height to 320
-  cv::Mat resize_image;
-  float scale = 320.0 / input_image.size().height;
-  int resize_height = static_cast<int>(input_image.size().height * scale);
-  int resize_width = static_cast<int>(input_image.size().width * scale);
-  cv::resize(input_image, resize_image, cv::Size(resize_width, resize_height), 0, 0); // width, height
-
-  LOG(INFO) << "resize_image.channels()=" << resize_image.channels();
-  LOG(INFO) << "resize_image.size().height=" << resize_image.size().height;
-  LOG(INFO) << "resize_image.size().width=" << resize_image.size().width;
-
-  // cv::subtract(input_image, cv::Scalar(1., 2., 3.), input_image);
-  // std::cout << "input_image = " << std::endl <<  input_image << std::endl;
-  cv::subtract(resize_image, cv::Scalar(104., 117., 123.), resize_image);
-  cv::multiply(resize_image, cv::Scalar( 0.007843), resize_image);
-
-  //copy the channels from the source image to the destination # HWC to CHW
-  // cv::Size input_size = input_image.size();
-  // cv::Size newsize(input_size.width,input_size.height*3);
-  cv::Size newsize(resize_width, resize_height*3);
-  cv::Mat destination(newsize, CV_32FC1);
-  for (int i = 0; i < resize_image.channels(); ++i) {
-    cv::extractChannel(resize_image, cv::Mat(resize_height, resize_width, CV_32FC1, 
-                       &(destination.at<float>(resize_height * resize_width * i))),i);
+float * read_imgnp(const std::string raw_imgnp_path, const std::vector<int64_t> input_shape_vec) {
+  std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
+  if (!raw_imgnp_file) {
+    std::cout << "Failed to load raw rgb image file: " <<  raw_imgnp_path << std::endl;
+    return nullptr;
   }
-  LOG(INFO) << "destination.channels()=" << destination.channels();
-  LOG(INFO) << "destination.size().height=" << destination.size().height;
-  LOG(INFO) << "destination.size().width=" << destination.size().width;
-
-  // std::cout << "destination = " << std::endl <<  destination << std::endl;
-  // const std::vector<float> INPUT_MEAN = {104., 117., 123.};
-  // const float INPUT_SCALE = 0.007843;
-
-  
-  // cv::mul(destination, 3);
-  // cv::multiply(destination, cv::Scalar(0.1), destination);
-
-  // std::cout << "destination = " << std::endl <<  destination << std::endl;
-
-  const float *image_data = reinterpret_cast<const float *>(destination.data);
-
-  // for (int i = 0; i < 24; ++i) {
-  //   std::cout << "image_data[" << i << "] = " << image_data[i] << std::endl;
-  // }
-
-  // for (int i = 0; i < destination.channels(); ++i) {
-
-  // }
-  
-
-  // cv::Mat resize_image;
-  // cv::resize(input_image, resize_image, cv::Size(input_width, input_height), 0, 0);
-  // if (resize_image.channels() == 4) {
-  //   cv::cvtColor(resize_image, resize_image, cv::COLOR_BGRA2RGB);
-  // }
-  // cv::Mat norm_image;
-  // resize_image.convertTo(norm_image, CV_32FC3, 1 / 255.f);
-  // // NHWC->NCHW
-
+  int64_t raw_imgnp_size = ShapeProduction(input_shape_vec);
+  std::vector<float> raw_imgnp_data(raw_imgnp_size);
+  raw_imgnp_file.read(reinterpret_cast<char *>(raw_imgnp_data.data()), raw_imgnp_size * sizeof(float));
+  raw_imgnp_file.close();
+  return raw_imgnp_data.data();
 }
 
 std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
@@ -100,14 +38,20 @@ std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
   return results;
 }
 
-void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> input_shape_vec) {
+void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::string imgnp_path, const std::vector<int64_t> input_shape_vec) {
   // 1. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(input_shape_vec);
   auto* input_data = input_tensor->mutable_data<float>();
+  // for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
+  //   input_data[i] = 1.0 + i;
+  // }
+  float * imgnp_data = read_imgnp(imgnp_path, input_shape_vec);
+  // std::copy(imgnp_data, imgnp_data + ShapeProduction(input_shape_vec), input_data);
   for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-    input_data[i] = 1.0 + i;
+    input_data[i] = imgnp_data[i];
   }
+
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor->Run();
@@ -138,15 +82,15 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   }
 }
 
-void RunLiteModel(const std::string model_path, const std::vector<int64_t> input_shape_vec) {
+void RunLiteModel(const std::string model_path, const std::string imgnp_path, const std::vector<int64_t> input_shape_vec) {
   std::cout << "Entering RunLiteModel ..." << std::endl;
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
   MobileConfig mobile_config;
-  // mobile_config.set_model_from_file(model_path+".nb");
+  mobile_config.set_model_from_file(model_path+".nb");
   // Load model from buffer
-  std::string model_buffer = ReadFile(model_path+".nb");
-  mobile_config.set_model_from_buffer(model_buffer);
+  // std::string model_buffer = ReadFile(model_path+".nb");
+  // mobile_config.set_model_from_buffer(model_buffer);
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
   // 2. Create PaddlePredictor by MobileConfig
@@ -161,7 +105,7 @@ void RunLiteModel(const std::string model_path, const std::vector<int64_t> input
   auto end_time = GetCurrentUS();
 
   // 3. Run model
-  process(predictor, input_shape_vec);
+  process(predictor, imgnp_path, input_shape_vec);
   LOG(INFO) << "MobileConfig preprosss: " 
             << (end_time - start_time) / 1000.0
             << " ms.";
@@ -236,42 +180,45 @@ int main(int argc, char **argv) {
   // int model_type = atoi(argv[3]);
   int model_type = 1;
 
-  // set input shape based on model name
+  // // set input shape based on model name
   std::vector<int64_t> input_shape_vec(4);
-  if (model_name == "align150-fp32") {
-    int64_t input_shape[] = {1, 3, 128, 128};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "angle-fp32") {
-    int64_t input_shape[] = {1, 3, 64, 64};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "detect_rgb-fp32") {
-    int64_t input_shape[] = {1, 3, 320, 240};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "detect_rgb-int8") {
-    int64_t input_shape[] = {1, 3, 320, 240};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "eyes_position-fp32") {
-    int64_t input_shape[] = {1, 3, 32, 32};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "iris_position-fp32") {
-    int64_t input_shape[] = {1, 3, 24, 24};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "mouth_position-fp32") {
-    int64_t input_shape[] = {1, 3, 48, 48};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "seg-model-int8") {
-    int64_t input_shape[] = {1, 4, 192, 192};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "pc-seg-float-model") {
-    int64_t input_shape[] = {1, 4, 192, 256};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else if (model_name == "softmax_infer") {
-    int64_t input_shape[] = {1, 2, 3, 1};
-    std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  } else {
-    LOG(ERROR) << "NOT supported model name!";
-    return 0;
-  }
+  // if (model_name == "align150-fp32") {
+  //   int64_t input_shape[] = {1, 3, 128, 128};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "angle-fp32") {
+  //   int64_t input_shape[] = {1, 3, 64, 64};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "detect_rgb-fp32") {
+  //   int64_t input_shape[] = {1, 3, 320, 240};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "detect_rgb-int8") {
+  //   int64_t input_shape[] = {1, 3, 320, 240};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "eyes_position-fp32") {
+  //   int64_t input_shape[] = {1, 3, 32, 32};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "iris_position-fp32") {
+  //   int64_t input_shape[] = {1, 3, 24, 24};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "mouth_position-fp32") {
+  //   int64_t input_shape[] = {1, 3, 48, 48};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "seg-model-int8") {
+  //   int64_t input_shape[] = {1, 4, 192, 192};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "pc-seg-float-model") {
+  //   int64_t input_shape[] = {1, 4, 192, 256};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else if (model_name == "softmax_infer") {
+  //   int64_t input_shape[] = {1, 2, 3, 1};
+  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
+  // } else {
+  //   LOG(ERROR) << "NOT supported model name!";
+  //   return 0;
+  // }
+
+  int64_t input_shape[] = {1, 3, 320, 512};
+  std::copy (input_shape, input_shape + 4, input_shape_vec.begin());
 
   LOG(INFO) << "Model Name is <" << model_name << ">, Input Shape is {" 
     << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
@@ -281,15 +228,14 @@ int main(int argc, char **argv) {
   std::string image_path = assets_dir + "/images/" + image_name;
 
   LOG(INFO) << "Model Path is <" << model_path << ">";
+  LOG(INFO) << "Image Path is <" << image_path << ">";
 
 // #ifdef USE_FULL_API
 //   SaveModel(model_path, model_type, input_shape_vec);
 //   RunFullModel(model_path, input_shape_vec);
 // #endif
 
-//   RunLiteModel(model_path, input_shape_vec);
-
-  preprocess(image_path);
+  RunLiteModel(model_path, image_path, input_shape_vec);
 
   return 0;
 }
