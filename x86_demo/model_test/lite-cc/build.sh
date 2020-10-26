@@ -19,8 +19,8 @@ PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lit
 # local sync lib dir
 # PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 
-# USE_FULL_API=TRUE
-USE_FULL_API=FALSE
+USE_FULL_API=TRUE
+# USE_FULL_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################

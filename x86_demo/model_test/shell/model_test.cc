@@ -1,6 +1,5 @@
 #include <iostream>
 #include <algorithm>
-#include <opencv2/opencv.hpp>
 #include "paddle_api.h"
 #include "logging.h"
 
@@ -10,17 +9,15 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-float * read_imgnp(const std::string raw_imgnp_path, const std::vector<int64_t> input_shape_vec) {
+void read_imgnp(const std::string raw_imgnp_path, const std::vector<int64_t> input_shape_vec, float * input_data) {
   std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
   if (!raw_imgnp_file) {
     std::cout << "Failed to load raw rgb image file: " <<  raw_imgnp_path << std::endl;
-    return nullptr;
+    return;
   }
   int64_t raw_imgnp_size = ShapeProduction(input_shape_vec);
-  std::vector<float> raw_imgnp_data(raw_imgnp_size);
-  raw_imgnp_file.read(reinterpret_cast<char *>(raw_imgnp_data.data()), raw_imgnp_size * sizeof(float));
+  raw_imgnp_file.read(reinterpret_cast<char *>(input_data), raw_imgnp_size * sizeof(float));
   raw_imgnp_file.close();
-  return raw_imgnp_data.data();
 }
 
 std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
@@ -43,14 +40,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(input_shape_vec);
   auto* input_data = input_tensor->mutable_data<float>();
-  // for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-  //   input_data[i] = 1.0 + i;
-  // }
-  float * imgnp_data = read_imgnp(imgnp_path, input_shape_vec);
-  // std::copy(imgnp_data, imgnp_data + ShapeProduction(input_shape_vec), input_data);
-  for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
-    input_data[i] = imgnp_data[i];
-  }
+  read_imgnp(imgnp_path, input_shape_vec, input_data);
 
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -83,7 +73,6 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
 }
 
 void RunLiteModel(const std::string model_path, const std::string imgnp_path, const std::vector<int64_t> input_shape_vec) {
-  std::cout << "Entering RunLiteModel ..." << std::endl;
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
   MobileConfig mobile_config;

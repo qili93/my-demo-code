@@ -28,12 +28,13 @@ MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 
 # MODEL_NAME=align150-fp32
 # MODEL_NAME=angle-fp32
-MODEL_NAME=detect_rgb-fp32
+# MODEL_NAME=detect_rgb-fp32
 # MODEL_NAME=eyes_position-fp32
 # MODEL_NAME=iris_position-fp32
 # MODEL_NAME=mouth_position-fp32
 # MODEL_NAME=pc-seg-float-model
 
+MODEL_NAME=face_detect_fp32
 IMAGE_NAME=face.raw
 
 # run demo

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
-project(human_seg_demo CXX C)
+project(model_test CXX C)
 
-set(TARGET_EXE human_seg_demo)
+set(TARGET_EXE model_test)
 
 option(WITH_MKL        "Compile demo with MKL/OpenBlas support, default use MKL."       ON)
 option(WITH_GPU        "Compile demo with GPU/CPU, default use CPU."                    OFF)
