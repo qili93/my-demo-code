@@ -34,7 +34,7 @@ MODEL_NAME=detect_rgb-fp32
 # MODEL_NAME=mouth_position-fp32
 # MODEL_NAME=pc-seg-float-model
 
-IMAGE_NAME=demo.jpg
+IMAGE_NAME=face.jpg
 
 # run demo
 export GLOG_v=0

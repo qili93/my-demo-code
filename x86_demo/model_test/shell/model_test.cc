@@ -11,20 +11,20 @@ const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
 void preprocess(const std::string image_path) {
-  float data[24];
-  for (int i = 0; i < 8; i ++) {
-    data[i * 3] = i;
-    data[i * 3 + 1] = i;
-    data[i * 3 + 2] = i;
-  }
-  // cv::Mat input_image = cv::imread(image_path, 1);
-  cv::Mat input_image(4, 2, CV_32FC3, data); // height, width, channel=3
+  // float data[24];
+  // for (int i = 0; i < 8; i ++) {
+  //   data[i * 3] = i;
+  //   data[i * 3 + 1] = i;
+  //   data[i * 3 + 2] = i;
+  // }
+  cv::Mat input_image = cv::imread(image_path, 1);
+  // cv::Mat input_image(4, 2, CV_32FC3, data); // height, width, channel=3
   LOG(INFO) << "input_image.channels()=" << input_image.channels();
   LOG(INFO) << "input_image.size().height=" << input_image.size().height;
   LOG(INFO) << "input_image.size().width=" << input_image.size().width;
-  std::cout << "input_image = " << std::endl <<  input_image << std::endl;
+  // std::cout << "input_image = " << std::endl <<  input_image << std::endl;
 
-  // resize to 320, 160, 3
+  // resize height to 320
   cv::Mat resize_image;
   float scale = 320.0 / input_image.size().height;
   int resize_height = static_cast<int>(input_image.size().height * scale);
@@ -35,37 +35,39 @@ void preprocess(const std::string image_path) {
   LOG(INFO) << "resize_image.size().height=" << resize_image.size().height;
   LOG(INFO) << "resize_image.size().width=" << resize_image.size().width;
 
-  cv::subtract(input_image, cv::Scalar(1., 2., 3.), input_image);
-
-  std::cout << "input_image = " << std::endl <<  input_image << std::endl;
+  // cv::subtract(input_image, cv::Scalar(1., 2., 3.), input_image);
+  // std::cout << "input_image = " << std::endl <<  input_image << std::endl;
+  cv::subtract(resize_image, cv::Scalar(104., 117., 123.), resize_image);
+  cv::multiply(resize_image, cv::Scalar( 0.007843), resize_image);
 
   //copy the channels from the source image to the destination # HWC to CHW
-  cv::Size input_size = input_image.size();
-  cv::Size newsize(input_size.width,input_size.height*3);
-  cv::Mat destination(newsize,CV_32FC1);
-  for (int i = 0; i < input_image.channels(); ++i) {
-    cv::extractChannel(input_image, cv::Mat(input_size.height, input_size.width, CV_32FC1, 
-                       &(destination.at<float>(input_size.height*input_size.width*i))),i);
+  // cv::Size input_size = input_image.size();
+  // cv::Size newsize(input_size.width,input_size.height*3);
+  cv::Size newsize(resize_width, resize_height*3);
+  cv::Mat destination(newsize, CV_32FC1);
+  for (int i = 0; i < resize_image.channels(); ++i) {
+    cv::extractChannel(resize_image, cv::Mat(resize_height, resize_width, CV_32FC1, 
+                       &(destination.at<float>(resize_height * resize_width * i))),i);
   }
   LOG(INFO) << "destination.channels()=" << destination.channels();
   LOG(INFO) << "destination.size().height=" << destination.size().height;
   LOG(INFO) << "destination.size().width=" << destination.size().width;
 
-  std::cout << "destination = " << std::endl <<  destination << std::endl;
+  // std::cout << "destination = " << std::endl <<  destination << std::endl;
   // const std::vector<float> INPUT_MEAN = {104., 117., 123.};
   // const float INPUT_SCALE = 0.007843;
 
   
   // cv::mul(destination, 3);
-  cv::multiply(destination, cv::Scalar(0.1), destination);
+  // cv::multiply(destination, cv::Scalar(0.1), destination);
 
-  std::cout << "destination = " << std::endl <<  destination << std::endl;
+  // std::cout << "destination = " << std::endl <<  destination << std::endl;
 
   const float *image_data = reinterpret_cast<const float *>(destination.data);
 
-  for (int i = 0; i < 24; ++i) {
-    std::cout << "image_data[" << i << "] = " << image_data[i] << std::endl;
-  }
+  // for (int i = 0; i < 24; ++i) {
+  //   std::cout << "image_data[" << i << "] = " << image_data[i] << std::endl;
+  // }
 
   // for (int i = 0; i < destination.channels(); ++i) {
 
