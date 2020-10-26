@@ -9,11 +9,9 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-# change together with run_demo.sh
-BUILD_DIR_NAME=build-v2.7-debug
-
 # paddle repo dir
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
+BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
 PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
@@ -33,7 +31,7 @@ cd $build_dir
 # export CPPFLAGS="-I/usr/local/opt/opencv@2/include"
 # export PKG_CONFIG_PATH="/usr/local/opt/opencv@2/lib/pkgconfig"
 
-cmake .. -DWITH_MKL=ON -DWITH_OPENCV=OFF \
+cmake .. -DWITH_MKL=ON -DWITH_OPENCV=ON \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \

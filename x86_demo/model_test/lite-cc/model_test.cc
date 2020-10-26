@@ -4,11 +4,15 @@
 #include <algorithm>
 #include <memory>
 #include <sys/time.h>
+#include <opencv2/opencv.hpp>
 #include <paddle_api.h>
 
 const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
+
+const std::string IMAGE_FILE_NAME = "face.jpg"; // {1, 3, 1050, 1682} NCHW
+const std::string IMAGE_DATA_NAME = "face.raw"; // {1, 3, 320, 512} NCHW
 
 // // MODEL_NAME=align150-fp32
 // const std::vector<int> INPUT_SHAPE = {1, 3, 128, 128};
@@ -56,15 +60,6 @@ static std::string shape_to_string(const std::vector<int64_t>& shape) {
   return ss.str();
 }
 
-struct RESULT {
-  int class_id;
-  float score;
-};
-
-bool topk_compare_func(std::pair<float, int> a, std::pair<float, int> b) {
-  return (a.first > b.first);
-}
-
 int64_t ShapeProduction(const std::vector<int64_t>& shape) {
   int64_t res = 1;
   for (auto i : shape) res *= i;
@@ -80,7 +75,7 @@ double GetCurrentUS() {
 void read_imgnp(const std::string raw_imgnp_path, float * input_data) {
   std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
   if (!raw_imgnp_file) {
-    std::cout << "Failed to load raw rgb image file: " <<  raw_imgnp_path << std::endl;
+    std::cout << "Failed to load raw image file: " <<  raw_imgnp_path << std::endl;
     return;
   }
   int64_t raw_imgnp_size = ShapeProduction(INPUT_SHAPE);
@@ -88,27 +83,66 @@ void read_imgnp(const std::string raw_imgnp_path, float * input_data) {
   raw_imgnp_file.close();
 }
 
-std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
-  const int TOPK = std::min(10, static_cast<int>(output_size));
-  std::vector<std::pair<float, int>> vec;
-  for (int i = 0; i < output_size; i++) {
-      vec.push_back(std::make_pair(output_data[i], i));
+void preprocess(const std::string image_path, float * input_data, const int input_width, const int input_height) {
+  cv::Mat input_image = cv::imread(image_path, 1);
+  // resize image
+  cv::Mat resize_image;
+  cv::resize(input_image, resize_image, cv::Size(input_width, input_height), 0, 0); // width, height
+  if (resize_image.channels() == 4) {
+    cv::cvtColor(resize_image, resize_image, cv::COLOR_BGRA2RGB);
   }
-  std::partial_sort(vec.begin(), vec.begin() + TOPK, vec.end(), topk_compare_func);
-  std::vector<RESULT> results(TOPK);
-  for (int i = 0; i < TOPK; i++) {
-      results[i].score = vec[i].first;
-      results[i].class_id = vec[i].second;
+  // minus mean
+  cv::subtract(resize_image, cv::Scalar(104., 117., 123.), resize_image);
+  // norm to 2/255
+  cv::Mat norm_image;
+  resize_image.convertTo(norm_image, CV_32FC3, 2 / 255.f);
+  // HWC (320, 512, 3) -> CHW (3, 320, 512)
+  cv::Size newsize(input_width, input_height*3); // width, height*3
+  cv::Mat destination(newsize, CV_32FC1);
+  for (int i = 0; i < norm_image.channels(); ++i) {
+    cv::extractChannel(norm_image, cv::Mat(input_height, input_width, CV_32FC1, 
+                       &(destination.at<float>(input_height * input_width * i))),i);
   }
-  return results;
+  // std::cout << "Destination Image Size is: (" << destination.size().height << "," 
+  //           <<  destination.size().width << "," << destination.channels() << ")" << std::endl;
+
+  const float * image_data = reinterpret_cast<const float *>(destination.data);
+  std::copy(image_data, image_data + ShapeProduction(INPUT_SHAPE), input_data);
 }
 
-void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::string imgnp_path) {
+void draw_image(cv::Mat& input_image, const float* face) {
+  int image_height = 1050;
+  int image_width = 1682;
+  int xmin = static_cast<int>(face[2] * image_width);
+  int ymin = static_cast<int>(face[3] * image_height);
+  int xmax = static_cast<int>(face[4] * image_width);
+  int ymax = static_cast<int>(face[5] * image_height);
+  cv::Point ptmin(xmin, ymin);
+  cv::Point ptmax(xmax, ymax);
+  cv::rectangle(input_image, ptmin, ptmax, cv::Scalar(0, 255, 0), 2);
+}
+
+void postprocess(const float * output_data, const std::vector<int64_t>& shape) {
+  int output_num = static_cast<int>(shape[0]);
+  cv::Mat input_image = cv::imread("../assets/images/face.jpg", 1);
+  for (int i = 0; i < output_num; ++i) {
+    int offset = i * 6;
+    float score = output_data[offset + 1];
+    if (score < 0.5) continue;
+    std::cout << data_to_string<float>(&output_data[offset], 6) << std::endl;
+    // detect_output.push_back(&output_data[offset]);
+    draw_image(input_image, &output_data[offset]);
+  }
+  cv::imwrite("face_detect.jpg", input_image);
+}
+
+void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::string image_path) {
   // 1. Prepare input data
   std::unique_ptr<paddle::lite_api::Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(INPUT_SHAPE);
   auto* input_data = input_tensor->mutable_data<float>();
-  read_imgnp(imgnp_path, input_data);
+  // read_imgnp(imgnp_path, input_data);
+  preprocess(image_path, input_data, INPUT_SHAPE[3], INPUT_SHAPE[2]);
 
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -132,15 +166,11 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
     std::cout << "Printing Output Index: <" << i << ">, shape is " << shape_to_string(output_tensor->shape()) << std::endl;
-    // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
-    // for (size_t j = 0; j < results.size(); j++) {
-    //   LOG(INFO) << "Top "<< j <<": " << results[j].class_id << " - " << results[j].score;
-    // }
-    std::cout << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape())) << std::endl;
+    postprocess(output_data, output_tensor->shape());
   }
 }
 
-void RunLiteModel(const std::string model_path, const std::string imgnp_path) {
+void RunLiteModel(const std::string model_path, const std::string image_path) {
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
   paddle::lite_api::MobileConfig mobile_config;
@@ -162,14 +192,14 @@ void RunLiteModel(const std::string model_path, const std::string imgnp_path) {
   auto end_time = GetCurrentUS();
 
   // 3. Run model
-  process(predictor, imgnp_path);
+  process(predictor, image_path);
   std::cout << "MobileConfig preprosss: " 
             << (end_time - start_time) / 1000.0
             << " ms." << std::endl;
 }
 
 #ifdef USE_FULL_API
-void RunFullModel(const std::string model_path, const std::string imgnp_path) {
+void RunFullModel(const std::string model_path, const std::string image_path) {
   // 1. Create CxxConfig
   auto start_time = GetCurrentUS();
   paddle::lite_api::CxxConfig cxx_config;
@@ -188,7 +218,7 @@ void RunFullModel(const std::string model_path, const std::string imgnp_path) {
   }
   auto end_time = GetCurrentUS();
   // 3. Run model
-  process(predictor, imgnp_path);
+  process(predictor, image_path);
   std::cout << "CXXConfig preprosss: " 
             << (end_time - start_time) / 1000.0
             << " ms." << std::endl;
