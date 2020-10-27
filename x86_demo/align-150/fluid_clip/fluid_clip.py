@@ -40,8 +40,10 @@ def main(argv=None):
     except OSError as e:
         if e.errno != 17:
             raise
-    feed_target_names = ["VISface_landmark_0"]
-    fetch_targets = [test_program.current_block().var("VISface_landmark_22968.avg_pool.output.1.tmp_0")]
+    feed_target_names = ["VISface_landmark_22954.batch_norm.output.1.tmp_2"]
+    # fetch_targets = [test_program.current_block().var("VISface_landmark_22960.conv2d.output.1.tmp_0")]
+    # fetch_targets = [test_program.current_block().var("VISface_landmark_22960.conv2d.output.1.tmp_1")]
+    fetch_targets = [test_program.current_block().var("VISface_landmark_22960.conv2d.output.1.tmp_1")]
     fluid.io.save_inference_model(ARGS.dst_model_dir, feed_target_names, fetch_targets, exe, test_program, ARGS.dst_model_filename, ARGS.dst_params_filename)
     #fluid.io.save_inference_model(ARGS.dst_model_dir, feed_target_names, fetch_targets, exe, test_program)
 

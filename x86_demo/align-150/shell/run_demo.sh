@@ -31,7 +31,7 @@ MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 # MODEL_NAME=mouth_position-fp32
 # MODEL_NAME=pc-seg-float-model
 
-MODEL_NAME=align150-fp32
+MODEL_NAME=align150-fp32-dst
 IMAGE_NAME=face-crop.raw
 
 # run demo

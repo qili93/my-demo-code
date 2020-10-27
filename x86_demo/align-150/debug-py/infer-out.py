@@ -12,7 +12,7 @@ def infer_model(model_path=MODEL_PATH):
     if model_path is None:
         return
 
-    img_np = np.ones([1, 3, 128, 128]).astype('float32')
+    img_np = np.ones([1, 80, 4, 4]).astype('float32')
     # img_np = read_image()
     # img_np = read_rawfile()
     

@@ -15,7 +15,8 @@ const std::string IMAGE_FILE_NAME = "face-crop.jpg"; // {1, 3, 1050, 1682} NCHW
 const std::string IMAGE_DATA_NAME = "face-crop.raw"; // {1, 3, 128, 128} # float32
 
 // MODEL_NAME=align150-fp32
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
+const std::vector<int64_t> INPUT_SHAPE = {1, 80, 4, 4};
 
 template <typename T>
 static std::string data_to_string(const T* data, const int64_t size) {
@@ -104,18 +105,12 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
             << (end_time - start_time) / FLAGS_repeats / 1000.0
             << " ms in average." << std::endl;
   // 5. Get output 0
-
   std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(0)));
   const float *output_data = output_tensor->data<float>();
   const int64_t ouput_size = ShapeProduction(output_tensor->shape());
   std::cout << "Printing Output Index: <0>, shape is " << shape_to_string(output_tensor->shape()) << std::endl;
-  write_file(output_data, output_tensor->shape(), OUTPUT_FILE_PATH);
-  std::cout << "Printing Output Index: <0>, data is " << data_to_string(output_data, ouput_size) << std::endl;
-  // 6. Get output 1
-  std::unique_ptr<const paddle::lite_api::Tensor> output_tensor_score(std::move(predictor->GetOutput(1)));
-  const float *output_data_score = output_tensor_score->data<float>();
-  std::cout << "Printing Output Index: <1>, shape is " << shape_to_string(output_tensor_score->shape()) << std::endl;
-  write_file(output_data_score, output_tensor_score->shape(), OUTPUT_SCORE_PATH);
+  write_file(output_data, output_tensor->shape(), "lite-out.raw");
+  // std::cout << "Printing Output Index: <0>, data is " << data_to_string(output_data, ouput_size) << std::endl;
 }
 
 void RunLiteModel(const std::string model_path, const std::string image_path) {
@@ -141,9 +136,7 @@ void RunLiteModel(const std::string model_path, const std::string image_path) {
 
   // 3. Run model
   process(predictor, image_path);
-  std::cout << "MobileConfig preprosss: " 
-            << (end_time - start_time) / 1000.0
-            << " ms." << std::endl;
+  std::cout << "MobileConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
 }
 
 #ifdef USE_FULL_API
