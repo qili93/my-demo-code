@@ -11,12 +11,11 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-const std::string IMAGE_FILE_NAME = "face-crop.jpg"; // {1, 3, 1050, 1682} NCHW
-const std::string IMAGE_DATA_NAME = "face-crop.raw"; // {1, 3, 128, 128} # float32
+const std::string IMAGE_DATA_FILE = "face-input.raw"; // {1, 3, 128, 128} # float32
 
 // MODEL_NAME=align150-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
-const std::vector<int64_t> INPUT_SHAPE = {1, 80, 4, 4};
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 80, 4, 4};
 
 template <typename T>
 static std::string data_to_string(const T* data, const int64_t size) {
@@ -55,7 +54,7 @@ double GetCurrentUS() {
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
-void read_imgnp(const std::string raw_imgnp_path, float * input_data) {
+void read_rawfile(const std::string raw_imgnp_path, float * input_data) {
   std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
   if (!raw_imgnp_file) {
     std::cout << "Failed to load raw image file: " <<  raw_imgnp_path << std::endl;
@@ -67,15 +66,24 @@ void read_imgnp(const std::string raw_imgnp_path, float * input_data) {
 }
 
 // save output to raw file
-void write_file(const float * output_data, const std::vector<int64_t>& shape, const std::string output_file_path) {
-  std::ofstream output_file(output_file_path, std::ios::out | std::ios::binary);
-  if (!output_file) {
-    std::cout << "Failed to open raw output file: " <<  output_file_path << std::endl;
+void write_file(const float * output_data, const std::vector<int64_t>& shape) {
+  std::ofstream output_file("lite-out.raw", std::ios::out | std::ios::trunc );
+  if (!output_file.is_open()) {
+    std::cout << "Failed to open raw output file: lite-out.raw" << std::endl;
     return;
   }
   int64_t output_size = ShapeProduction(shape);
   output_file.write(reinterpret_cast<const char *>(output_data), output_size * sizeof(float));
   output_file.close();
+
+  float* infer_out = new float[300];
+  std::ifstream infer_out_file("infer-out.raw", std::ios::in | std::ios::binary);
+  infer_out_file.read(reinterpret_cast<char *>(infer_out), 300 * sizeof(float));
+  for (int i = 0; i < 300; ++i) {
+    if (std::abs(output_data[i] - infer_out[i]) > 0.002) {
+      std::cout << "abs error exceeded: index " << i << ", infer res is " << infer_out[i] << ", lite res is " << output_data[i] << std::endl;
+    }
+  }
 }
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::string image_path) {
@@ -83,10 +91,10 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   std::unique_ptr<paddle::lite_api::Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(INPUT_SHAPE);
   auto* input_data = input_tensor->mutable_data<float>();
-  for (size_t i = 0; i < ShapeProduction(INPUT_SHAPE); ++i) {
-    input_data[i] = 1.0f;
-  }
-  // read_imgnp(image_path, input_data);
+  // for (size_t i = 0; i < ShapeProduction(INPUT_SHAPE); ++i) {
+  //   input_data[i] = 1.0f;
+  // }
+  read_rawfile(IMAGE_DATA_FILE, input_data);
 
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -109,7 +117,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   const float *output_data = output_tensor->data<float>();
   const int64_t ouput_size = ShapeProduction(output_tensor->shape());
   std::cout << "Printing Output Index: <0>, shape is " << shape_to_string(output_tensor->shape()) << std::endl;
-  write_file(output_data, output_tensor->shape(), "lite-out.raw");
+  write_file(output_data, output_tensor->shape());
   // std::cout << "Printing Output Index: <0>, data is " << data_to_string(output_data, ouput_size) << std::endl;
 }
 

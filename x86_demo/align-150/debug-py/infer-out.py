@@ -4,7 +4,8 @@ import paddle
 import paddle.fluid as fluid
 import numpy as np
 
-MODEL_PATH="../assets/models/align150-fp32-dst"
+MODEL_PATH="../assets/models/align150-fp32"
+# MODEL_PATH="../assets/models/align150-fp32-dst"
 
 paddle.enable_static()
 
@@ -12,9 +13,9 @@ def infer_model(model_path=MODEL_PATH):
     if model_path is None:
         return
 
-    img_np = np.ones([1, 80, 4, 4]).astype('float32')
-    # img_np = read_image()
-    # img_np = read_rawfile()
+    # img_np = np.ones([1, 3, 128, 128]).astype('float32')
+    img_np = np.fromfile("face-input.raw", dtype=np.float32)
+    img_np.resize(1, 3, 128, 128)
     
     place = fluid.CPUPlace()
     exe = fluid.Executor(place)
@@ -22,7 +23,7 @@ def infer_model(model_path=MODEL_PATH):
     with fluid.scope_guard(inference_scope):
         [inference_program, feed_target_names, fetch_targets] = fluid.io.load_inference_model(
                                                  model_path, exe, '__model__', '__params__')
-        output, = exe.run(inference_program,
+        output, scores = exe.run(inference_program,
                          feed={feed_target_names[0]: img_np},
                          fetch_list=fetch_targets,
                          return_numpy=False)

@@ -6,7 +6,7 @@ import numpy as np
 INFER_OUT_PATH="infer-out.raw"
 LITE_OUT_PATH="lite-out.raw"
 
-OUTPUT_LENGTH = 1 * 160 * 4 * 4
+OUTPUT_LENGTH = 1 * 300
 
 def compare_output():
     infer_out = np.fromfile(INFER_OUT_PATH, dtype=np.float32)
