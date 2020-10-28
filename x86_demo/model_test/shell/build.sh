@@ -10,7 +10,7 @@ function readlinkf() {
 #######################################
 
 # change together with run_demo.sh
-BUILD_DIR_NAME=build-v2.7-debug
+BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
 
 # paddle repo dir
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)

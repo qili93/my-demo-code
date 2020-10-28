@@ -8,39 +8,30 @@ using namespace paddle::lite_api;  // NOLINT
 const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
+const paddle::lite_api::PowerMode CPU_POWER_MODE 
+      = paddle::lite_api::PowerMode::LITE_POWER_HIGH;
+const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
 
-void read_imgnp(const std::string raw_imgnp_path, const std::vector<int64_t> input_shape_vec, float * input_data) {
-  std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
-  if (!raw_imgnp_file) {
-    std::cout << "Failed to load raw rgb image file: " <<  raw_imgnp_path << std::endl;
-    return;
-  }
-  int64_t raw_imgnp_size = ShapeProduction(input_shape_vec);
-  raw_imgnp_file.read(reinterpret_cast<char *>(input_data), raw_imgnp_size * sizeof(float));
-  raw_imgnp_file.close();
+inline int64_t get_current_us() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
 }
 
-std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
-  const int TOPK = std::min(10, static_cast<int>(output_size));
-  std::vector<std::pair<float, int>> vec;
-  for (int i = 0; i < output_size; i++) {
-      vec.push_back(std::make_pair(output_data[i], i));
-  }
-  std::partial_sort(vec.begin(), vec.begin() + TOPK, vec.end(), topk_compare_func);
-  std::vector<RESULT> results(TOPK);
-  for (int i = 0; i < TOPK; i++) {
-      results[i].score = vec[i].first;
-      results[i].class_id = vec[i].second;
-  }
-  return results;
+int64_t shape_production(const std::vector<int64_t>& shape) {
+  int64_t res = 1;
+  for (auto i : shape) res *= i;
+  return res;
 }
 
-void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::string imgnp_path, const std::vector<int64_t> input_shape_vec) {
+void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   // 1. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-  input_tensor->Resize(input_shape_vec);
+  input_tensor->Resize(INPUT_SHAPE);
   auto* input_data = input_tensor->mutable_data<float>();
-  read_imgnp(imgnp_path, input_shape_vec, input_data);
+  for (int64_t i = 0; i < shape_production(INPUT_SHAPE); ++i) {
+    input_data[i] = 1.0f;
+  }
 
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
@@ -53,26 +44,23 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   }
   auto end_time = GetCurrentUS();
   // 4. Speed Report
-  LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Warmup: " << FLAGS_warmup
-            << ", repeats: " << FLAGS_repeats << ", spend "
-            << (end_time - start_time) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+  std::cout << "================== Speed Report ===================" << std::endl;
+  std::cout << "Warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats 
+            << ", spend " << (end_time - start_time) / FLAGS_repeats / 1000.0
+            << " ms in average." << std::endl;
+
   // 5. Get all output
   int output_num = static_cast<int>(predictor->GetOutputNames().size());
   for (int i = 0; i < output_num; ++i) {
     std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
-    LOG(INFO) << "Printing Output Index: <" << i << ">, shape is " << shape_to_string(output_tensor->shape());
-    // std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
-    // for (size_t j = 0; j < results.size(); j++) {
-    //   LOG(INFO) << "Top "<< j <<": " << results[j].class_id << " - " << results[j].score;
+    // for (size_t j = 0; j < shape_production(output_tensor->shape()); j++) {
+    //   std::cout << "Output["<< j <<"]: " << output_data[i] << std::endl;
     // }
-    LOG(INFO) << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape()));
   }
 }
 
-void RunLiteModel(const std::string model_path, const std::string imgnp_path, const std::vector<int64_t> input_shape_vec) {
+void RunLiteModel(const std::string model_path) {
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
   MobileConfig mobile_config;
@@ -87,21 +75,19 @@ void RunLiteModel(const std::string model_path, const std::string imgnp_path, co
   // 2. Create PaddlePredictor by MobileConfig
   try {
     predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
-    std::cout << "==============MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "MobileConfig Predictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
   auto end_time = GetCurrentUS();
 
   // 3. Run model
-  process(predictor, imgnp_path, input_shape_vec);
-  LOG(INFO) << "MobileConfig preprosss: " 
-            << (end_time - start_time) / 1000.0
-            << " ms.";
+  process(predictor);
+  std::cout << "MobileConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
 }
 
 #ifdef USE_FULL_API
-void RunFullModel(const std::string model_path, const std::vector<int64_t> input_shape_vec) {
+void RunFullModel(const std::string model_path) {
   // 1. Create CxxConfig
   auto start_time = GetCurrentUS();
   CxxConfig cxx_config;
@@ -114,19 +100,17 @@ void RunFullModel(const std::string model_path, const std::vector<int64_t> input
   // 2. Create PaddlePredictor by MobileConfig
   try {
     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "==============CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "CxxConfig Predictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
   auto end_time = GetCurrentUS();
   // 3. Run model
-  process(predictor, input_shape_vec);
-  LOG(INFO) << "CXXConfig preprosss: " 
-            << (end_time - start_time) / 1000.0
-            << " ms.";
+  process(predictor);
+  std::cout << "CxxConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
 }
 
-void SaveModel(const std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
+void SaveOptModel(const std::string model_path, const int model_type) {
   // 1. Create CxxConfig
   CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -143,7 +127,7 @@ void SaveModel(const std::string model_path, const int model_type, const std::ve
   std::shared_ptr<PaddlePredictor> predictor = nullptr;
   try {
     predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "============== CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "CxxConfig Predictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
@@ -158,73 +142,22 @@ void SaveModel(const std::string model_path, const int model_type, const std::ve
 #endif
 
 int main(int argc, char **argv) {
-  if (argc < 3) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << "assets_dir model_name image_name\n";
+  if (argc < 2) {
+    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_path\n";
     exit(1);
   }
-  std::string assets_dir = argv[1];
-  std::string model_name = argv[2];
-  std::string image_name = argv[3];
-  // 0 for uncombined, 1 for combined model
-  // int model_type = atoi(argv[3]);
-  int model_type = 1;
+  std::string model_path = argv[1];
+  std::cout << "Model Path is <" << model_path << ">" << std::endl;
 
-  // // set input shape based on model name
-  std::vector<int64_t> input_shape_vec(4);
-  // if (model_name == "align150-fp32") {
-  //   int64_t input_shape[] = {1, 3, 128, 128};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "angle-fp32") {
-  //   int64_t input_shape[] = {1, 3, 64, 64};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "detect_rgb-fp32") {
-  //   int64_t input_shape[] = {1, 3, 320, 240};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "detect_rgb-int8") {
-  //   int64_t input_shape[] = {1, 3, 320, 240};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "eyes_position-fp32") {
-  //   int64_t input_shape[] = {1, 3, 32, 32};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "iris_position-fp32") {
-  //   int64_t input_shape[] = {1, 3, 24, 24};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "mouth_position-fp32") {
-  //   int64_t input_shape[] = {1, 3, 48, 48};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "seg-model-int8") {
-  //   int64_t input_shape[] = {1, 4, 192, 192};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "pc-seg-float-model") {
-  //   int64_t input_shape[] = {1, 4, 192, 256};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "softmax_infer") {
-  //   int64_t input_shape[] = {1, 2, 3, 1};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else {
-  //   LOG(ERROR) << "NOT supported model name!";
-  //   return 0;
-  // }
+  // 0 for umcombined
+  const int model_type = 1;
 
-  int64_t input_shape[] = {1, 3, 320, 512};
-  std::copy (input_shape, input_shape + 4, input_shape_vec.begin());
+#ifdef USE_FULL_API
+  SaveOptModel(model_path, model_type);
+  RunFullModel(model_path);
+#endif
 
-  LOG(INFO) << "Model Name is <" << model_name << ">, Input Shape is {" 
-    << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
-    << input_shape_vec[2] << ", " << input_shape_vec[3] << "}";
-
-  std::string model_path = assets_dir + "/models/" + model_name;
-  std::string image_path = assets_dir + "/images/" + image_name;
-
-  LOG(INFO) << "Model Path is <" << model_path << ">";
-  LOG(INFO) << "Image Path is <" << image_path << ">";
-
-// #ifdef USE_FULL_API
-//   SaveModel(model_path, model_type, input_shape_vec);
-//   RunFullModel(model_path, input_shape_vec);
-// #endif
-
-  RunLiteModel(model_path, image_path, input_shape_vec);
+  RunLiteModel(model_path);
 
   return 0;
 }

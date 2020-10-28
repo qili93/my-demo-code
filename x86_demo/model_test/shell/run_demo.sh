@@ -10,7 +10,7 @@ function readlinkf() {
 #######################################
 
 # change together with run_demo.sh
-BUILD_DIR_NAME=build-v2.7-debug
+BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
 
 # paddle repo dir
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
@@ -23,19 +23,19 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 # export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
 # set model dir
-ASSETS_DIR=$(readlinkf ../assets)
-MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
+ASSETS_DIR=$(readlinkf ../assets/models)
 
 # MODEL_NAME=align150-fp32
 # MODEL_NAME=angle-fp32
-MODEL_NAME=detect_rgb-fp32
+# MODEL_NAME=detect_rgb-fp32
 # MODEL_NAME=eyes_position-fp32
 # MODEL_NAME=iris_position-fp32
 # MODEL_NAME=mouth_position-fp32
-# MODEL_NAME=pc-seg-float-model
 
-IMAGE_NAME=face.raw
+# MODEL_NAME=pc-seg-float-model
+# MODEL_NAME=pc-seg-float-model-new
+MODEL_NAME=pc_seg_float_x86_1016
 
 # run demo
-export GLOG_v=0
-./build/model_test $ASSETS_DIR $MODEL_NAME $IMAGE_NAME
+export GLOG_v=5
+./build/model_test $ASSETS_DIR/$MODEL_NAME
