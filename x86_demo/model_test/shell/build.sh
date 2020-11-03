@@ -9,18 +9,16 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-# change together with run_demo.sh
-BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
-
-# paddle repo dir
+# paddle repo dir => NOTE: change together with run_demo.sh
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
+BUILD_DIR_NAME=build-v2.7-relse-static-openmp
 PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
-# local sync lib dir
+# local sync lib dir => NOTE: change together with CMakeLists.txt
 # PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 
-# USE_FULL_API=TRUE
-USE_FULL_API=FALSE
+USE_FULL_API=TRUE
+# USE_FULL_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################
@@ -37,7 +35,7 @@ cmake .. -DWITH_MKL=ON -DWITH_OPENCV=OFF \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-      -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_BUILD_TYPE=Release
 
 make
 
