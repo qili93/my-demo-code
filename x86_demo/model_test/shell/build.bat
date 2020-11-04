@@ -40,8 +40,8 @@ call :getabsolute "..\..\..\x86_lite_libs"
 set PADDLE_LITE_DIR=%absolute%
 echo "------------PADDLE_LITE_DIR is %PADDLE_LITE_DIR%------------"
 
-rem set USE_FULL_API=TRUE
-set USE_FULL_API=FALSE
+set USE_FULL_API=TRUE
+REM set USE_FULL_API=FALSE
 
 cmake ..   -G "Visual Studio 14 2015 Win64" -T host=x64 ^
                 -DPADDLE_LITE_DIR=%PADDLE_LITE_DIR%   ^

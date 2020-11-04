@@ -18,14 +18,14 @@ endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
 # set PADDLE_LIB_DIR to LOCAL LIB DIR
-# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
-# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
-# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
+set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
 
 # set PADDLE_LIB_DIR to PADDLE BUILD DIR
-set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
-set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
-set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
+# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
 
 message(STATUS "PADDLE_INC_DIR=${PADDLE_INC_DIR}")
 message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
@@ -34,13 +34,18 @@ message(STATUS "MKLML_LIB_DIR=${MKLML_LIB_DIR}")
 # 2. compile options
 if (WIN32)
   add_definitions("/DGOOGLE_GLOG_DLL_DECL=")
-  option(MSVC_STATIC_CRT "use static C Runtime library by default" ON)
+  option(MSVC_STATIC_CRT "use static C Runtime library by default" OFF)
   if (MSVC_STATIC_CRT)
     set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MTd")
     set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MT")
     set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MTd")
     set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MT")
-  endif()
+  else(MSVC_STATIC_CRT)
+    set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG} /bigobj /MDd")
+    set(CMAKE_C_FLAGS_RELEASE  "${CMAKE_C_FLAGS_RELEASE} /bigobj /MD")
+    set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} /bigobj /MDd")
+    set(CMAKE_CXX_FLAGS_RELEASE   "${CMAKE_CXX_FLAGS_RELEASE} /bigobj /MD")
+  endif(MSVC_STATIC_CRT)
 endif()
 
 if (NOT WIN32)
@@ -117,52 +122,6 @@ endif()
 if(WITH_MKL)
   demo_deps_library(${LITE_IOMP5_LIB_NAME} ${MKLML_LIB_DIR})
 endif()
-
-# # find paddle-lite cxx libs
-# if(USE_FULL_API)
-#   add_definitions(-DUSE_FULL_API)
-#   find_library(PADDLE_LIBRARY_FILE NAMES ${LITE_FULL_LIB_NAME} PATHS "${PADDLE_LIB_DIR}" NO_DEFAULT_PATH)
-# else()
-#   find_library(PADDLE_LIBRARY_FILE NAMES ${LITE_TINY_LIB_NAME}  PATHS "${PADDLE_LIB_DIR}" NO_DEFAULT_PATH)
-# endif()
-# if(NOT PADDLE_LIBRARY_FILE)
-#   message(FATAL_ERROR "Can not find Paddle-Lite Library in ${PADDLE_LIB_DIR}")
-# else()
-#   message(STATUS "Found Paddle-Lite Library of ${PADDLE_LIBRARY_FILE}")
-#   if(WIN32)
-#     add_library(paddle_lite_api STATIC IMPORTED GLOBAL)
-#   else()
-#     add_library(paddle_lite_api SHARED IMPORTED GLOBAL)
-#   endif()
-#   set_property(TARGET paddle_lite_api PROPERTY IMPORTED_LOCATION ${PADDLE_LIBRARY_FILE})
-# endif()
-
-# find intel mklml libs
-# find_library(MKLML_LIBRARY_FILE NAMES ${LITE_MKLML_LIB_NAME} PATHS "${MKLML_LIB_DIR}" NO_DEFAULT_PATH)
-# if(NOT MKLML_LIBRARY_FILE)
-#   message(FATAL_ERROR "Can not find ${LITE_MKLML_LIB_NAME} Library in ${MKLML_LIB_DIR}")
-# else()
-#   message(STATUS "Found Intel MKLML Library of ${MKLML_LIBRARY_FILE}")
-#   if(WIN32)
-#     add_library(intel_mklml STATIC IMPORTED GLOBAL)
-#   else()
-#     add_library(intel_mklml SHARED IMPORTED GLOBAL)
-#   endif()
-#   set_property(TARGET intel_mklml PROPERTY IMPORTED_LOCATION ${MKLML_LIBRARY_FILE})
-# endif()
-
-# find_library(IOMP5_LIBRARY_FILE NAMES ${LITE_IOMP5_LIB_NAME} PATHS "${MKLML_LIB_DIR}" NO_DEFAULT_PATH)
-# if(NOT IOMP5_LIBRARY_FILE)
-#   message(FATAL_ERROR "Can not find ${LITE_IOMP5_LIB_NAME} Library in ${MKLML_LIB_DIR}")
-# else()
-#   message(STATUS "Found Intel IOMP5 Library of ${IOMP5_LIBRARY_FILE}")
-#   if(WIN32)
-#     add_library(intel_iomp5 STATIC IMPORTED GLOBAL)
-#   else()
-#     add_library(intel_iomp5 SHARED IMPORTED GLOBAL)
-#   endif()
-#   set_property(TARGET intel_iomp5 PROPERTY IMPORTED_LOCATION ${IOMP5_LIBRARY_FILE})
-# endif()
 
 # 5.add executable output
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)

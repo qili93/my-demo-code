@@ -21,7 +21,7 @@ set MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
 set MODEL_NAME=pc-seg-float-model
 
 set GLOG_v=5
-build\Release\model_test.exe %MODEL_DIR% %MODEL_NAME% %MODEL_TYPE%
+build\Release\model_test.exe %MODEL_DIR%\%MODEL_NAME%
 goto:eof
 
 :getabsolute
