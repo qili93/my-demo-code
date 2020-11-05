@@ -73,7 +73,7 @@ echo "copy from == $LITE_IOMP5_LIB"
 echo "copy from == $LITE_MKLML_LIB"
 echo "copy to ==== $target_lib"
 cp $LITE_IOMP5_LIB $target_lib
-cp $LITE_MKLML_LIB $target_lib
+# cp $LITE_MKLML_LIB $target_lib
 
 
 echo "---------------List Files-----------------"

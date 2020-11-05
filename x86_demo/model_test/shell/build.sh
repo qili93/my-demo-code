@@ -10,12 +10,12 @@ function readlinkf() {
 #######################################
 
 # paddle repo dir => NOTE: change together with run_demo.sh
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-BUILD_DIR_NAME=build-v2.7-relse-static-openmp
-PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+#BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
+#BUILD_DIR_NAME=build-v2.7-relse-static-openmp
+#PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir => NOTE: change together with CMakeLists.txt
-# PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 
 USE_FULL_API=TRUE
 # USE_FULL_API=FALSE
