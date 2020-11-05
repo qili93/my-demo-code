@@ -1,13 +1,14 @@
 #include <iostream>
 #include <algorithm>
-#include "paddle_api.h"
-#include "logging.h"
-
-using namespace paddle::lite_api;  // NOLINT
+#include <sys/time.h>
+#include <paddle_api.h>
 
 const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
+
+// model - inception_v4
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 224, 224};
 
 struct RESULT {
   int64_t class_id;
@@ -33,7 +34,7 @@ std::vector<RESULT> postprocess(const float *output_data, int64_t output_size) {
   return results;
 }
 
-int64_t ShapeProduction(const shape_t& shape) {
+int64_t ShapeProduction(const std::vector<int64_t>& shape) {
   int64_t res = 1;
   for (auto i : shape) res *= i;
   return res;
@@ -45,10 +46,10 @@ double GetCurrentUS() {
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
-void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> input_shape_vec) {
+void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   // 1. Prepare input data
-  std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
-  input_tensor->Resize(input_shape_vec);
+  std::unique_ptr<paddle::lite_api::Tensor> input_tensor(std::move(predictor->GetInput(0)));
+  input_tensor->Resize(INPUT_SHAPE);
   auto* input_data = input_tensor->mutable_data<float>();
   for (int i = 0; i < ShapeProduction(input_tensor->shape()); ++i) {
     input_data[i] = 1;
@@ -64,154 +65,92 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   }
   auto end_time = GetCurrentUS();
   // 4. Speed Report
-  LOG(INFO) << "================== Speed Report ===================";
-  LOG(INFO) << "Warmup: " << FLAGS_warmup
-            << ", repeats: " << FLAGS_repeats << ", spend "
-            << (end_time - start_time) / FLAGS_repeats / 1000.0
-            << " ms in average.";
+  std::cout << "================== Speed Report ===================" << std::endl;
+  std::cout << "Warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats 
+            << ", spend " << (end_time - start_time) / FLAGS_repeats / 1000.0
+            << " ms in average." << std::endl;
 
-  // 5. Get output
-  std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(0)));
+  // 5. Get output (1 x 1000)
+  std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(0)));
   const float *output_data = output_tensor->data<float>();
-  // 6. Print output
+
+  // 6. Print TOPK
   std::vector<RESULT> results = postprocess(output_data, ShapeProduction(output_tensor->shape()));
   printf("results: %lu\n", results.size());
   for (size_t i = 0; i < results.size(); i++) {
-    printf("Top%lu: %lu - %f\n", i, results[i].class_id, results[i].score);
+    std::cout << "Top" << i << ": " << results[i].class_id << " - " << results[i].score << std::endl;
+    // printf("Top%lu: %lu - %f\n", i, results[i].class_id, results[i].score);
   }
 }
 
-void RunLiteModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+void RunLiteModel(std::string model_path) {
   // 1. Create MobileConfig
   auto start_time = GetCurrentUS();
-  MobileConfig mobile_config;
+  paddle::lite_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(model_path+".nb");
   mobile_config.set_threads(CPU_THREAD_NUM);
-  mobile_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
+  mobile_config.set_power_mode(paddle::lite_api::PowerMode::LITE_POWER_HIGH);
   // mobile_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
   mobile_config.set_device_id(1);
   // 2. Create PaddlePredictor by MobileConfig
-  std::shared_ptr<PaddlePredictor> predictor = nullptr;
-  // 2. Create PaddlePredictor by MobileConfig
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   try {
-    predictor = CreatePaddlePredictor<MobileConfig>(mobile_config);
-    std::cout << "============== RunLiteModel MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    predictor = paddle::lite_api::CreatePaddlePredictor<paddle::lite_api::MobileConfig>(mobile_config);
+    std::cout << "Predictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
   auto end_time = GetCurrentUS();
+  std::cout << "MobileConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
 
   // 3. Run model
-  process(predictor, input_shape_vec);
-  LOG(INFO) << "MobileConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms.";
+  process(predictor);
 }
 
 #ifdef USE_FULL_API
-void RunFullModel(std::string model_path, const std::vector<int64_t> input_shape_vec) {
+void RunFullModel(std::string model_path) {
   // 1. Create CxxConfig
   auto start_time = GetCurrentUS();
-  CxxConfig cxx_config;
-  cxx_config.set_model_file(model_path + "_opt/model");
-  cxx_config.set_param_file(model_path + "_opt/params");
-  cxx_config.set_valid_places({Place{TARGET(kX86), PRECISION(kFloat)},
-                               Place{TARGET(kHost), PRECISION(kFloat)}});
-  cxx_config.set_valid_places({Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
-                             Place{TARGET(kX86), PRECISION(kFloat)},
-                             Place{TARGET(kHost), PRECISION(kFloat)}});
+  paddle::lite_api::CxxConfig cxx_config;
+  cxx_config.set_model_dir(model_path);
+  cxx_config.set_valid_places({paddle::lite_api::Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
+                               paddle::lite_api::Place{TARGET(kX86), PRECISION(kFloat)}});
   // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
   cxx_config.set_device_id(1);
-  // 2. Create PaddlePredictor by MobileConfig
-  std::shared_ptr<PaddlePredictor> predictor = nullptr;
-  // 2. Create PaddlePredictor by MobileConfig
+
+  // 2. Create PaddlePredictor by CxxConfig
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   try {
-    predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "============== RunFullModel CxxConfig Predictor Version: " << predictor->GetVersion() 
-              << " ==============" << std::endl;
+    predictor = paddle::lite_api::CreatePaddlePredictor<paddle::lite_api::CxxConfig>(cxx_config);
+    std::cout << "Predictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
   auto end_time = GetCurrentUS();
+  std::cout << "CxxConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
+
   // 3. Run model
-  process(predictor, input_shape_vec);
-  LOG(INFO) << "CXXConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms.";
-}
+  process(predictor);
 
-void SaveOptModel(std::string model_path, const int model_type, const std::vector<int64_t> input_shape_vec) {
-  // 1. Create CxxConfig
-  CxxConfig cxx_config;
-  if (model_type) { // combined model
-    cxx_config.set_model_file(model_path + "/model");
-    cxx_config.set_param_file(model_path + "/params");
-  } else {
-    cxx_config.set_model_dir(model_path);
-  }
-  cxx_config.set_valid_places({Place{TARGET(kHuaweiAscendNPU), PRECISION(kFloat)},
-                             Place{TARGET(kX86), PRECISION(kFloat)},
-                             Place{TARGET(kARM), PRECISION(kFloat)},
-                             Place{TARGET(kHost), PRECISION(kFloat)}});
-  // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
-  cxx_config.set_device_id(1);
-  // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
-
-  // 2. Create PaddlePredictor by CxxConfig
-  std::shared_ptr<PaddlePredictor> predictor = nullptr;
-  try {
-    predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
-    std::cout << "============== SaveOptModel CxxConfig Predictor Version: " << predictor->GetVersion() 
-              << " ==============" << std::endl;
-  } catch (std::exception e) {
-    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
-  }
-
-  // 3. Save optimized model
-  predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
+  // 4. Save optimized model
+  predictor->SaveOptimizedModel(model_path, paddle::lite_api::LiteModelType::kNaiveBuffer);
   std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
-
-  // predictor->SaveOptimizedModel(model_path+"_opt", LiteModelType::kProtobuf);
-  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 
 int main(int argc, char **argv) {
-  if (argc < 3) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_dir model_name model_type\n";
+  if (argc < 2) {
+    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_path\n";
     exit(1);
   }
-  std::string model_dir = argv[1];
-  std::string model_name = argv[2];
-  // 0 for uncombined, 1 for combined model
-  int model_type = atoi(argv[3]);
-
-  std::vector<int64_t> input_shape_vec = {1, 3, 224, 224};
-
-  // set input shape based on model name
-  // std::vector<int64_t> input_shape_vec(4);
-  // if (model_name == "mobilenet_v1") {
-  //   int64_t input_shape[] = {1, 3, 224, 224};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } (model_name == "mobilenet_v2") {
-  //   int64_t input_shape[] = {1, 3, 224, 224};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else if (model_name == "resnet50") {
-  //   int64_t input_shape[] = {1, 3, 224, 224};
-  //   std::copy (input_shape, input_shape+4, input_shape_vec.begin());
-  // } else {
-  //   LOG(ERROR) << "NOT supported model name!";
-  //   return 0;
-  // }
-
-  LOG(INFO) << "Model Name is <" << model_name << ">, Input Shape is {" 
-    << input_shape_vec[0] << ", " << input_shape_vec[1] << ", " 
-    << input_shape_vec[2] << ", " << input_shape_vec[3] << "}";
-
-  std::string model_path = model_dir + '/' + model_name;
+  std::string model_path = argv[1];
+  std::cout << "Model Path is <" << model_path << ">" << std::endl;
 
 #ifdef USE_FULL_API
-  //SaveOptModel(model_path, model_type, input_shape_vec);
-  // RunFullModel(model_path, input_shape_vec);
+  RunFullModel(model_path);
 #endif
 
-  RunLiteModel(model_path, input_shape_vec);
+  RunLiteModel(model_path);
 
   return 0;
 }
