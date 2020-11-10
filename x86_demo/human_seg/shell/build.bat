@@ -5,8 +5,8 @@ setlocal enabledelayedexpansion
 set source_path=%~dp0
 set workspace=%source_path%
 REM Set Win32 or x64 platform
-REM set BUILD_PLATFORM=Win32
-set BUILD_PLATFORM=x64
+set BUILD_PLATFORM=Win32
+REM set BUILD_PLATFORM=x64
 REM Set /MT (ON) or /MD (OFF)
 set MSVC_STATIC_CRT=OFF
 set WITH_STATIC_MKL=ON
