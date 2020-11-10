@@ -14,7 +14,7 @@ set WITH_STATIC_MKL=ON
 set USE_FULL_API=FALSE
 
 REM "Set Paddle-Lite Lib Dir"
-call :getabsolute "..\..\..\x86_lite_libs"
+call :getabsolute "..\..\x86_lite_libs"
 set PADDLE_LITE_DIR=%absolute%
 
 set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat
@@ -27,17 +27,15 @@ echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                      
 echo "|  USE_FULL_API=%USE_FULL_API%                                                                        |"
 echo "------------------------------------------------------------------------------------------------------|"
 
-cd "%workspace%"
 set build_directory=%workspace%\build
 REM "Clean the build directory."
 if EXIST "%build_directory%" (
     call:rm_rebuild_dir "%build_directory%"
     md "%build_directory%"
 )
+
 cd "%build_directory%"
-
-
-cmake %root_dir%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
+cmake %workspace%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
             -DWITH_STATIC_MKL=%WITH_STATIC_MKL% ^
             -DPADDLE_LITE_DIR=%PADDLE_LITE_DIR% ^
