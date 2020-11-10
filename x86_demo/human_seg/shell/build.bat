@@ -31,9 +31,9 @@ set build_directory=%workspace%\build
 REM "Clean the build directory."
 if EXIST "%build_directory%" (
     call:rm_rebuild_dir "%build_directory%"
-    md "%build_directory%"
 )
 
+md "%build_directory%"
 cd "%build_directory%"
 cmake %workspace%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
             -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT% ^
