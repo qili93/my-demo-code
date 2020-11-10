@@ -4,7 +4,7 @@ setlocal enabledelayedexpansion
 
 rem paddle repo dir
 set BASE_REPO_PATH=D:\liqi27\Paddle-Lite
-set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86\inference_lite_lib
+set PADDLE_LITE_DIR=%BASE_REPO_PATH%\build.lite.x86.MD.X64.MKL_LIB\inference_lite_lib
 echo PADDLE_LITE_DIR is %PADDLE_LITE_DIR%
 
 set LITE_FULL_LIB_NAME=libpaddle_api_full_bundled.lib
@@ -23,9 +23,9 @@ set LITE_INC_DIR=%PADDLE_LITE_DIR%\cxx\include
 
 rem MKLML Lib
 set LITE_IOMP5_LIB=%PADDLE_LITE_DIR%\third_party\mklml\lib\%LITE_IOMP5_LIB_NAME%
+set LITE_IOMP5_DLL=%PADDLE_LITE_DIR%\third_party\mklml\lib\%LITE_IOMP5_DLL_NAME%
 set LITE_MKLML_LIB=%PADDLE_LITE_DIR%\third_party\mklml\lib\%LITE_MKLML_LIB_NAME%
-set LITE_IOMP5_DLL=%PADDLE_LITE_DIR%\third_party\mklml\lib\%LITE_MKLML_DLL_NAME%
-set LITE_MKLML_DLL=%PADDLE_LITE_DIR%\third_party\mklml\lib\%LITE_IOMP5_DLL_NAME%
+set LITE_MKLML_DLL=%PADDLE_LITE_DIR%\third_party\mklml\lib\%LITE_MKLML_DLL_NAME%
 
 rem target dirs
 set target_dir=%~dp0
@@ -64,9 +64,9 @@ echo copy from == %LITE_IOMP5_LIB%
 echo copy from == %LITE_MKLML_LIB%
 echo copy to ==== %target_lib%
 copy %LITE_IOMP5_LIB% %target_lib%
-copy %LITE_MKLML_LIB% %target_lib%
 copy %LITE_IOMP5_DLL% %target_lib%
-copy %LITE_MKLML_DLL% %target_lib%
+REM copy %LITE_MKLML_LIB% %target_lib%
+REM copy %LITE_MKLML_DLL% %target_lib%
 
 echo ---------------List Files-----------------
 tree /F /A
