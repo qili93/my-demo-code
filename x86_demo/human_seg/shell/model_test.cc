@@ -15,8 +15,8 @@
 #include<sys/timeb.h>
 #endif
 
-const int FLAGS_warmup = 5;
-const int FLAGS_repeats = 10;
+const int FLAGS_warmup = 1;
+const int FLAGS_repeats = 1;
 const int CPU_THREAD_NUM = 1;
 
 const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
