@@ -10,14 +10,14 @@ function readlinkf() {
 #######################################
 
 # change together with run_demo.sh
-BUILD_DIR_NAME=build-v2.7-debug
+# BUILD_DIR_NAME=build-vdev-debug
 
-# paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+# # paddle repo dir
+# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
+# PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
-# PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 
 # USE_FULL_API=TRUE
 USE_FULL_API=FALSE
