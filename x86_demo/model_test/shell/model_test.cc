@@ -1,7 +1,7 @@
 #include <iostream>
 #include <algorithm>
-#include "paddle_api.h"
-#include "logging.h"
+#include <sys/time.h>
+#include <paddle_api.h>
 
 using namespace paddle::lite_api;  // NOLINT
 
@@ -38,11 +38,11 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
     predictor->Run();
   }
   // 3. Repeat Run
-  auto start_time = GetCurrentUS();
+  auto start_time = get_current_us();
   for (int i = 0; i < FLAGS_repeats; ++i) {
     predictor->Run();
   }
-  auto end_time = GetCurrentUS();
+  auto end_time = get_current_us();
   // 4. Speed Report
   std::cout << "================== Speed Report ===================" << std::endl;
   std::cout << "Warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats 
@@ -62,7 +62,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
 
 void RunLiteModel(const std::string model_path) {
   // 1. Create MobileConfig
-  auto start_time = GetCurrentUS();
+  auto start_time = get_current_us();
   MobileConfig mobile_config;
   mobile_config.set_model_from_file(model_path+".nb");
   // Load model from buffer
@@ -79,7 +79,7 @@ void RunLiteModel(const std::string model_path) {
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
-  auto end_time = GetCurrentUS();
+  auto end_time = get_current_us();
 
   // 3. Run model
   process(predictor);
@@ -89,7 +89,7 @@ void RunLiteModel(const std::string model_path) {
 #ifdef USE_FULL_API
 void RunFullModel(const std::string model_path) {
   // 1. Create CxxConfig
-  auto start_time = GetCurrentUS();
+  auto start_time = get_current_us();
   CxxConfig cxx_config;
   cxx_config.set_model_file(model_path + "_opt/model");
   cxx_config.set_param_file(model_path + "_opt/params");
@@ -104,7 +104,7 @@ void RunFullModel(const std::string model_path) {
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
-  auto end_time = GetCurrentUS();
+  auto end_time = get_current_us();
   // 3. Run model
   process(predictor);
   std::cout << "CxxConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;

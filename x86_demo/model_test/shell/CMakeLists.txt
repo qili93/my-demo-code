@@ -18,14 +18,14 @@ endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
 # set PADDLE_LIB_DIR to LOCAL LIB DIR
-set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
-set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
-set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
 
 # set PADDLE_LIB_DIR to PADDLE BUILD DIR
-# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
-# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
-# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
+set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
+set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
+set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
 
 message(STATUS "PADDLE_INC_DIR=${PADDLE_INC_DIR}")
 message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
@@ -62,78 +62,93 @@ include_directories(${PADDLE_INC_DIR})
 
 # 4. link paddle-lite libraries
 if(APPLE)
-  set(LITE_FULL_LIB_NAME "paddle_full_api_shared")
-  set(LITE_TINY_LIB_NAME "paddle_light_api_shared")
-  # set(LITE_MKLML_LIB_NAME "mklml")
-  set(LITE_IOMP5_LIB_NAME "iomp5")
+  set(LITE_FULL_SHARED_NAME "paddle_full_api_shared")
+  set(LITE_TINY_SHARED_NAME "paddle_light_api_shared")
+  set(INTEL_IOMP5_SHARED_NAME "iomp5")
 elseif(WIN32)
-  set(LITE_FULL_LIB_NAME "libpaddle_api_full_bundled")
-  set(LITE_TINY_LIB_NAME "libpaddle_api_light_bundled")
-  # set(LITE_MKLML_LIB_NAME "mklml")
-  set(LITE_IOMP5_LIB_NAME "libiomp5md")
+  set(LITE_FULL_STATIC_NAME "libpaddle_api_full_bundled")
+  set(LITE_FULL_STATIC_NAME "libpaddle_api_light_bundled")
+  set(INTEL_IOMP5_SHARED_NAME "libiomp5md")
 else()
-  set(LITE_FULL_LIB_NAME "paddle_full_api_shared")
-  set(LITE_TINY_LIB_NAME "paddle_light_api_shared")
-  # set(LITE_MKLML_LIB_NAME "mklml")
-  set(LITE_IOMP5_LIB_NAME "iomp5")
+  set(LITE_FULL_SHARED_NAME "paddle_full_api_shared")
+  set(LITE_TINY_SHARED_NAME "paddle_light_api_shared")
+  set(LITE_FULL_STATIC_NAME "paddle_api_full_bundled")
+  set(LITE_TINY_STATIC_NAME "paddle_api_light_bundled")
+  set(MKLML_IOMP5_SHARED_NAME "iomp5")
 endif()
 
 # message("prefix: ${CMAKE_FIND_LIBRARY_PREFIXES}")
 # message("suffix: ${CMAKE_FIND_LIBRARY_SUFFIXES}")
+# message("shared prefix: ${CMAKE_SHARED_LIBRARY_PREFIX}")
+# message("shared suffix: ${CMAKE_SHARED_LIBRARY_SUFFIX}")
+# message("static prefix: ${CMAKE_STATIC_LIBRARY_PREFIX}")
+# message("static suffix: ${CMAKE_STATIC_LIBRARY_SUFFIX}")
 
 # message(STATUS "LITE_FULL_LIB_NAME=${LITE_FULL_LIB_NAME}")
 # message(STATUS "LITE_TINY_LIB_NAME=${LITE_TINY_LIB_NAME}")
 # message(STATUS "LITE_MKLML_LIB_NAME=${LITE_MKLML_LIB_NAME}")
 # message(STATUS "LITE_IOMP5_LIB_NAME=${LITE_IOMP5_LIB_NAME}")
 
-
-# Create demo_deps_library function
-set(dep_libs CACHE INTERNAL "dependent libraries")
-function(demo_deps_library TARGET_NAME PATH_DIR)
-  find_library(${TARGET_NAME}_FILE NAMES ${TARGET_NAME} PATHS "${PATH_DIR}" NO_DEFAULT_PATH)
-  if(NOT ${TARGET_NAME}_FILE)
-    message(FATAL_ERROR "Can not find ${TARGET_NAME} Library in ${PATH_DIR}")
+function(add_lite_lib TARGET_NAME)
+  cmake_parse_arguments(add_lite_lib "" "NAME" "PATH" ${ARGN})
+  unset(ABS_PATH CACHE)
+  find_library(ABS_PATH NAMES ${add_lite_lib_NAME} PATHS ${add_lite_lib_PATH} NO_DEFAULT_PATH)
+  if(add_lite_lib_SHARED) # build shared lib
+    add_library(${TARGET_NAME} SHARED IMPORTED GLOBAL)
+    set_property(TARGET ${TARGET_NAME} PROPERTY IMPORTED_LOCATION ${ABS_PATH})
   else()
-    message(STATUS "Found ${TARGET_NAME}: ${${TARGET_NAME}_FILE}")
-    if(WIN32)
-      add_library(${TARGET_NAME}_lib_dep STATIC IMPORTED GLOBAL)
-    else()
-      add_library(${TARGET_NAME}_lib_dep SHARED IMPORTED GLOBAL)
-    endif()
-    set_property(TARGET ${TARGET_NAME}_lib_dep PROPERTY IMPORTED_LOCATION "${${TARGET_NAME}_FILE}")
-    set(dep_libs "${dep_libs};${${TARGET_NAME}_FILE}" CACHE INTERNAL "")
-    # list(APPEND DEP_LIBS "${${TARGET_NAME}_FILE}")
+    add_library(${TARGET_NAME} STATIC IMPORTED GLOBAL)
+    set_property(TARGET ${TARGET_NAME} PROPERTY IMPORTED_LOCATION ${ABS_PATH})
+  endif()
+  if(NOT ABS_PATH)
+    message(FATAL_ERROR "Can not find ${add_lite_lib_NAME} Library in ${add_lite_lib_PATH}")
+  else()  
+    message(STATUS "Found ${add_lite_lib_NAME}: ${ABS_PATH}")
   endif()
 endfunction()
 
-if(NOT DEFINED USE_FULL_API)
-  set(USE_FULL_API TRUE)
-endif()
+option(USE_FULL_API "use paddle lite full api by default" ON)
+option(USE_SHARED_API "use paddle lite shared api by default" ON)
 if(USE_FULL_API)
   add_definitions(-DUSE_FULL_API)
-  demo_deps_library(${LITE_FULL_LIB_NAME} ${PADDLE_LIB_DIR})
+  if(USE_SHARED_API)
+    add_lite_lib(paddle_api SHARED NAME ${LITE_FULL_SHARED_NAME} PATH ${PADDLE_LIB_DIR})
+  else()
+    add_lite_lib(paddle_api STATIC NAME ${LITE_FULL_STATIC_NAME} PATH ${PADDLE_LIB_DIR})
+  endif()
 else()
-  demo_deps_library(${LITE_TINY_LIB_NAME} ${PADDLE_LIB_DIR})
+  if(USE_SHARED_API)
+    add_lite_lib(paddle_api SHARED NAME ${LITE_TINY_SHARED_NAME} PATH ${PADDLE_LIB_DIR})
+  else()
+    add_lite_lib(paddle_api STATIC NAME ${LITE_TINY_STATIC_NAME} PATH ${PADDLE_LIB_DIR})
+  endif()
 endif()
 
-if(NOT DEFINED WITH_MKL)
-  set(WITH_MKL TRUE)
-endif()
+option(WITH_MKL "use Intel MKLML Library by default" ON)
 if(WITH_MKL)
-  demo_deps_library(${LITE_IOMP5_LIB_NAME} ${MKLML_LIB_DIR})
+  add_lite_lib(mklml_iomp5 SHARED NAME ${MKLML_IOMP5_SHARED_NAME} PATH ${MKLML_LIB_DIR})
 endif()
 
 # 5.add executable output
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
 
 # 6. link libraries
-message(STATUS "dep_libs=${dep_libs}")
-target_link_libraries(${TARGET_EXE} ${dep_libs} ${OpenCV_LIBS})
+target_link_libraries(${TARGET_EXE} paddle_api mklml_iomp5)
 
+option(WITH_STATIC_MKL "use Intel MKLML Library by default" OFF)
 if(WIN32)
+  if (NOT WITH_STATIC_MKL)
+    ADD_LIBRARY(mklml_dll SHARED IMPORTED GLOBAL)
+    SET_PROPERTY(TARGET mklml_dll PROPERTY IMPORTED_LOCATION ${LITE_MKLML_DLL_FILE})
+    SET_PROPERTY(TARGET mklml_dll PROPERTY IMPORTED_IMPLIB ${LITE_MKLML_LIB_FILE})
+
+    target_link_libraries(${TARGET_EXE} mklml_dll)
+    add_custom_command(TARGET ${TARGET_EXE} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_LIB_DIR}/mklml.dll ${CMAKE_BINARY_DIR}/Release
+    )
+  endif()
   target_link_libraries(${TARGET_EXE} shlwapi.lib)
   add_custom_command(TARGET ${TARGET_EXE} POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_LIB_DIR}/mklml.dll ${CMAKE_BINARY_DIR}/Release
       COMMAND ${CMAKE_COMMAND} -E copy ${MKLML_LIB_DIR}/libiomp5md.dll ${CMAKE_BINARY_DIR}/Release
   )
 endif()
