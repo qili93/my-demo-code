@@ -11,7 +11,7 @@ function readlinkf() {
 
 # # paddle repo dir
 # BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-# BUILD_DIR_NAME=build-v2.7-debug
+# BUILD_DIR_NAME=build-v2.7-profile
 # PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
