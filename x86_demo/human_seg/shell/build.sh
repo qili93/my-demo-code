@@ -10,15 +10,17 @@ function readlinkf() {
 #######################################
 
 # # paddle repo dir
-# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-# BUILD_DIR_NAME=build-v2.7-debug
-# PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
+BUILD_DIR_NAME=build-v2.7-debug
+PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
-PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+# PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
 
 # USE_FULL_API=TRUE
 USE_FULL_API=FALSE
+USE_STATIC_API=FALSE
+# USE_STATIC_API=TRUE
 #######################################
 # Build commands, do not change them
 #######################################
@@ -30,6 +32,7 @@ cd $build_dir
 
 cmake .. -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
+      -DUSE_STATIC_API=${USE_STATIC_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -DCMAKE_BUILD_TYPE=Release
 

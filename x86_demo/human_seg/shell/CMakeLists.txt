@@ -12,14 +12,14 @@ endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
 # set PADDLE_LIB_DIR to LOCAL LIB DIR
-set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
-set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
-set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
 
 # set PADDLE_LIB_DIR to PADDLE BUILD DIR
-# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
-# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
-# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
+set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
+set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
+set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
 
 message(STATUS "PADDLE_INC_DIR=${PADDLE_INC_DIR}")
 message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
@@ -59,9 +59,13 @@ elseif(WIN32)
   set(LITE_TINY_LIB_FILE   ${PADDLE_LIB_DIR}/libpaddle_api_light_bundled.lib)
   set(LITE_IOMP5_LIB_FILE  ${MKLML_LIB_DIR}/libiomp5md.lib)
   set(LITE_IOMP5_DLL_FILE  ${MKLML_LIB_DIR}/libiomp5md.dll)
+  set(LITE_MKLML_LIB_FILE  ${MKLML_LIB_DIR}/mklml.lib)
+  set(LITE_MKLML_DLL_FILE  ${MKLML_LIB_DIR}/mklml.dll)
 else()
-  set(LITE_FULL_LIB_FILE   ${PADDLE_LIB_DIR}/libpaddle_full_api_shared.so)
-  set(LITE_TINY_LIB_FILE   ${PADDLE_LIB_DIR}/libpaddle_light_api_shared.so)
+  set(LITE_FULL_DLL_FILE   ${PADDLE_LIB_DIR}/libpaddle_full_api_shared.so)
+  set(LITE_TINY_DLL_FILE   ${PADDLE_LIB_DIR}/libpaddle_light_api_shared.so)
+  set(LITE_FULL_LIB_FILE   ${PADDLE_LIB_DIR}/libpaddle_api_full_bundled.a)
+  set(LITE_TINY_LIB_FILE   ${PADDLE_LIB_DIR}/libpaddle_api_light_bundled.a)
   set(LITE_IOMP5_DLL_FILE  ${MKLML_LIB_DIR}/libiomp5.so)
 endif()
 
@@ -69,7 +73,7 @@ if(NOT DEFINED USE_FULL_API)
   set(USE_FULL_API TRUE)
 endif()
 
-IF(WIN32)
+IF(USE_STATIC_API)
   if(USE_FULL_API)
     add_definitions(-DUSE_FULL_API)
     ADD_LIBRARY(paddle_api STATIC IMPORTED GLOBAL) 
@@ -78,16 +82,16 @@ IF(WIN32)
     ADD_LIBRARY(paddle_api STATIC IMPORTED GLOBAL) 
     SET_PROPERTY(TARGET paddle_api PROPERTY IMPORTED_LOCATION ${LITE_TINY_LIB_FILE})
   endif()
-ELSE(WIN32)
+ELSE(USE_STATIC_API)
   if(USE_FULL_API)
     add_definitions(-DUSE_FULL_API)
     ADD_LIBRARY(paddle_api SHARED IMPORTED GLOBAL) 
-    SET_PROPERTY(TARGET paddle_api PROPERTY IMPORTED_LOCATION ${LITE_FULL_LIB_FILE})
+    SET_PROPERTY(TARGET paddle_api PROPERTY IMPORTED_LOCATION ${LITE_FULL_DLL_FILE})
   else()
     ADD_LIBRARY(paddle_api SHARED IMPORTED GLOBAL) 
-    SET_PROPERTY(TARGET paddle_api PROPERTY IMPORTED_LOCATION ${LITE_TINY_LIB_FILE})
+    SET_PROPERTY(TARGET paddle_api PROPERTY IMPORTED_LOCATION ${LITE_FULL_DLL_FILE})
   endif()
-ENDIF(WIN32)
+ENDIF(USE_STATIC_API)
 
 ADD_LIBRARY(mklml_iomp5 SHARED IMPORTED GLOBAL)
 SET_PROPERTY(TARGET mklml_iomp5 PROPERTY IMPORTED_LOCATION ${LITE_IOMP5_DLL_FILE})
@@ -102,6 +106,16 @@ add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
 target_link_libraries(${TARGET_EXE} paddle_api mklml_iomp5)
 
 if(WIN32)
+  if (NOT WITH_STATIC_MKL)
+    ADD_LIBRARY(mklml_dll SHARED IMPORTED GLOBAL)
+    SET_PROPERTY(TARGET mklml_dll PROPERTY IMPORTED_LOCATION ${LITE_MKLML_DLL_FILE})
+    SET_PROPERTY(TARGET mklml_dll PROPERTY IMPORTED_IMPLIB ${LITE_MKLML_LIB_FILE})
+
+    target_link_libraries(${TARGET_EXE} mklml_dll)
+    add_custom_command(TARGET ${TARGET_EXE} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy ${LITE_MKLML_DLL_FILE} ${CMAKE_BINARY_DIR}/Release
+    )
+  endif()
   target_link_libraries(${TARGET_EXE} shlwapi.lib)
   add_custom_command(TARGET ${TARGET_EXE} POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy ${LITE_IOMP5_DLL_FILE} ${CMAKE_BINARY_DIR}/Release
