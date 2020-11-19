@@ -9,8 +9,8 @@ const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
 // MODEL_NAME=align150-fp32
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 180};
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 180};
 
 template <typename T>
 static std::string data_to_string(const T* data, const int64_t size) {
