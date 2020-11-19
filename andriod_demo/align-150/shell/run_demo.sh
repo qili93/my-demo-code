@@ -8,7 +8,7 @@ function readlinkf() {
 #######################################
 # Local Settings: please change accrodingly
 #######################################
-ANDROID_NDK=/opt/android-ndk-r17c
+ANDROID_NDK=~/Library/android-ndk-r17c
 ANDROID_ABI=arm64-v8a
 # ANDROID_ABI=armeabi-v7a
 ANDROID_NATIVE_API_LEVEL=android-23

@@ -8,7 +8,7 @@ function readlinkf() {
 #######################################
 # Local Settings: please change accrodingly
 #######################################
-ANDROID_NDK=/Users/liqi27/Library/android-ndk-r17c
+ANDROID_NDK=~/Library/android-ndk-r17c
 ANDROID_ABI=arm64-v8a
 # ANDROID_ABI=armeabi-v7a
 ANDROID_NATIVE_API_LEVEL=android-23
@@ -17,7 +17,7 @@ if [ $ANDROID_ABI == "armeabi-v7a" ]; then
 fi
 
 USE_FULL_API=FALSE
-PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib.android.armv8)
+PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
 #######################################
 # Build commands, do not change them
