@@ -7,8 +7,6 @@ build/
 kernel_meta/
 include/
 lib/
-fluid_inference/
-inference_lite_lib/
 # ignore files
 core*
 *.log

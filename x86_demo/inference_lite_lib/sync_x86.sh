@@ -6,7 +6,7 @@ function readlinkf() {
 }
 
 # change together with run_demo.sh
-BUILD_DIR_NAME=build-v2.7-relse-static
+BUILD_DIR_NAME=build-v2.7-debug-extra
 
 # paddle repo dir
 BASE_REPO_PATH=$(readlinkf ../../../Paddle-Lite)
@@ -73,7 +73,7 @@ echo "copy from == $LITE_IOMP5_LIB"
 echo "copy from == $LITE_MKLML_LIB"
 echo "copy to ==== $target_lib"
 cp $LITE_IOMP5_LIB $target_lib
-# cp $LITE_MKLML_LIB $target_lib
+cp $LITE_MKLML_LIB $target_lib
 
 
 echo "---------------List Files-----------------"
