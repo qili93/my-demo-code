@@ -8,7 +8,7 @@ function readlinkf() {
 #######################################
 # Local Settings: please change accrodingly
 #######################################
-ANDROID_NDK=/opt/android-ndk-r17c
+ANDROID_NDK=~/Library/android-ndk-r17c
 ANDROID_ABI=arm64-v8a
 # ANDROID_ABI=armeabi-v7a
 ANDROID_NATIVE_API_LEVEL=android-23
@@ -17,7 +17,7 @@ if [ $ANDROID_ABI == "armeabi-v7a" ]; then
 fi
 
 # paddle lite dir
-PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib.android.armv8)
+PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
 #######################################
 # Model variables, do not change them
@@ -25,7 +25,8 @@ PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib.android.armv8)
 # build target
 TARGET_EXE=model_test
 # model name
-MODEL_NAME=face_detect_fp32
+# MODEL_NAME=face_detect_fp32
+MODEL_NAME=detect_rgb-fp32
 # model dir
 MODEL_DIR=$(readlinkf ../assets/models)
 # workspace
@@ -58,9 +59,9 @@ adb shell ls -l ${WORK_SPACE}
 echo ""
 
 # pull optimized model
-adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
+# adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
 
 # list models files
-echo ""
-echo "ls -l ${MODEL_DIR}"
-ls -l ${MODEL_DIR}
+# echo ""
+# echo "ls -l ${MODEL_DIR}"
+# ls -l ${MODEL_DIR}
