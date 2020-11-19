@@ -15,10 +15,10 @@ function readlinkf() {
 # PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
-PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
-USE_FULL_API=TRUE
-# USE_FULL_API=FALSE
+# USE_FULL_API=TRUE
+USE_FULL_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################
@@ -31,7 +31,7 @@ cd $build_dir
 # export CPPFLAGS="-I/usr/local/opt/opencv@2/include"
 # export PKG_CONFIG_PATH="/usr/local/opt/opencv@2/lib/pkgconfig"
 
-cmake .. -DWITH_MKL=ON -DWITH_OPENCV=ON \
+cmake .. -DWITH_MKL=ON -DWITH_OPENCV=OFF \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \

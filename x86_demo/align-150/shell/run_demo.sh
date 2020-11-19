@@ -16,25 +16,13 @@ function readlinkf() {
 # export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
 # local sync lib dir
-PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
 # set model dir
-ASSETS_DIR=$(readlinkf ../assets)
-MODEL_TYPE=1 # 0 uncombined; 1 combined paddle fluid model
-
-# MODEL_NAME=align150-fp32
-# MODEL_NAME=angle-fp32
-# MODEL_NAME=detect_rgb-fp32
-# MODEL_NAME=eyes_position-fp32
-# MODEL_NAME=iris_position-fp32
-# MODEL_NAME=mouth_position-fp32
-# MODEL_NAME=pc-seg-float-model
-
+MODEL_DIR=$(readlinkf ../assets/models)
 MODEL_NAME=align150-fp32
-# MODEL_NAME=align150-fp32-dst
-IMAGE_NAME=face-input.raw
 
 # run demo
-export GLOG_v=0
-./build/model_test $ASSETS_DIR $MODEL_NAME $IMAGE_NAME
+export GLOG_v=5
+./build/model_test $MODEL_DIR/$MODEL_NAME
