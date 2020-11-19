@@ -161,8 +161,8 @@ void SaveModel(const std::string model_path, const int model_type) {
 #endif
 
 int main(int argc, char **argv) {
-  if (argc < 3) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_path\n";
+  if (argc < 2) {
+    std::cerr << "[ERROR] usage: ./" << argv[0] << " model_path\n";
     exit(1);
   }
   std::string model_path = argv[1];

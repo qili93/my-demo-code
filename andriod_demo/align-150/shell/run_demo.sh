@@ -17,7 +17,7 @@ if [ $ANDROID_ABI == "armeabi-v7a" ]; then
 fi
 
 # paddle lite dir
-PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib.android.armv8)
+PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
 #######################################
 # Model variables, do not change them
@@ -25,7 +25,7 @@ PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib.android.armv8)
 # build target
 TARGET_EXE=model_test
 # model name
-MODEL_NAME=face_detect_fp32
+MODEL_NAME=align150-fp32
 # model dir
 MODEL_DIR=$(readlinkf ../assets/models)
 # workspace
@@ -39,7 +39,7 @@ adb shell  "rm -r ${WORK_SPACE}/*"
 adb push   ${PADDLE_LITE_DIR}/lib/.     ${WORK_SPACE}
 adb push   ${MODEL_DIR}/.               ${WORK_SPACE}
 adb push   build/${TARGET_EXE}          ${WORK_SPACE}
-adb shell  chmod +x "${WORK_SPACE}/${TARGET_EXE}"
+adb shell   chmod +x "${WORK_SPACE}/${TARGET_EXE}"
 # define exe commands
 EXE_SHELL="cd ${WORK_SPACE}; "
 EXE_SHELL+="export GLOG_v=5;"
@@ -57,10 +57,10 @@ echo "ls -l ${WORK_SPACE}"
 adb shell ls -l ${WORK_SPACE}
 echo ""
 
-# pull optimized model
-adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
+# # pull optimized model
+# # adb pull ${WORK_SPACE}/${MODEL_NAME}.nb ${MODEL_DIR}
 
-# list models files
-echo ""
-echo "ls -l ${MODEL_DIR}"
-ls -l ${MODEL_DIR}
+# # list models files
+# echo ""
+# echo "ls -l ${MODEL_DIR}"
+# ls -l ${MODEL_DIR}
