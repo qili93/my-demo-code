@@ -105,6 +105,8 @@ void RunModel(const std::string model_path, const int model_type) {
   }
   // 开启 IR 优化
   config.SwitchIrOptim();
+  // 启用 GPU 预测
+  config.EnableUseGpu(100, 0);
 
   // 2. Create PaddlePredictor by AnalysisConfig
   auto predictor = paddle_infer::CreatePredictor(config);
@@ -138,7 +140,7 @@ void RunModel(const std::string model_path, const int model_type) {
             << (end_time - start_time) / FLAGS_repeats / 1000.0
             << " ms in average." << std::endl;
 
-// 5. Get all output
+  // 5. Get all output
   auto output_names = predictor->GetOutputNames();
   int output_num = static_cast<int>(output_names.size());
   for (int i = 0; i < output_num; ++i) {
@@ -152,6 +154,11 @@ void RunModel(const std::string model_path, const int model_type) {
     // std::cout << data_to_string<float>(output_data.data(), output_size) << std::endl;
     std::cout << "Printing Output Index: <" << i << ">, output_data size is " << output_data.size() << std::endl;
   }
+  // 释放中间Tensor
+  predictor->ClearIntermediateTensor();
+
+  // 释放内存池中的所有临时 Tensor
+  predictor->TryShrinkMemory();
 }
 
 int main(int argc, char **argv) {
