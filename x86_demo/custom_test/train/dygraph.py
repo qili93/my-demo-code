@@ -64,3 +64,18 @@ train(layer, loader, loss_fn, adam)
 # save
 path = "example_model/linear"
 paddle.jit.save(layer, path)
+
+# load
+loaded_layer = paddle.jit.load(path)
+
+# inference
+loaded_layer.eval()
+x = paddle.randn([1, IMAGE_SIZE], 'float32')
+pred = loaded_layer(x)
+print("Predictor Output Tensor: {}".format(pred))
+print("Predictor Output Numpy: {}".format(pred.numpy()))
+
+# fine-tune
+loaded_layer.train()
+adam = opt.Adam(learning_rate=0.001, parameters=loaded_layer.parameters())
+train(loaded_layer, loader, loss_fn, adam)
