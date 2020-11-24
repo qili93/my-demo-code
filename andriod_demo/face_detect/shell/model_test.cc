@@ -12,7 +12,8 @@ const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
 // MODEL_NAME=face_detect_fp32
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 512};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 320, 512};
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 160, 90};
 
 template <typename T>
 static std::string data_to_string(const T* data, const int64_t size) {

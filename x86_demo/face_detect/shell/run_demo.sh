@@ -24,7 +24,8 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
 # set model dir
 MODEL_DIR=$(readlinkf ../assets/models)
-MODEL_NAME=face_detect_fp32
+# MODEL_NAME=face_detect_fp32
+MODEL_NAME=detect_rgb-fp32
 
 # run demo
 export GLOG_v=5

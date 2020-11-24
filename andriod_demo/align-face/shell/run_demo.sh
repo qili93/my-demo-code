@@ -43,7 +43,7 @@ adb shell   chmod +x "${WORK_SPACE}/${TARGET_EXE}"
 # define exe commands
 EXE_SHELL="cd ${WORK_SPACE}; "
 EXE_SHELL+="export GLOG_v=5;"
-EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE} ./${MODEL_NAME}"
+EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE}"
 echo ${EXE_SHELL}
 # run
 adb shell ${EXE_SHELL}
