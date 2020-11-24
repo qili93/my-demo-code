@@ -19,7 +19,7 @@ function readlinkf() {
 # export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
 # local sync lib dir
-PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/lib:$LD_LIBRARY_PATH
 
 # set model dir
