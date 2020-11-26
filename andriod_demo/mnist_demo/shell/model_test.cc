@@ -65,7 +65,6 @@ void RunModel(std::string model_dir) {
   config.set_threads(CPU_THREAD_NUM);
   config.set_power_mode(PowerMode::LITE_POWER_HIGH);
   //config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
-  config.set_subgraph_model_cache_dir("/data/local/tmp");
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<MobileConfig>(config);
   std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
@@ -73,26 +72,30 @@ void RunModel(std::string model_dir) {
   process(predictor);
 }
 
-void SaveModel(std::string model_dir) {
+void SaveModel(const std::string model_path, const int model_type) {
   // 1. Create CxxConfig
-  CxxConfig config;
-  config.set_model_dir(model_dir);
-  config.set_threads(CPU_THREAD_NUM);
-  config.set_power_mode(PowerMode::LITE_POWER_HIGH);
-  config.set_valid_places({Place{TARGET(kNPU), PRECISION(kFloat)},
+  CxxConfig cxx_config;
+  if (model_type) { // combined model
+    cxx_config.set_model_file(model_path + "/__model__");
+    cxx_config.set_param_file(model_path + "/__params__");
+  } else {
+    cxx_config.set_model_dir(model_path);
+  }
+  cxx_config.set_threads(CPU_THREAD_NUM);
+  cxx_config.set_power_mode(PowerMode::LITE_POWER_HIGH);
+  cxx_config.set_valid_places({Place{TARGET(kNPU), PRECISION(kFloat)},
                            Place{TARGET(kARM), PRECISION(kFloat)}});
-  //config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
-  config.set_subgraph_model_cache_dir("/data/local/tmp");
+  //cxx_config.set_subgraph_model_cache_dir(model_dir.substr(0, model_dir.find_last_of("/")));
   // 2. Create PaddlePredictor by CxxConfig
-  std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<CxxConfig>(config);
+  std::shared_ptr<PaddlePredictor> predictor = CreatePaddlePredictor<CxxConfig>(cxx_config);
   std::cout << "PaddlePredictor Version: " << predictor->GetVersion() << std::endl;
   // 3. Run model
   process(predictor);
   // 4. Save optimized model
-  predictor->SaveOptimizedModel(model_dir, LiteModelType::kNaiveBuffer);
+  predictor->SaveOptimizedModel(model_path, LiteModelType::kNaiveBuffer);
   //predictor->SaveOptimizedModel(model_dir, LiteModelType::kProtobuf);
-  std::cout << "Load model from " << model_dir << std::endl;
-  std::cout << "Save optimized model to " << (model_dir+".nb") << std::endl;
+  std::cout << "Load model from " << model_path << std::endl;
+  std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -101,9 +104,11 @@ int main(int argc, char **argv) {
     exit(1);
   }
   std::string model_path = argv[1];
+  // 0 for umcombined
+  const int model_type = 1;
 
 #ifdef USE_FULL_API
-  SaveModel(model_path);
+  SaveModel(model_path, model_type);
 #endif
   RunModel(model_path);
   return 0;

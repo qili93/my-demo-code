@@ -27,7 +27,7 @@ TARGET_EXE=model_test
 # model name
 MODEL_NAME=mnist_model
 # model dir
-MODEL_DIR=$(readlinkf ../python)
+MODEL_DIR=$(readlinkf ../assets/models)
 # workspace
 WORK_SPACE=/data/local/tmp
 
@@ -43,7 +43,7 @@ adb shell   chmod +x "${WORK_SPACE}/${TARGET_EXE}"
 # define exe commands
 EXE_SHELL="cd ${WORK_SPACE}; "
 EXE_SHELL+="export GLOG_v=5;"
-EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE}"
+EXE_SHELL+="LD_LIBRARY_PATH=. ./${TARGET_EXE} ./${MODEL_NAME}"
 echo ${EXE_SHELL}
 # run
 adb shell ${EXE_SHELL}
