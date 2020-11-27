@@ -35,8 +35,8 @@ save_dirname = './saved_infer_model'
 
 # input_data = np.array([1, 10, 100]).astype(np.float32).reshape([1, 3, 1, 1])
 # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-input_data = np.arange(1, 49).astype(np.float32).reshape([1, 3, 4, 4])
-# input_data = np.arange(1, 13).astype(np.float32).reshape([1, 3, 2, 2])
+# input_data = np.arange(1, 49).astype(np.float32).reshape([1, 3, 4, 4])
+input_data = np.arange(1, 13).astype(np.float32).reshape([1, 3, 2, 2])
 print("input shape is {}".format(input_data.shape))
 print("input data is \n {}".format(input_data))
 input_tensor = paddle.to_tensor(input_data)
