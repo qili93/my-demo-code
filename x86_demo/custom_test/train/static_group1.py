@@ -31,7 +31,7 @@ class ExampleLayer(paddle.nn.Layer):
     def forward(self, input):
         return self._conv2d(input)
 
-save_dirname = './saved_infer_model'
+save_dirname = './model_group1'
 
 # input_data = np.array([1, 10, 100]).astype(np.float32).reshape([1, 3, 1, 1])
 # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
