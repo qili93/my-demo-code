@@ -14,6 +14,19 @@ const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::
 
 const std::vector<int64_t> INPUT_SHAPE = {1, 3, 2, 2};
 
+int64_t get_current_us() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
+}
+
+
+int64_t shape_production(const std::vector<int64_t>& shape) {
+  int64_t res = 1;
+  for (auto i : shape) res *= i;
+  return res;
+}
+
 template <typename T>
 std::string data_to_string(const T* data, const int64_t size) {
   std::ostringstream ss;
@@ -45,30 +58,16 @@ std::string shape_to_string(const std::vector<int64_t>& shape) {
 template <typename T>
 void tensor_to_string(const T* data, const std::vector<int64_t>& shape) {
   std::cout << "Shape: " << shape_to_string(shape) << std::endl;
-  int64_t stride = shape.back(); 
-  int64_t index = 0;
-  for (size_t i = 0; i < shape[0]; ++i) {
-    for (size_t j = 0; j < shape[1]; ++j) {
+  int64_t stride = shape.back();
+  int64_t split = shape.size() > 2 ? shape[shape.size() - 2] : 0;
+  int64_t length = static_cast<int64_t>(shape_production(shape) / stride);
+  for (size_t i = 0; i < length; ++i) {
+    const T * data_start = data + i * stride;
+    std::cout << data_to_string<T>(data_start, stride) << std::endl;
+    if (split != 0 && i % split == 1) {
       std::cout << std::endl;
-      for (size_t k = 0; k < shape[2]; ++k) {
-        const T * data_start = data + index;
-        std::cout << data_to_string<T>(data_start, stride) << std::endl;
-        index += stride;
-      }
     }
   }
-}
-
-int64_t get_current_us() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
-}
-
-int64_t shape_production(const std::vector<int64_t>& shape) {
-  int64_t res = 1;
-  for (auto i : shape) res *= i;
-  return res;
 }
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
