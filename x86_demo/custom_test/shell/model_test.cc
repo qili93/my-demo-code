@@ -1,5 +1,7 @@
 #include <iostream>
+#include <sstream>
 #include <algorithm>
+#include <iomanip>
 #include <sys/time.h>
 #include <paddle_api.h>
 
@@ -13,7 +15,53 @@ const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::
 const std::string model_path = "../train/saved_infer_model";
 const std::vector<int64_t> INPUT_SHAPE = {1, 3, 4, 4};
 
-inline int64_t get_current_us() {
+
+template <typename T>
+std::string data_to_string(const T* data, const int64_t size) {
+  std::ostringstream ss;
+  ss << "[";
+  for (int64_t i = 0; i < size - 1; ++i) {
+    ss << std::setprecision(2) << std::setw(9) << std::setfill(' ') 
+       << std::fixed << data[i] << ", ";
+  }
+  ss << std::setprecision(2) << std::setw(9) << std::setfill(' ') 
+     << std::fixed << data[size - 1] << "]";
+  // ss << data[size - 1] << "]";
+  return ss.str();
+}
+
+std::string shape_to_string(const std::vector<int64_t>& shape) {
+  std::ostringstream ss;
+  if (shape.empty()) {
+    ss << "{}";
+    return ss.str();
+  }
+  ss << "{";
+  for (size_t i = 0; i < shape.size() - 1; ++i) {
+    ss << shape[i] << ", ";
+  }
+  ss << shape[shape.size() - 1] << "}";
+  return ss.str();
+}
+
+template <typename T>
+void tensor_to_string(const T* data, const std::vector<int64_t>& shape) {
+  std::cout << "Shape: " << shape_to_string(shape) << std::endl;
+  int64_t stride = shape.back(); 
+  int64_t index = 0;
+  for (size_t i = 0; i < shape[0]; ++i) {
+    for (size_t j = 0; j < shape[1]; ++j) {
+      std::cout << std::endl;
+      for (size_t k = 0; k < shape[2]; ++k) {
+        const T * data_start = data + index;
+        std::cout << data_to_string<T>(data_start, stride) << std::endl;
+        index += stride;
+      }
+    }
+  }
+}
+
+int64_t get_current_us() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
@@ -31,7 +79,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   input_tensor->Resize(INPUT_SHAPE);
   auto* input_data = input_tensor->mutable_data<float>();
   for (int64_t i = 0; i < shape_production(INPUT_SHAPE); ++i) {
-    input_data[i] = 1.0f;
+    input_data[i] = i + 1.0f;
   }
 
   // 2. Warmup Run
@@ -51,13 +99,14 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
             << " ms in average." << std::endl;
 
   // 5. Get all output
+  std::cout << std::endl << "Output Index: <0>" << std::endl;
+  tensor_to_string<float>(input_data, input_tensor->shape());
   int output_num = static_cast<int>(predictor->GetOutputNames().size());
   for (int i = 0; i < output_num; ++i) {
     std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
-    // for (size_t j = 0; j < shape_production(output_tensor->shape()); j++) {
-    //   std::cout << "Output["<< j <<"]: " << output_data[i] << std::endl;
-    // }
+    std::cout << std::endl << "Output Index: <" << i << ">" << std::endl;
+    tensor_to_string<float>(output_data, output_tensor->shape());
   }
 }
 
