@@ -10,7 +10,7 @@ function readlinkf() {
 #######################################
 
 # # paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-release)
+BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-profile)
 PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
