@@ -1,20 +1,34 @@
-import numpy as np
 import paddle
+import numpy as np
 
 class ExampleLayer(paddle.nn.Layer):
     def __init__(self):
         super(ExampleLayer, self).__init__()
-        self._conv2d = paddle.nn.Conv2D(in_channels=3, out_channels=2, kernel_size=3, stride=2, padding=1)
+        weight_data_1 = np.arange(1,7).astype(np.float32).reshape([6, 1, 1, 1])
+        weight_attr_1 = paddle.framework.ParamAttr(name="conv_weight_1",
+                        initializer=paddle.nn.initializer.Assign(weight_data_1))
+        bias_data_1 = np.full((6), 1).astype(np.float32).reshape([6])
+        bias_attr_1 = paddle.framework.ParamAttr(name="conv_bias_1",
+                      initializer=paddle.nn.initializer.Assign(bias_data_1))
+        self._conv2d = paddle.nn.Conv2D(in_channels=3, 
+                                        out_channels=6, 
+                                        kernel_size=1, 
+                                        groups=3, 
+                                        weight_attr=weight_attr_1,
+                                        bias_attr=bias_attr_1)
 
     def forward(self, input):
         return self._conv2d(input)
 
 save_dirname = './saved_infer_model'
-in_np = np.random.random([1, 3, 4, 4]).astype('float32')
-in_var = paddle.to_tensor(in_np)
+
+input_data = np.array([1, 10, 100]).astype(np.float32).reshape([1, 3, 1, 1])
+print("output shape is {}".format(input_data.shape)) # (1, 3, 1, 1)
+print("inpout data is \n {}".format(input_data)) # (1, 10, 100)
+input_tensor = paddle.to_tensor(input_data)
 layer = ExampleLayer()
 
-out_dygraph, static_layer = paddle.jit.TracedLayer.trace(layer, inputs=[in_var])
+out_dygraph, static_layer = paddle.jit.TracedLayer.trace(layer, inputs=[input_tensor])
 static_layer.save_inference_model(save_dirname, feed=[0], fetch=[0])
 
 paddle.enable_static()
@@ -22,5 +36,8 @@ place = paddle.CPUPlace()
 exe = paddle.static.Executor(place)
 program, feed_vars, fetch_vars = paddle.static.load_inference_model(save_dirname, exe)
 
-fetch, = exe.run(program, feed={feed_vars[0]: in_np}, fetch_list=fetch_vars)
-print(fetch.shape) # (1, 8, 10)
+fetch, = exe.run(program, feed={feed_vars[0]: input_data}, fetch_list=fetch_vars)
+print("output shape is {}".format(fetch.shape)) # (1, 6, 1, 1)
+print("output data is \n {}".format(fetch)) 
+# NO BIAS => (1, 2, 30, 40, 500, 600)
+# HAS BIAS => (2, 3, 31, 41, 501, 601)
