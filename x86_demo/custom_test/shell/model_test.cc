@@ -11,7 +11,7 @@ const int CPU_THREAD_NUM = 1;
 const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::LITE_POWER_HIGH;
 
 const std::string model_path = "../train/saved_infer_model";
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 2, 2};
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 4, 4};
 
 inline int64_t get_current_us() {
   struct timeval time;
