@@ -12,9 +12,7 @@ const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::LITE_POWER_HIGH;
 
-const std::string model_path = "../train/saved_infer_model";
 const std::vector<int64_t> INPUT_SHAPE = {1, 3, 2, 2};
-
 
 template <typename T>
 std::string data_to_string(const T* data, const int64_t size) {
@@ -192,6 +190,15 @@ void SaveOptModel(const std::string model_path, const int model_type = 0) {
 #endif
 
 int main(int argc, char **argv) {
+  if (argc < 2) {
+    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_path\n";
+    exit(1);
+  }
+  const std::string model_path = argv[1];
+  std::cout << "Model Path is <" << model_path << ">" << std::endl;
+
+  // 0 for umcombined
+  const int model_type = 0;
 
 #ifdef USE_FULL_API
   SaveOptModel(model_path);
