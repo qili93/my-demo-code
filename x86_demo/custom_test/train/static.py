@@ -7,7 +7,8 @@ class ExampleLayer(paddle.nn.Layer):
         weight_data_1 = np.arange(1,7).astype(np.float32).reshape([6, 1, 1, 1])
         weight_attr_1 = paddle.framework.ParamAttr(name="conv_weight_1",
                         initializer=paddle.nn.initializer.Assign(weight_data_1))
-        bias_data_1 = np.full((6), 1).astype(np.float32).reshape([6])
+        # bias_data_1 = np.full((6), 1).astype(np.float32).reshape([6])
+        bias_data_1 = np.arange(1,7).astype(np.float32).reshape([6])
         bias_attr_1 = paddle.framework.ParamAttr(name="conv_bias_1",
                       initializer=paddle.nn.initializer.Assign(bias_data_1))
         self._conv2d = paddle.nn.Conv2D(in_channels=3, 
@@ -23,6 +24,8 @@ class ExampleLayer(paddle.nn.Layer):
 save_dirname = './saved_infer_model'
 
 input_data = np.array([1, 10, 100]).astype(np.float32).reshape([1, 3, 1, 1])
+# [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+# input_data = np.arange(1, 13).astype(np.float32).reshape([1, 3, 2, 2])
 print("output shape is {}".format(input_data.shape)) # (1, 3, 1, 1)
 print("inpout data is \n {}".format(input_data)) # (1, 10, 100)
 input_tensor = paddle.to_tensor(input_data)
@@ -39,5 +42,6 @@ program, feed_vars, fetch_vars = paddle.static.load_inference_model(save_dirname
 fetch, = exe.run(program, feed={feed_vars[0]: input_data}, fetch_list=fetch_vars)
 print("output shape is {}".format(fetch.shape)) # (1, 6, 1, 1)
 print("output data is \n {}".format(fetch)) 
-# NO BIAS => (1, 2, 30, 40, 500, 600)
-# HAS BIAS => (2, 3, 31, 41, 501, 601)
+# NO BIAS =>> (1, 2, 30, 40, 500, 600)
+# BIAS DATA = (1, 2,  3,  4,   5,   6)
+# BIAS OUT => (2, 4, 33, 44, 505, 606)
