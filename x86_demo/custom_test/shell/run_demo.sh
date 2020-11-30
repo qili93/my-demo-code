@@ -20,9 +20,9 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 
 # set model dir
 MODEL_DIR=$(readlinkf ../train)
-MODEL_NAME=model_group1
-# MODEL_NAME=model_group3
+# MODEL_NAME=model_group1
+MODEL_NAME=model_group3
 
 # run demo
-export GLOG_v=0
+export GLOG_v=5
 ./build/model_test $MODEL_DIR/$MODEL_NAME

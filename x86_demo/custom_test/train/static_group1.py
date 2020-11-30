@@ -9,7 +9,7 @@ class ExampleLayer(paddle.nn.Layer):
     def __init__(self):
         super(ExampleLayer, self).__init__()
         # weight_data_1 = np.arange(1,7).astype(np.float32).reshape([6, 1, 1, 1])
-        weight_data_1 = np.array([0.01, 0.1, 1, 10, 100, 1000]).astype(np.float32).reshape([2, 3, 1, 1])
+        weight_data_1 = np.array([-0.01, -0.1, -1, 10, 100, 1000]).astype(np.float32).reshape([2, 3, 1, 1])
         print("weight shape is {}".format(weight_data_1.shape))
         print("weight data is \n {}".format(weight_data_1))
         weight_attr_1 = paddle.framework.ParamAttr(name="conv_weight_1",
@@ -27,9 +27,12 @@ class ExampleLayer(paddle.nn.Layer):
                                         padding=0,
                                         weight_attr=weight_attr_1,
                                         bias_attr=bias_attr_1)
+        self._relu6 = paddle.nn.ReLU6()
 
     def forward(self, input):
-        return self._conv2d(input)
+        x = self._conv2d(input)
+        # x = self._relu6(x)
+        return x
 
 save_dirname = './model_group1'
 

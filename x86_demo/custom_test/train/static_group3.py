@@ -14,8 +14,8 @@ class ExampleLayer(paddle.nn.Layer):
         print("weight data is \n {}".format(weight_data_1))
         weight_attr_1 = paddle.framework.ParamAttr(name="conv_weight_1",
                         initializer=paddle.nn.initializer.Assign(weight_data_1))
-        # bias_data_1 = np.full((6), 0).astype(np.float32).reshape([6])
-        bias_data_1 = np.arange(1,7).astype(np.float32).reshape([6])
+        bias_data_1 = np.full((6), 0).astype(np.float32).reshape([6])
+        # bias_data_1 = np.arange(1,7).astype(np.float32).reshape([6])
         bias_attr_1 = paddle.framework.ParamAttr(name="conv_bias_1",
                       initializer=paddle.nn.initializer.Assign(bias_data_1))
         self._conv2d = paddle.nn.Conv2D(in_channels=3, 
@@ -27,8 +27,26 @@ class ExampleLayer(paddle.nn.Layer):
                                         weight_attr=weight_attr_1,
                                         bias_attr=bias_attr_1)
 
+        weight_data_2 = np.array([0.01, 0.1, 1, 10, 100, 1000]).astype(np.float32).reshape([6])
+        weight_attr_2 = paddle.framework.ParamAttr(name="bn_weight_2",
+                        initializer=paddle.nn.initializer.Assign(weight_data_2))
+        bias_data_2 = np.full((6), 0).astype(np.float32).reshape([6])
+        bias_attr_2 = paddle.framework.ParamAttr(name="bn_bias_2",
+                        initializer=paddle.nn.initializer.Assign(bias_data_2))
+        self._batchnorm = paddle.nn.BatchNorm2D(num_features=6,
+                                               weight_attr=weight_attr_2,
+                                               bias_attr=bias_attr_2)
+        self._relu = paddle.nn.ReLU()
+        self._relu6 = paddle.nn.ReLU6()
+
     def forward(self, input):
-        return self._conv2d(input)
+        x = self._conv2d(input)
+        print("output data after conv2d is \n {}".format(x))
+        x = self._batchnorm(x)
+        print("output data after batchnorm is \n {}".format(x))
+        # x = self._relu(x)
+        # x = self._relu6(x)
+        return x
 
 save_dirname = './model_group3'
 
