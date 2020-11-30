@@ -123,25 +123,69 @@ void RunLiteModel(const std::string model_path, const std::vector<int64_t> INPUT
   // std::cout << "MobileConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
 }
 
+#ifdef USE_FULL_API
+void SaveOptModel(const std::string model_path, const int model_type = 0) {
+  // 1. Create CxxConfig
+  paddle::lite_api::CxxConfig cxx_config;
+  if (model_type) { // combined model
+    cxx_config.set_model_file(model_path + "/__model__");
+    cxx_config.set_param_file(model_path + "/__params__");
+  } else {
+    cxx_config.set_model_dir(model_path);
+  }
+  cxx_config.set_valid_places({paddle::lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
+                               paddle::lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
+  // cxx_config.set_subgraph_model_cache_dir(model_path.substr(0, model_path.find_last_of("/")));
+
+  // 2. Create PaddlePredictor by CxxConfig
+  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
+  try {
+    predictor = paddle::lite_api::CreatePaddlePredictor<paddle::lite_api::CxxConfig>(cxx_config);
+    std::cout << "CxxConfig Predictor Version: " << predictor->GetVersion() << std::endl;
+  } catch (std::exception e) {
+    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
+  }
+
+  // 3. Save optimized model
+  predictor->SaveOptimizedModel(model_path, paddle::lite_api::LiteModelType::kNaiveBuffer);
+  std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
+
+  predictor->SaveOptimizedModel(model_path+"_opt", paddle::lite_api::LiteModelType::kProtobuf);
+  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+}
+#endif
+
 int main(int argc, char **argv) {
 
   std::cout << "Model Path is <" << model_align << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_ALIGN) << std::endl;
+#ifdef USE_FULL_API
+  SaveOptModel(model_align, 1);
+#endif
   RunLiteModel(model_align, INPUT_SHAPE_ALIGN);
 
   std::cout << std::endl;
   std::cout << "Model Path is <" << model_eyes << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_EYES) << std::endl;
+#ifdef USE_FULL_API
+  SaveOptModel(model_eyes, 1);
+#endif
   RunLiteModel(model_eyes, INPUT_SHAPE_EYES);
 
   std::cout << std::endl;
   std::cout << "Model Path is <" << model_iris << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_IRIS) << std::endl;
+#ifdef USE_FULL_API
+  SaveOptModel(model_eyes, 1);
+#endif
   RunLiteModel(model_iris, INPUT_SHAPE_IRIS);
 
   std::cout << std::endl;
   std::cout << "Model Path is <" << model_mouth << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_MOUTH) << std::endl;
+#ifdef USE_FULL_API
+  SaveOptModel(model_eyes, 1);
+#endif
   RunLiteModel(model_mouth, INPUT_SHAPE_MOUTH);
 
   std::cout << "==========================================" << std::endl;
