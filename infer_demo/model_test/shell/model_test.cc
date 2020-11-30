@@ -172,6 +172,12 @@ int main(int argc, char **argv) {
   // int model_type = atoi(argv[3]);
   int model_type = 0;
 
-  RunModel(model_path, model_type);
+  //RunModel(model_path, model_type);
+  // 创建 FLOAT32 类型 DataType
+  auto data_type = paddle_infer::DataType::FLOAT32;
+
+  // 输出 data_type 的字节数 - 4
+  std::cout << paddle_infer::GetNumBytesOfDataType(data_type) << std::endl;
+
   return 0;
 }
