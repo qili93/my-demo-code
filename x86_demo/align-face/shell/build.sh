@@ -9,16 +9,16 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-# paddle repo dir
-# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-# BUILD_DIR_NAME=build-v2.7-mkl-on-log-of-tailer
-# PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+# # paddle repo dir
+# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-release)
+BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-debuging)
+PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
-PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
+# PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
-# USE_FULL_API=TRUE
-USE_FULL_API=FALSE
+USE_FULL_API=TRUE
+# USE_FULL_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################
