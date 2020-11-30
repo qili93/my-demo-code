@@ -10,10 +10,9 @@ function readlinkf() {
 #######################################
 
 # # paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-# BUILD_DIR_NAME=build-v2.7-release
-BUILD_DIR_NAME=build-v2.7-debugging
-PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-release)
+# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-release)
+PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
 # PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)

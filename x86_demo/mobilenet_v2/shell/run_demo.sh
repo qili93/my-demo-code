@@ -9,12 +9,10 @@ function readlinkf() {
 # Local Settings: paddle-lite envs
 #######################################
 
-# paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-# BUILD_DIR_NAME=build-v2.7-profile
-# BUILD_DIR_NAME=build-v2.7-release
-BUILD_DIR_NAME=build-v2.7-debugging
-PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+# # paddle repo dir
+BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-release)
+# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-release)
+PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party/mklml/lib:$LD_LIBRARY_PATH
 
 # local sync lib dir
@@ -23,7 +21,7 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 
 # set model dir
 MODEL_DIR=$(readlinkf ../assets/models)
-MODEL_NAME=mobilenet_v2
+MODEL_NAME=MobileNetV2
 
 # run demo
 export GLOG_v=5
