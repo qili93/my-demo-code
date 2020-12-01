@@ -21,7 +21,7 @@ export LD_LIBRARY_PATH=${PADDLE_LITE_DIR}/cxx/lib:${PADDLE_LITE_DIR}/third_party
 
 # set model dir
 MODEL_DIR=$(readlinkf ../assets/models)
-MODEL_NAME=mobilenet_v2
+MODEL_NAME=MobileNetV2
 
 # run demo
 export GLOG_v=0
