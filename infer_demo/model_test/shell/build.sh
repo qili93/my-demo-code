@@ -10,12 +10,12 @@ function readlinkf() {
 #######################################
 
 # paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle)
-BUILD_DIR_NAME=build_infer
-PADDLE_INFER_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/paddle_inference_install_dir
+# BASE_REPO_PATH=$(readlinkf ../../../../Paddle)
+# BUILD_DIR_NAME=build_infer
+# PADDLE_INFER_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/paddle_inference_install_dir
 
 # local lib dir
-# PADDLE_INFER_DIR=$(readlinkf ../../paddle_inference_install_dir)
+PADDLE_INFER_DIR=$(readlinkf ../../paddle_inference)
 
 #######################################
 # Build commands, do not change them
