@@ -92,7 +92,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   input_tensor->Resize(INPUT_SHAPE);
   auto* input_data = input_tensor->mutable_data<float>();
   for (int64_t i = 0; i < shape_production(INPUT_SHAPE); ++i) {
-    input_data[i] = i + 1.0f;
+    input_data[i] = 1.0f;
   }
 
   // 2. Warmup Run
