@@ -99,8 +99,10 @@ void RunNCNNOP() {
     // set conv attr
     int stride_h = 1;
     int stride_w = 1;
-    int padding_h = 1;
-    int padding_w = 1;
+    int pad_left = 1;
+    int pad_right = 1;
+    int pad_top = 1;
+    int pad_bottom = 1;
     int diliation = 1;
 
     // get shape
@@ -117,7 +119,9 @@ void RunNCNNOP() {
     ncnn::Option opt;
     opt.num_threads = 1;
 
-    ncnn::Layer* op = ncnn::create_layer("ConvolutionDepthWise");
+    // ncnn::Layer* op = ncnn::create_layer("ConvolutionDepthWise");
+    ncnn::Layer* op = ncnn::create_layer("Convolution");
+
 
     // set param
     ncnn::ParamDict pd;
@@ -128,8 +132,10 @@ void RunNCNNOP() {
     pd.set(12, diliation); // dilation_h = 1
     pd.set(3, stride_w); // stride_w = 1
     pd.set(13, stride_h); // stride_h = 1
-    pd.get(4, padding_w); // pad_w = 0
-    pd.get(14, padding_h); // pad_h = 0
+    pd.set(4, pad_left); // pad_left
+    pd.set(15, pad_right); // pad_right
+    pd.set(14, pad_top); // pad_top
+    pd.set(16, pad_bottom); // pad_bottom
     pd.set(5, 1);// bias_term  = 0
     pd.set(6, filter_size);// weight_data_size = [2, 3, 1, 1] = [oc, ic/groups, kw, kw]
     pd.set(7, groups);// group = 1
@@ -142,7 +148,7 @@ void RunNCNNOP() {
     for (int i = 0; i < filter_size; ++i)
     {
         // weights[0][i] = std::pow(10, i)/100.f;
-        weights[0][i] = (i + 1.f)/9;
+        weights[0][i] = 1.0f;
     }
     std::cout << "--------- Printing Conv Filter ---------" << std::endl;
     tensor_to_string<float>(static_cast<float*>(weights[0].data), filter_shape);
@@ -150,7 +156,7 @@ void RunNCNNOP() {
     weights[1].create(bias_size);
     for (int i = 0; i < bias_size; ++i)
     {
-        weights[1][i] = i + 1.f;
+        weights[1][i] = 1.0f;
     }
     std::cout << "--------- Printing Conv Bias ---------" << std::endl;
     tensor_to_string<float>(static_cast<float*>(weights[1].data), bias_shape);
@@ -161,9 +167,10 @@ void RunNCNNOP() {
 
     // prepare input
     ncnn::Mat input = ncnn::Mat(input_height, input_width, input_channel);
+    // ncnn::Mat input = ncnn::Mat(input_height, input_width, input_channel, 32UL, 8);
     for (int i = 0; i < input_size; ++i)
     {
-      input[i] = (i + 1.f)/9;
+      input[i] = 1.0f;
     }
     std::cout << "--------- Printing Conv Input ---------" << std::endl;
     //tensor_to_string<float>(static_cast<float*>(input.data), input_shape);
