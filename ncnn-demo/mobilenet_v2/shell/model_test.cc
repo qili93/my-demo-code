@@ -7,8 +7,8 @@
 
 #include <ncnn/net.h>
 
-const int FLAGS_warmup = 5;
-const int FLAGS_repeats = 10;
+const int FLAGS_warmup = 0;
+const int FLAGS_repeats = 1;
 // const int CPU_THREAD_NUM = 1;
 
 // MODEL_NAME=squeezenet_v1.1
