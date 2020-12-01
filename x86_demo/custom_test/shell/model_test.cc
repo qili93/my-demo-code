@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <iomanip>
 #include <sys/time.h>
+#include <float.h>
+#include <math.h>
 #include <paddle_api.h>
 
 using namespace paddle::lite_api;  // NOLINT
@@ -12,19 +14,18 @@ const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::LITE_POWER_HIGH;
 
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 2, 2};
+const std::vector<int64_t> INPUT_SHAPE = {1, 8, 64, 64};
 
-int64_t get_current_us() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1000000LL * (int64_t)time.tv_sec + (int64_t)time.tv_usec;
-}
-
-
-int64_t shape_production(const std::vector<int64_t>& shape) {
-  int64_t res = 1;
+static inline int64_t shape_production(const std::vector<int64_t>& shape) {
+  int res = 1;
   for (auto i : shape) res *= i;
   return res;
+}
+
+static inline uint64_t get_current_us() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return static_cast<uint64_t>(time.tv_sec) * 1e+6 + time.tv_usec;
 }
 
 template <typename T>
@@ -70,6 +71,21 @@ void tensor_to_string(const T* data, const std::vector<int64_t>& shape) {
   }
 }
 
+void speed_report(const std::vector<float>& costs) {
+  float max = 0, min = FLT_MAX, sum = 0, avg;
+  for (auto v : costs) {
+      max = fmax(max, v);
+      min = fmin(min, v);
+      sum += v;
+  }
+  avg = costs.size() > 0 ? sum / costs.size() : 0;
+  std::cout << "================== Speed Report ==================" << std::endl;
+  std::cout << "[ - ]  warmup: " << FLAGS_warmup 
+            << ", repeats: " << FLAGS_repeats 
+            << ", max=" << max << " ms, min=" << min
+            << "ms, avg=" << avg << "ms" << std::endl;
+}
+
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   // 1. Prepare input data
   std::unique_ptr<Tensor> input_tensor(std::move(predictor->GetInput(0)));
@@ -84,27 +100,28 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
     predictor->Run();
   }
   // 3. Repeat Run
-  auto start_time = get_current_us();
+  std::vector<float> costs;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start_time = get_current_us();
     predictor->Run();
+    auto end_time = get_current_us();
+    costs.push_back((end_time - start_time) / 1000.0);
   }
-  auto end_time = get_current_us();
-  // 4. Speed Report
-  std::cout << "================== Speed Report ===================" << std::endl;
-  std::cout << "Warmup: " << FLAGS_warmup << ", repeats: " << FLAGS_repeats 
-            << ", spend " << (end_time - start_time) / FLAGS_repeats / 1000.0
-            << " ms in average." << std::endl;
 
-  // 5. Get all output
-  std::cout << std::endl << "Output Index: <0>" << std::endl;
-  tensor_to_string<float>(input_data, input_tensor->shape());
+  // 4. Get all output
+  // std::cout << std::endl << "Output Index: <0>" << std::endl;
+  // tensor_to_string<float>(input_data, input_tensor->shape());
   int output_num = static_cast<int>(predictor->GetOutputNames().size());
   for (int i = 0; i < output_num; ++i) {
     std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
-    std::cout << std::endl << "Output Index: <" << i << ">" << std::endl;
-    tensor_to_string<float>(output_data, output_tensor->shape());
+    std::cout << "Output Index: <" << i << ">" << std::endl;
+    std::cout << "Shape: " << shape_to_string(output_tensor->shape()) << std::endl;
+    //tensor_to_string<float>(output_data, output_tensor->shape());
   }
+
+  // 5. speed report
+  speed_report(costs);
 }
 
 void RunLiteModel(const std::string model_path) {
