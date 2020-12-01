@@ -12,7 +12,6 @@ paddle_inference/
 core*
 *.log
 *.om
-*.bin
 *.so
 *.dylib
 *.lib
