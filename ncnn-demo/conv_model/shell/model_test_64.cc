@@ -14,9 +14,6 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-// MODEL_NAME=squeezenet_v1.1
-// const std::vector<int64_t> INPUT_SHAPE_ALIGN = {1, 3, 227, 227};
-
 int shape_production(const std::vector<int>& shape) {
   int64_t res = 1;
   for (auto i : shape) res *= i;
@@ -88,23 +85,23 @@ void speed_report(const std::vector<float>& costs) {
 }
 
 void RunNCNNModel() {
-  //  set conv input - [bs, ic, ih, iw] = [1, 8, 2, 2]
+  //  set conv input - [bs, ic, ih, iw] = [1, 8, 64, 64]
   int batch_size = 1;
   int input_channel = 8;
-  int input_height = 2;
-  int input_width = 2;
-  // set conv filter [oc, ic/groups, kh, hw] = [8, 1, 1, 1]
+  int input_height = 64;
+  int input_width = 64;
+  // set conv filter [oc, ic/groups, kh, hw] = [8, 1, 3, 3]
   int output_channel = 8;
   int groups = 8;
-  int kernel_h = 1;
-  int kernel_w = 1;
+  int kernel_h = 3;
+  int kernel_w = 3;
   // set conv attr
   int stride_h = 1;
   int stride_w = 1;
-  int pad_left = 0;
-  int pad_right = 0;
-  int pad_top = 0;
-  int pad_bottom = 0;
+  int pad_left = 1;
+  int pad_right = 1;
+  int pad_top = 1;
+  int pad_bottom = 1;
   int diliation = 1;
   // get shape
   const std::vector<int> input_shape = {batch_size, input_channel, input_height, input_width};
@@ -131,18 +128,18 @@ void RunNCNNModel() {
   mobilenet.opt.use_int8_storage = false;
   mobilenet.opt.use_int8_arithmetic = false;
 
-  mobilenet.load_param("../train/torch-conv-08.param");
-  mobilenet.load_model("../train/torch-conv-08.bin");
+  mobilenet.load_param("../train/torch-conv-64.param");
+  mobilenet.load_model("../train/torch-conv-64.bin");
 
   // prepare input
   ncnn::Mat input = ncnn::Mat(input_height, input_width, input_channel);
   // ncnn::Mat input = ncnn::Mat(input_height, input_width, input_channel, 32UL, 8);
   for (int i = 0; i < input_size; ++i)
   {
-    input[i] = i + 1.0f;
+    input[i] = 1.0f;
   }
   std::cout << "--------- Printing Conv Input ---------" << std::endl;
-  tensor_to_string<float>(static_cast<float*>(input.data), input_shape);
+  // tensor_to_string<float>(static_cast<float*>(input.data), input_shape);
   std::cout << "input.dims: " << input.dims << std::endl;
   std::cout << "input.w: " << input.w << std::endl;
   std::cout << "input.h: " << input.h << std::endl;
@@ -172,7 +169,7 @@ void RunNCNNModel() {
 
   // 5. get output
   std::cout << "--------- Printing Conv Output ---------" << std::endl;
-  tensor_to_string<float>(static_cast<float*>(output.data), output_shape);
+  // tensor_to_string<float>(static_cast<float*>(output.data), output_shape);
   std::cout << "output.dims: " << output.dims << std::endl;
   std::cout << "output.w: " << output.w << std::endl;
   std::cout << "output.h: " << output.h << std::endl;

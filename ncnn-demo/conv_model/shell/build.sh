@@ -28,7 +28,7 @@ cd $build_dir
 cmake .. \
       -DNCNN_INSTALL_DIR=${NCNN_INSTALL_DIR} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-      -DCMAKE_BUILD_TYPE=Release
+      -DCMAKE_BUILD_TYPE=Debug
 
 make
 
