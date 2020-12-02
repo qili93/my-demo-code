@@ -20,7 +20,7 @@ include_directories(${NCNN_INSTALL_DIR}/include)
 add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
 
 add_library(ncnn_lib STATIC IMPORTED GLOBAL)
-set_property(TARGET ncnn_lib PROPERTY IMPORTED_LOCATION ${NCNN_INSTALL_DIR}/lib/libncnn.a)
+set_property(TARGET ncnn_lib PROPERTY IMPORTED_LOCATION ${NCNN_INSTALL_DIR}/lib/libncnnd.a)
 
 target_link_libraries(${TARGET_EXE} ncnn_lib)
 

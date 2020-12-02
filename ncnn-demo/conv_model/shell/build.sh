@@ -9,12 +9,12 @@ function readlinkf() {
 # Local Settings: please change accrodingly
 #######################################
 
-# # ncnn repo dir
-# NCNN_REPO_PATH=$(readlinkf ../../../../ncnn/build-debug)
-# NCNN_INSTALL_DIR=${NCNN_REPO_PATH}/install
+# ncnn repo dir
+NCNN_REPO_PATH=$(readlinkf ../../../../ncnn/build-debug)
+NCNN_INSTALL_DIR=${NCNN_REPO_PATH}/install
 
 # local sync lib dir
-NCNN_INSTALL_DIR=$(readlinkf ../../inference_ncnn_lib)
+# NCNN_INSTALL_DIR=$(readlinkf ../../inference_ncnn_lib)
 
 #######################################
 # Build commands, do not change them

@@ -11,7 +11,7 @@
 
 const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
-// const int CPU_THREAD_NUM = 1;
+const int CPU_THREAD_NUM = 1;
 
 // MODEL_NAME=squeezenet_v1.1
 // const std::vector<int64_t> INPUT_SHAPE_ALIGN = {1, 3, 227, 227};
@@ -46,8 +46,16 @@ void speed_report(const std::vector<float>& costs) {
 void RunNCNNModel() {
   // 1. Load Model
   ncnn::Net mobilenet;
-
-  mobilenet.opt.use_vulkan_compute = true;
+  // set opt
+  mobilenet.opt.lightmode = true;
+  mobilenet.opt.num_threads = CPU_THREAD_NUM;
+  mobilenet.opt.use_int8_inference = false;
+  mobilenet.opt.use_vulkan_compute = false;
+  mobilenet.opt.use_fp16_packed = false;
+  mobilenet.opt.use_fp16_storage = false;
+  mobilenet.opt.use_fp16_arithmetic = false;
+  mobilenet.opt.use_int8_storage = false;
+  mobilenet.opt.use_int8_arithmetic = false;
 
   mobilenet.load_param("../train/torch-conv.param");
   mobilenet.load_model("../train/torch-conv.bin");
