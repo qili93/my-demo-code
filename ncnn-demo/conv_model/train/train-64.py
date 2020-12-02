@@ -1,5 +1,10 @@
 import torch
 import torch.onnx
+import numpy as np
+
+# format
+float_formatter = "{:9.2f}".format
+np.set_printoptions(formatter={'float_kind':float_formatter})
 
 # Define model
 class TheModelClass(torch.nn.Module):
@@ -40,7 +45,7 @@ torch_out = torch_model(x)
 # Export the model
 torch.onnx.export(torch_model,               # model being run
                   x,                         # model input (or a tuple for multiple inputs)
-                  "super_resolution.onnx",   # where to save the model (can be a file or file-like object)
+                  "torch-conv-64.onnx",   # where to save the model (can be a file or file-like object)
                   export_params=True,        # store the trained parameter weights inside the model file
                   opset_version=10,          # the ONNX version to export the model to
                   do_constant_folding=True,  # whether to execute constant folding for optimization
