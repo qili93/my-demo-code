@@ -3,8 +3,8 @@ from paddle.fluid.param_attr import ParamAttr
 import paddle.fluid as fluid
 
 def x2paddle_net():
-    x2paddle_input = fluid.layers.data(dtype='float32', shape=[1, 8, 64, 64], name='x2paddle_input', append_batch_size=False)
-    x2paddle_output = fluid.layers.conv2d(x2paddle_input, num_filters=8, filter_size=[3, 3], stride=[1, 1], padding=[1, 1], dilation=[1, 1], groups=8, param_attr='x2paddle_conv1_weight', name='x2paddle_output', bias_attr='x2paddle_conv1_bias')
+    x2paddle_input = fluid.layers.data(dtype='float32', shape=[-1, 4, 8, 8], name='x2paddle_input', append_batch_size=False)
+    x2paddle_output = fluid.layers.conv2d(x2paddle_input, num_filters=4, filter_size=[3, 3], stride=[1, 1], padding=[1, 1], dilation=[1, 1], groups=4, param_attr='x2paddle_conv1_weight', name='x2paddle_output', bias_attr='x2paddle_conv1_bias')
 
     return [x2paddle_input], [x2paddle_output]
 
