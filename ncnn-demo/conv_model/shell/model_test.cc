@@ -14,9 +14,6 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-// MODEL_NAME=squeezenet_v1.1
-// const std::vector<int64_t> INPUT_SHAPE_ALIGN = {1, 3, 227, 227};
-
 int shape_production(const std::vector<int>& shape) {
   int64_t res = 1;
   for (auto i : shape) res *= i;
@@ -48,10 +45,10 @@ std::string data_to_string(const T* data, const int size) {
   std::ostringstream ss;
   ss << "[";
   for (int i = 0; i < size - 1; ++i) {
-    ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
+    ss << std::setprecision(1) << std::setw(9) << std::setfill(' ') 
        << std::fixed << data[i] << ", ";
   }
-  ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
+  ss << std::setprecision(1) << std::setw(9) << std::setfill(' ') 
      << std::fixed << data[size - 1] << "]";
   // ss << data[size - 1] << "]";
   return ss.str();
@@ -88,23 +85,23 @@ void speed_report(const std::vector<float>& costs) {
 }
 
 void RunNCNNModel() {
-  //  set conv input - [bs, ic, ih, iw] = [1, 8, 2, 2]
+  //  set conv input - [bs, ic, ih, iw] = [1, 4, 8, 8]
   int batch_size = 1;
-  int input_channel = 8;
-  int input_height = 2;
-  int input_width = 2;
-  // set conv filter [oc, ic/groups, kh, hw] = [8, 1, 1, 1]
-  int output_channel = 8;
-  int groups = 8;
-  int kernel_h = 1;
-  int kernel_w = 1;
+  int input_channel = 4;
+  int input_height = 8;
+  int input_width = 8;
+  // set conv filter [oc, ic/groups, kh, hw] = [4, 1, 3, 3]
+  int output_channel = 4;
+  int groups = 4;
+  int kernel_h = 3;
+  int kernel_w = 3;
   // set conv attr
   int stride_h = 1;
   int stride_w = 1;
-  int pad_left = 0;
-  int pad_right = 0;
-  int pad_top = 0;
-  int pad_bottom = 0;
+  int pad_left = 1;
+  int pad_right = 1;
+  int pad_top = 1;
+  int pad_bottom = 1;
   int diliation = 1;
   // get shape
   const std::vector<int> input_shape = {batch_size, input_channel, input_height, input_width};
@@ -131,15 +128,23 @@ void RunNCNNModel() {
   mobilenet.opt.use_int8_storage = false;
   mobilenet.opt.use_int8_arithmetic = false;
 
-  mobilenet.load_param("../train/torch-conv-08.param");
-  mobilenet.load_model("../train/torch-conv-08.bin");
+  mobilenet.load_param("../train/torch-conv_3x3s1.param");
+  mobilenet.load_model("../train/torch-conv_3x3s1.bin");
 
   // prepare input
   ncnn::Mat input = ncnn::Mat(input_height, input_width, input_channel);
   // ncnn::Mat input = ncnn::Mat(input_height, input_width, input_channel, 32UL, 8);
-  for (int i = 0; i < input_size; ++i)
-  {
-    input[i] = i + 1.0f;
+  // for (int i = 0; i < input_size; ++i)
+  // {
+  //   input[i] = i + 1.0f;
+  // }
+  for (int ic = 0; ic < input_channel; ++ic) {
+    for (int ih = 0; ih < input_height; ++ih) {
+      for (int iw = 0; iw < input_width; ++iw) {
+        int index = iw + ih * input_width + ic * input_height * input_width;
+        input[index] = 100 * ic + 10 * ih + iw;
+      }
+    }
   }
   std::cout << "--------- Printing Conv Input ---------" << std::endl;
   tensor_to_string<float>(static_cast<float*>(input.data), input_shape);
