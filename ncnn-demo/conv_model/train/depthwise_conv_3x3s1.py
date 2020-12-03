@@ -32,7 +32,7 @@ input_data = np.empty([batch_size, input_channel, input_height, input_width], dt
 for ic in range(input_channel):
     for ih in range(input_height):
         for iw in range(input_width):
-            input_data[0, ic, ih, iw] = 100 * ic + 10 * ih + iw
+            input_data[0, ic, ih, iw] = 100 * ic + ih * input_width + iw
 
 # print(input_data) - {1, 4, 8, 8}
 print("Input Data = [{}, {}, {}, {}]".format(batch_size, input_channel, input_height, input_width))
@@ -45,7 +45,7 @@ filter_data = np.empty([output_channel, 1, kernel_h, kernel_w], dtype=np.float32
 for oc in range(output_channel):
     for kh in range(kernel_h):
         for kw in range(kernel_w):
-            filter_data[oc, 0, kh, kw] = 100 * oc + 10 * kh + kw
+            filter_data[oc, 0, kh, kw] = (10 * oc + kh * kernel_w + kw) * 10
 
 # print(filter_data) - {4, 1, 1, 1}
 print("Filter Data = [{}, {}, {}, {}]".format(output_channel, 1, kernel_h, kernel_w))
@@ -56,8 +56,8 @@ for oc in range(output_channel):
 
 bias_data = np.empty([output_channel,], dtype=np.float32)
 for oc in range(output_channel):
-    # bias_data[oc] = oc
-    bias_data[oc] = 0
+    bias_data[oc] = (oc+1)/10
+    # bias_data[oc] = 0
 # print(bias_data) - {4}
 print("Bias Data = {4}")
 print("[ {} ]".format(" ".join(str(float_formatter(v)) for v in bias_data)))
