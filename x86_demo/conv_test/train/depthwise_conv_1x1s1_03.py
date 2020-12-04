@@ -6,18 +6,18 @@ import numpy as np
 float_formatter = "{:9.1f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-model_name = "conv4_1x1s1.onnx"
+model_name = "dconv03.onnx"
 
 # Define Conv Attr
 # input
-batch_size = 2
-input_channel = 4
+batch_size = 1
+input_channel = 3
 input_height = 2
 input_width = 2
 input_size = batch_size * input_channel * input_height * input_width
 # filter
-output_channel = 4
-groups = 4
+output_channel = 3
+groups = 3
 kernel_h = 1
 kernel_w = 1
 filter_size = output_channel * 1 * kernel_h * kernel_w

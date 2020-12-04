@@ -6,11 +6,11 @@ import numpy as np
 float_formatter = "{:9.1f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-model_name = "conv08_1x1s1.onnx"
+model_name = "dconv08.onnx"
 
 # Define Conv Attr
 # input
-batch_size = 2
+batch_size = 1
 input_channel = 8
 input_height = 2
 input_width = 2
