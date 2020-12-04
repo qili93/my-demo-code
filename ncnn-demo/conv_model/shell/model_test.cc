@@ -10,12 +10,12 @@
 
 #include <ncnn/net.h>
 
-const int FLAGS_warmup = 5;
-const int FLAGS_repeats = 10;
+const int FLAGS_warmup = 0;
+const int FLAGS_repeats = 1;
 const int CPU_THREAD_NUM = 1;
 
 int shape_production(const std::vector<int>& shape) {
-  int64_t res = 1;
+  int res = 1;
   for (auto i : shape) res *= i;
   return res;
 }
@@ -40,8 +40,7 @@ std::string shape_to_string(const std::vector<int>& shape) {
   return ss.str();
 }
 
-template <typename T>
-std::string data_to_string(const T* data, const int size) {
+std::string data_to_string(const float* data, const int size) {
   std::ostringstream ss;
   ss << "[";
   for (int i = 0; i < size - 1; ++i) {
@@ -54,15 +53,14 @@ std::string data_to_string(const T* data, const int size) {
   return ss.str();
 }
 
-template <typename T>
-void tensor_to_string(const T* data, const std::vector<int>& shape) {
+void tensor_to_string(const float* data, const std::vector<int>& shape) {
   std::cout << "Shape: " << shape_to_string(shape) << std::endl;
   int stride = shape.back();
   int split = shape.size() > 2 ? shape[shape.size() - 2] : 0;
   int length = static_cast<int>(shape_production(shape) / stride);
   for (size_t i = 0; i < length; ++i) {
-    const T * data_start = data + i * stride;
-    std::cout << data_to_string<T>(data_start, stride) << std::endl;
+    const float * data_start = data + i * stride;
+    std::cout << data_to_string(data_start, stride) << std::endl;
     if (split != 0 && (i + 1) % split == 0) {
       std::cout << std::endl;
     }
@@ -142,12 +140,12 @@ void RunNCNNModel() {
     for (int ih = 0; ih < input_height; ++ih) {
       for (int iw = 0; iw < input_width; ++iw) {
         int index = iw + ih * input_width + ic * input_height * input_width;
-        input[index] = 100 * ic + 10 * ih + iw;
+        input[index] = 100 * ic + input_width * ih + iw;
       }
     }
   }
   std::cout << "--------- Printing Conv Input ---------" << std::endl;
-  tensor_to_string<float>(static_cast<float*>(input.data), input_shape);
+  tensor_to_string(static_cast<float*>(input.data), input_shape);
   std::cout << "input.dims: " << input.dims << std::endl;
   std::cout << "input.w: " << input.w << std::endl;
   std::cout << "input.h: " << input.h << std::endl;
@@ -177,7 +175,7 @@ void RunNCNNModel() {
 
   // 5. get output
   std::cout << "--------- Printing Conv Output ---------" << std::endl;
-  tensor_to_string<float>(static_cast<float*>(output.data), output_shape);
+  tensor_to_string(static_cast<float*>(output.data), output_shape);
   std::cout << "output.dims: " << output.dims << std::endl;
   std::cout << "output.w: " << output.w << std::endl;
   std::cout << "output.h: " << output.h << std::endl;

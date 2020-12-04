@@ -6,63 +6,47 @@ import numpy as np
 float_formatter = "{:9.1f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-model_name = "torch-conv_1x1s1.onnx"
+model_name = "conv4_1x1s1.onnx"
 
 # Define Conv Attr
 # input
-batch_size = 1
+batch_size = 2
 input_channel = 4
-input_height = 8
-input_width = 8
+input_height = 2
+input_width = 2
+input_size = batch_size * input_channel * input_height * input_width
 # filter
 output_channel = 4
 groups = 4
 kernel_h = 1
 kernel_w = 1
+filter_size = output_channel * 1 * kernel_h * kernel_w
 # attr
 conv_stride = 1
 conv_padding = 0
 conv_dilation = 1
 # output
-output_height = 8
-output_width = 8
+output_height = input_height
+output_width = input_width
 
 # Init Conv Param
-input_data = np.empty([batch_size, input_channel, input_height, input_width], dtype=np.float32)
-for ic in range(input_channel):
-    for ih in range(input_height):
-        for iw in range(input_width):
-            input_data[0, ic, ih, iw] = 100 * ic + 10 * ih + iw
-
-# print(input_data) - {1, 4, 8, 8}
+input_data = np.arange(0, input_size, dtype=np.float32).reshape((batch_size, input_channel, input_height, input_width)) 
 print("Input Data = [{}, {}, {}, {}]".format(batch_size, input_channel, input_height, input_width))
-for ic in range(input_channel):
-    for ih in range(input_height):
-        print("[ {} ]".format(" ".join([str(float_formatter(v)) for v in input_data[0, ic, ih, :]])))
-    print("")
+for bs in range(batch_size):
+    for ic in range(input_channel):
+        for ih in range(input_height):
+            print("[ {} ]".format(" ".join([str(float_formatter(v)) for v in input_data[bs, ic, ih, :]])))
+        print("")
+    print("-----------------------")
 
-filter_data = np.empty([output_channel, 1, kernel_h, kernel_w], dtype=np.float32)
-for oc in range(output_channel):
-    filter_data[oc, 0, 0, 0] = np.power(10, (output_channel - oc - 1))
-    # for kh in range(kernel_h):
-    #     for kw in range(kernel_w):
-            # filter_data[oc, 0, kh, kw] = 100 * oc + 10 * kh + kw
-
-# print(filter_data) - {4, 1, 1, 1}
+filter_data = np.arange(0, filter_size, dtype=np.float32).reshape((output_channel, 1, kernel_h, kernel_w)) 
 print("Filter Data = [{}, {}, {}, {}]".format(output_channel, 1, kernel_h, kernel_w))
 print("[ {} ]".format(" ".join(str(float_formatter(v)) for v in filter_data[:,0,0,0])))
 print("")
-# for oc in range(output_channel):
-#     # for kh in range(kernel_h):
-#         print("[ {} ]".format(" ".join([str(float_formatter(v)) for v in filter_data[oc, 0, kh, :]])))
-#     # print("")
 
-bias_data = np.empty([output_channel,], dtype=np.float32)
-for oc in range(output_channel):
-    # bias_data[oc] = oc
-    bias_data[oc] = 0
-# print(bias_data) - {4}
-print("Bias Data = {4}")
+bias_data = np.arange(1, output_channel+1, dtype=np.float32).reshape((output_channel,))
+bias_data /= 10
+print("Bias Data = {}".format(output_channel))
 print("[ {} ]".format(" ".join(str(float_formatter(v)) for v in bias_data)))
 print("")
 
@@ -115,11 +99,13 @@ print("conv output size = {}".format(torch_out.size()))
 
 # print(output_data) - {1, 4, 8, 8}
 output_data = torch_out.detach().numpy()
-print("Output Data = {1, 4, 8, 8}")
-for oc in range(output_channel):
-    for oh in range(output_height):
-        print("[ {} ]".format(" ".join([str(float_formatter(v)) for v in output_data[0, oc, oh, :]])))
-    print("")
+print("Input Data = [{}, {}, {}, {}]".format(batch_size, output_channel, output_height, output_width))
+for bs in range(batch_size):
+    for ic in range(output_channel):
+        for ih in range(output_height):
+            print("[ {} ]".format(" ".join([str(float_formatter(v)) for v in output_data[bs, ic, ih, :]])))
+        print("")
+    print("-----------------------")
 
 # Export the model
 torch.onnx.export(torch_model,               # model being run
