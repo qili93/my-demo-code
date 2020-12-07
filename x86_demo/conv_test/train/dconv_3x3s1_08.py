@@ -6,31 +6,31 @@ import numpy as np
 float_formatter = "{:9.1f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-model_name = "dconv03.onnx"
+model_name = "dconv08.onnx"
 
 # Define Conv Attr
 # input
 batch_size = 1
-input_channel = 3
-input_height = 2
-input_width = 2
+input_channel = 8
+input_height = 3
+input_width = 3
 input_size = batch_size * input_channel * input_height * input_width
 # filter
-output_channel = 3
-groups = 3
-kernel_h = 1
-kernel_w = 1
+output_channel = 8
+groups = 8
+kernel_h = 3
+kernel_w = 3
 filter_size = output_channel * 1 * kernel_h * kernel_w
 # attr
 conv_stride = 1
-conv_padding = 0
+conv_padding = 1
 conv_dilation = 1
 # output
 output_height = input_height
 output_width = input_width
 
 # Init Conv Param
-input_data = np.arange(0, input_size, dtype=np.float32).reshape((batch_size, input_channel, input_height, input_width)) 
+input_data = np.arange(1, input_size+1, dtype=np.float32).reshape((batch_size, input_channel, input_height, input_width)) 
 print("Input Data = [{}, {}, {}, {}]".format(batch_size, input_channel, input_height, input_width))
 for bs in range(batch_size):
     for ic in range(input_channel):
@@ -39,10 +39,13 @@ for bs in range(batch_size):
         print("")
     print("-----------------------")
 
-filter_data = np.arange(0, filter_size, dtype=np.float32).reshape((output_channel, 1, kernel_h, kernel_w)) 
+filter_data = np.arange(1, filter_size+1, dtype=np.float32).reshape((output_channel, 1, kernel_h, kernel_w)) 
 print("Filter Data = [{}, {}, {}, {}]".format(output_channel, 1, kernel_h, kernel_w))
-print("[ {} ]".format(" ".join(str(float_formatter(v)) for v in filter_data[:,0,0,0])))
-print("")
+for oc in range(output_channel):
+    for kh in range(kernel_h):
+        print("[ {} ]".format(" ".join(str(float_formatter(v)) for v in filter_data[oc,0,kh,:])))
+    print("")
+print("-----------------------")
 
 bias_data = np.arange(1, output_channel+1, dtype=np.float32).reshape((output_channel,))
 bias_data /= 10
@@ -99,7 +102,7 @@ print("conv output size = {}".format(torch_out.size()))
 
 # print(output_data) - {1, 4, 8, 8}
 output_data = torch_out.detach().numpy()
-print("Input Data = [{}, {}, {}, {}]".format(batch_size, output_channel, output_height, output_width))
+print("Output Data = [{}, {}, {}, {}]".format(batch_size, output_channel, output_height, output_width))
 for bs in range(batch_size):
     for ic in range(output_channel):
         for ih in range(output_height):

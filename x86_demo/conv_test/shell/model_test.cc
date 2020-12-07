@@ -9,13 +9,13 @@
 
 using namespace paddle::lite_api;  // NOLINT
 
-const int FLAGS_warmup = 5;
-const int FLAGS_repeats = 10;
+const int FLAGS_warmup = 0;
+const int FLAGS_repeats = 1;
 const int CPU_THREAD_NUM = 1;
 const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::LITE_POWER_HIGH;
 
-const std::string model_path = "../train/torch-conv-64/inference_model";
-const std::vector<int64_t> INPUT_SHAPE = {1, 8, 64, 64};
+const std::string model_path = "../train/dconv16/inference_model";
+const std::vector<int64_t> INPUT_SHAPE = {2, 16, 2, 2};
 
 static inline int64_t shape_production(const std::vector<int64_t>& shape) {
   int res = 1;
@@ -66,7 +66,7 @@ void tensor_to_string(const T* data, const std::vector<int64_t>& shape) {
   for (size_t i = 0; i < length; ++i) {
     const T * data_start = data + i * stride;
     std::cout << data_to_string<T>(data_start, stride) << std::endl;
-    if (split != 0 && i % split == 1) {
+    if (split != 0 && ((i + 1) % split) == 0) {
       std::cout << std::endl;
     }
   }
@@ -111,13 +111,13 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
 
   // 4. Get all output
   std::cout << std::endl << "Input Index: <0>" << std::endl;
-  // tensor_to_string<float>(input_data, input_tensor->shape());
+  tensor_to_string<float>(input_data, input_tensor->shape());
   int output_num = static_cast<int>(predictor->GetOutputNames().size());
   for (int i = 0; i < output_num; ++i) {
     std::unique_ptr<const Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
     std::cout << "Output Index: <" << i << ">" << std::endl;
-    // tensor_to_string<float>(output_data, output_tensor->shape());
+    tensor_to_string<float>(output_data, output_tensor->shape());
   }
 
   // 5. speed report
