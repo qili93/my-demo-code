@@ -19,8 +19,8 @@ const std::string model_path = "../train/dconv08";
 //  set conv input - [bs, ic, ih, iw]
 const int batch_size = 1;
 const int input_channel = 8;
-const int input_height = 3;
-const int input_width = 3;
+const int input_height = 4;
+const int input_width = 4;
 // set conv filter [oc, ic/groups, kh, hw]
 const int output_channel = 8;
 const int groups = 8;
@@ -145,6 +145,7 @@ void RunNCNNModel() {
   std::cout << "input.w: " << input.w << std::endl;
   std::cout << "input.h: " << input.h << std::endl;
   std::cout << "input.c: " << input.c << std::endl;
+  std::cout << "input.cstep: " << input.cstep << std::endl;
   std::cout << "input.elemsize: " << input.elemsize << std::endl;
   std::cout << "input.elempack: " << input.elempack << std::endl;
 
@@ -175,6 +176,7 @@ void RunNCNNModel() {
   std::cout << "output.w: " << output.w << std::endl;
   std::cout << "output.h: " << output.h << std::endl;
   std::cout << "output.c: " << output.c << std::endl;
+  std::cout << "output.cstep: " << output.cstep << std::endl;
   std::cout << "output.elemsize: " << output.elemsize << std::endl;
   std::cout << "output.elempack: " << output.elempack << std::endl;
 

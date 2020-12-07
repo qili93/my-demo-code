@@ -12,8 +12,8 @@ model_name = "dconv08.onnx"
 # input
 batch_size = 1
 input_channel = 8
-input_height = 3
-input_width = 3
+input_height = 4
+input_width = 4
 input_size = batch_size * input_channel * input_height * input_width
 # filter
 output_channel = 8

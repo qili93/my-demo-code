@@ -14,8 +14,8 @@ const int FLAGS_repeats = 1;
 const int CPU_THREAD_NUM = 1;
 const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::LITE_POWER_HIGH;
 
-const std::string model_path = "../train/dconv16/inference_model";
-const std::vector<int64_t> INPUT_SHAPE = {2, 16, 2, 2};
+const std::string model_path = "../train/dconv08/inference_model";
+const std::vector<int64_t> INPUT_SHAPE = {1, 8, 3, 3};
 
 static inline int64_t shape_production(const std::vector<int64_t>& shape) {
   int res = 1;
