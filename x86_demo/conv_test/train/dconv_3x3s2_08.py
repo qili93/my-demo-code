@@ -6,7 +6,7 @@ import numpy as np
 float_formatter = "{:9.1f}".format
 np.set_printoptions(formatter={'float_kind':float_formatter})
 
-model_name = "dconv08.onnx"
+model_name = "dconv08s2.onnx"
 
 # Define Conv Attr
 # input
@@ -22,12 +22,12 @@ kernel_h = 3
 kernel_w = 3
 filter_size = output_channel * 1 * kernel_h * kernel_w
 # attr
-conv_stride = 1
+conv_stride = 2
 conv_padding = 1
 conv_dilation = 1
 # output
-output_height = input_height
-output_width = input_width
+output_height = np.int_(input_height/2)
+output_width = np.int_(input_width/2)
 
 # Init Conv Param
 input_data = np.arange(1, input_size+1, dtype=np.float32).reshape((batch_size, input_channel, input_height, input_width)) 

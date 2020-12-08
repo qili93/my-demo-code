@@ -12,6 +12,7 @@ function readlinkf() {
 # # paddle repo dir
 # BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-release)
 BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-release)
+# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-debuging)
 PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
@@ -35,7 +36,7 @@ cmake .. -DWITH_MKL=ON -DWITH_OPENCV=OFF \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-      -DCMAKE_BUILD_TYPE=Debug
+      -DCMAKE_BUILD_TYPE=Release
 
 make
 

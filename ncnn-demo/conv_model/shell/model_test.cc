@@ -14,26 +14,26 @@ const int FLAGS_warmup = 0;
 const int FLAGS_repeats = 1;
 const int CPU_THREAD_NUM = 1;
 
-const std::string model_path = "../train/dconv08";
+const std::string model_path = "../train/dconv04";
 
 //  set conv input - [bs, ic, ih, iw]
 const int batch_size = 1;
-const int input_channel = 8;
+const int input_channel = 4;
 const int input_height = 4;
 const int input_width = 4;
 // set conv filter [oc, ic/groups, kh, hw]
-const int output_channel = 8;
-const int groups = 8;
-const int kernel_h = 3;
-const int kernel_w = 3;
+const int output_channel = 4;
+const int groups = 4;
+const int kernel_h = 1;
+const int kernel_w = 1;
 const int filter_channel = input_channel / groups;
 // set conv attr
 const int stride_h = 1;
 const int stride_w = 1;
-const int pad_left = 1;
-const int pad_right = 1;
-const int pad_top = 1;
-const int pad_bottom = 1;
+const int pad_left = 0;
+const int pad_right = 0;
+const int pad_top = 0;
+const int pad_bottom = 0;
 const int diliation = 1;
 
 static inline int shape_production(const std::vector<int>& shape) {

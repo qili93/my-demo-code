@@ -14,8 +14,8 @@ const int FLAGS_repeats = 1;
 const int CPU_THREAD_NUM = 1;
 const paddle::lite_api::PowerMode CPU_POWER_MODE = paddle::lite_api::PowerMode::LITE_POWER_HIGH;
 
-const std::string model_path = "../train/dconv08/inference_model";
-const std::vector<int64_t> INPUT_SHAPE = {1, 8, 3, 3};
+const std::string model_path = "../train/dconv08s2/inference_model";
+const std::vector<int64_t> INPUT_SHAPE = {2, 8, 4, 4};
 
 static inline int64_t shape_production(const std::vector<int64_t>& shape) {
   int res = 1;
@@ -60,9 +60,9 @@ std::string shape_to_string(const std::vector<int64_t>& shape) {
 template <typename T>
 void tensor_to_string(const T* data, const std::vector<int64_t>& shape) {
   std::cout << "Shape: " << shape_to_string(shape) << std::endl;
-  int64_t stride = shape.back();
-  int64_t split = shape.size() > 2 ? shape[shape.size() - 2] : 0;
-  int64_t length = static_cast<int64_t>(shape_production(shape) / stride);
+  const int64_t stride = shape.back();
+  const int64_t split = shape.size() > 2 ? shape[shape.size() - 2] : 0;
+  const int64_t length = static_cast<int64_t>(shape_production(shape) / stride);
   for (size_t i = 0; i < length; ++i) {
     const T * data_start = data + i * stride;
     std::cout << data_to_string<T>(data_start, stride) << std::endl;
