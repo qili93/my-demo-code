@@ -5,17 +5,17 @@ setlocal enabledelayedexpansion
 set source_path=%~dp0
 set workspace=%source_path%
 REM Set Win32 or x64 platform
-@REM set BUILD_PLATFORM=Win32
-@REM REM set BUILD_PLATFORM=x64
+REM set BUILD_PLATFORM=Win32
+set BUILD_PLATFORM=x64
 REM Set /MT (ON) or /MD (OFF)
 set MSVC_STATIC_CRT=OFF
 set WITH_STATIC_MKL=ON
-@REM set USE_FULL_API=TRUE
-set USE_FULL_API=FALSE
-set USE_SHARED_API=FALSE
+REM set USE_FULL_API=ON
+set USE_FULL_API=OFF
+set USE_SHARED_API=OFF
 
 REM "Set Paddle-Lite Lib Dir"
-call :getabsolute "..\inference_lite_lib"
+call :getabsolute "..\..\inference_lite_lib"
 set PADDLE_LITE_DIR=%absolute%
 
 set vcvarsall_dir=C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat

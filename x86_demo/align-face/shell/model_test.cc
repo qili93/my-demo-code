@@ -1,10 +1,16 @@
 #include <iostream>
 #include <sstream>
-#include <algorithm>
-#include <sys/time.h>
 #include <math.h>
 #include <float.h>
 #include <paddle_api.h>
+
+#if !defined(_WIN32)
+#include <sys/time.h>
+#else
+#define NOMINMAX  // msvc max/min macro conflict with std::min/max
+#include <windows.h>
+#include<sys/timeb.h>
+#endif
 
 const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
@@ -29,11 +35,19 @@ int64_t shape_production(const std::vector<int64_t>& shape) {
   return res;
 }
 
+#if !defined(_WIN32)
 double get_current_us() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
+#else
+double get_current_us() {
+  struct timeb cur_time;
+  ftime(&cur_time);
+  return (cur_time.time * 1e+6) + cur_time.millitm * 1e+3;
+}
+#endif
 
 template <typename T>
 static std::string data_to_string(const T* data, const int64_t size) {

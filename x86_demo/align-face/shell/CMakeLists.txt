@@ -19,14 +19,14 @@ endif()
 message(STATUS "PADDLE_LITE_DIR=${PADDLE_LITE_DIR}")
 
 # set PADDLE_LIB_DIR to LOCAL LIB DIR
-# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
-# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
-# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/include) # for local lib
+set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
+set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/lib) # for local lib
 
 # set PADDLE_LIB_DIR to PADDLE BUILD DIR
-set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
-set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
-set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
+# set(PADDLE_INC_DIR ${PADDLE_LITE_DIR}/cxx/include)
+# set(PADDLE_LIB_DIR ${PADDLE_LITE_DIR}/cxx/lib)
+# set(MKLML_LIB_DIR ${PADDLE_LITE_DIR}/third_party/mklml/lib)
 
 message(STATUS "PADDLE_INC_DIR=${PADDLE_INC_DIR}")
 message(STATUS "PADDLE_LIB_DIR=${PADDLE_LIB_DIR}")
@@ -68,7 +68,7 @@ if(APPLE)
   set(MKLML_IOMP5_SHARED_NAME "iomp5")
 elseif(WIN32)
   set(LITE_FULL_STATIC_NAME "libpaddle_api_full_bundled")
-  set(LITE_FULL_STATIC_NAME "libpaddle_api_light_bundled")
+  set(LITE_TINY_STATIC_NAME "libpaddle_api_light_bundled")
   set(MKLML_IOMP5_SHARED_NAME "libiomp5md")
 else()
   set(LITE_FULL_SHARED_NAME "paddle_full_api_shared")
