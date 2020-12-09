@@ -20,6 +20,8 @@ PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
 # USE_FULL_API=TRUE
 USE_FULL_API=FALSE
+USE_SHARED_API=TRUE
+# USE_SHARED_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################
@@ -32,9 +34,11 @@ cd $build_dir
 # export CPPFLAGS="-I/usr/local/opt/opencv@2/include"
 # export PKG_CONFIG_PATH="/usr/local/opt/opencv@2/lib/pkgconfig"
 
-cmake .. -DWITH_MKL=ON -DWITH_OPENCV=OFF \
+cmake .. -DWITH_MKL=ON \
+      -DWITH_STATIC_MKL=ON \
       -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
+      -DUSE_SHARED_API=${USE_SHARED_API}
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -DCMAKE_BUILD_TYPE=Release
 
