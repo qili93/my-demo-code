@@ -9,7 +9,7 @@ function readlinkf() {
 BUILD_DIR_NAME=build-v2.7-relse-MKL_LIB
 
 # paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-release)
+BASE_REPO_PATH=$(readlinkf ../../../Paddle-Lite/build-v2.7-static-ruliu-avx2)
 PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 
 # define lib name
@@ -70,10 +70,10 @@ cp -r $LITE_INC_DIR $target_dir
 
 echo "---------------COPY MKLML Libs-----------------"
 echo "copy from == $LITE_IOMP5_LIB"
-echo "copy from == $LITE_MKLML_LIB"
+# echo "copy from == $LITE_MKLML_LIB"
 echo "copy to ==== $target_lib"
 cp $LITE_IOMP5_LIB $target_lib
-cp $LITE_MKLML_LIB $target_lib
+# cp $LITE_MKLML_LIB $target_lib
 
 
 echo "---------------List Files-----------------"
