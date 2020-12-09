@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
   std::cout << "Model Path is <" << model_iris << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_IRIS) << std::endl;
 #ifdef USE_FULL_API
-  SaveOptModel(model_eyes, 1);
+  SaveOptModel(model_iris, 1);
 #endif
   RunLiteModel(model_iris, INPUT_SHAPE_IRIS);
 
@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
   std::cout << "Model Path is <" << model_mouth << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_MOUTH) << std::endl;
 #ifdef USE_FULL_API
-  SaveOptModel(model_eyes, 1);
+  SaveOptModel(model_mouth, 1);
 #endif
   RunLiteModel(model_mouth, INPUT_SHAPE_MOUTH);
 
