@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <algorithm>
 #include <sys/time.h>
@@ -10,18 +11,18 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-const std::string model_align = "../assets/models/align150-fp32"; // {1, 3, 128, 128}
-const std::string model_eyes = "../assets/models/eyes_position-fp32"; // {1, 3, 32, 32}
-const std::string model_iris = "../assets/models/iris_position-fp32"; // {1, 3, 24, 24}
-const std::string model_mouth = "../assets/models/mouth_position-fp32"; // {1, 3, 48, 48}
+const std::string model_path = "../assets/models/align150-fp32"; // {1, 3, 128, 128}
+// const std::string model_eyes = "../assets/models/eyes_position-fp32"; // {1, 3, 32, 32}
+// const std::string model_iris = "../assets/models/iris_position-fp32"; // {1, 3, 24, 24}
+// const std::string model_mouth = "../assets/models/mouth_position-fp32"; // {1, 3, 48, 48}
 
 // MODEL_NAME=align150-fp32
-const std::vector<int64_t> INPUT_SHAPE_ALIGN = {1, 3, 128, 128};
-const std::vector<int64_t> INPUT_SHAPE_EYES = {1, 3, 32, 32};
-const std::vector<int64_t> INPUT_SHAPE_IRIS = {1, 3, 24, 24};
-const std::vector<int64_t> INPUT_SHAPE_MOUTH = {1, 3, 48, 48};
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
+// const std::vector<int64_t> INPUT_SHAPE_EYES = {1, 3, 32, 32};
+// const std::vector<int64_t> INPUT_SHAPE_IRIS = {1, 3, 24, 24};
+// const std::vector<int64_t> INPUT_SHAPE_MOUTH = {1, 3, 48, 48};
 
-static double total_time = 0; 
+// static double total_time = 0; 
 
 int64_t shape_production(const std::vector<int64_t>& shape) {
   int64_t res = 1;
@@ -33,17 +34,6 @@ double get_current_us() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
-}
-
-template <typename T>
-static std::string data_to_string(const T* data, const int64_t size) {
-  std::stringstream ss;
-  ss << "{";
-  for (int64_t i = 0; i < size - 1; ++i) {
-    ss << data[i] << ",";
-  }
-  ss << data[size - 1] << "}";
-  return ss.str();
 }
 
 static std::string shape_to_string(const std::vector<int64_t>& shape) {
@@ -60,8 +50,19 @@ static std::string shape_to_string(const std::vector<int64_t>& shape) {
   return ss.str();
 }
 
-void speed_report(const std::vector<double>& costs) {
-  double max = 0, min = FLT_MAX, sum = 0, avg;
+template <typename T>
+static std::string data_to_string(const T* data, const int64_t size) {
+  std::stringstream ss;
+  ss << "{";
+  for (int64_t i = 0; i < size - 1; ++i) {
+    ss << data[i] << ",";
+  }
+  ss << data[size - 1] << "}";
+  return ss.str();
+}
+
+void speed_report(const std::vector<float>& costs) {
+  float max = 0, min = FLT_MAX, sum = 0, avg;
   for (auto v : costs) {
       max = fmax(max, v);
       min = fmin(min, v);
@@ -73,8 +74,41 @@ void speed_report(const std::vector<double>& costs) {
             << ", repeats: " << FLAGS_repeats 
             << ", max=" << max << " ms, min=" << min
             << "ms, avg=" << avg << "ms" << std::endl;
-  // get total avg time
-  total_time += avg;
+}
+
+void read_rawfile(const std::string raw_imgnp_path, float * input_data) {
+  std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
+  if (!raw_imgnp_file) {
+    std::cout << "Failed to load raw image file: " <<  raw_imgnp_path << std::endl;
+    return;
+  }
+  int64_t raw_imgnp_size = shape_production(INPUT_SHAPE);
+  raw_imgnp_file.read(reinterpret_cast<char *>(input_data), raw_imgnp_size * sizeof(float));
+  raw_imgnp_file.close();
+}
+
+// save output to raw file
+void write_rawfile(const float * output_data, const int64_t output_size) {
+  std::ofstream output_file("lite-out.raw", std::ios::out | std::ios::trunc );
+  if (!output_file.is_open()) {
+    std::cout << "Failed to open raw output file: lite-out.raw" << std::endl;
+    return;
+  }
+  output_file.write(reinterpret_cast<const char *>(output_data), output_size * sizeof(float));
+  output_file.close();
+
+  float* infer_out = new float[output_size];
+  std::ifstream infer_out_file("infer-out.raw", std::ios::in | std::ios::binary);
+  if (!infer_out_file.is_open()) {
+    std::cout << "Failed to open raw input file: infer-out.raw" << std::endl;
+    return;
+  }
+  infer_out_file.read(reinterpret_cast<char *>(infer_out), output_size * sizeof(float));
+  for (int i = 0; i < output_size; ++i) {
+    if (fabs(output_data[i] - infer_out[i]) > 0.002) {
+      std::cout << "abs error exceeded: index " << i << ", infer res is " << infer_out[i] << ", lite res is " << output_data[i] << std::endl;
+    }
+  }
 }
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> INPUT_SHAPE) {
@@ -91,7 +125,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     predictor->Run();
   }
   // 3. Repeat Run
-  std::vector<double> costs;
+  std::vector<float> costs;
   for (int i = 0; i < FLAGS_repeats; ++i) {
     auto start_time = get_current_us();
     predictor->Run();
@@ -99,14 +133,16 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     costs.push_back((end_time - start_time) / 1000.0);
   }
 
-  // 5. Get all output
+  // 4. Get all output
+  // std::cout << std::endl << "Input Index: <0>" << std::endl;
+  // tensor_to_string<float>(input_data, input_tensor->shape());
   int output_num = static_cast<int>(predictor->GetOutputNames().size());
   for (int i = 0; i < output_num; ++i) {
     std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
-    const int64_t ouput_size = shape_production(output_tensor->shape());
     std::cout << "Output Index: <" << i << ">, shape: " << shape_to_string(output_tensor->shape()) << std::endl;
-    // LOG(INFO) << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape())) << std::endl;
+    write_rawfile(output_data, shape_production(output_tensor->shape()));
+    // tensor_to_string<float>(output_data, output_tensor->shape());
   }
 
   // 5. speed report
@@ -171,39 +207,39 @@ void SaveOptModel(const std::string model_path, const int model_type = 0) {
 
 int main(int argc, char **argv) {
 
-  std::cout << "Model Path is <" << model_align << ">" << std::endl;
-  std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_ALIGN) << std::endl;
+  std::cout << "Model Path is <" << model_path << ">" << std::endl;
+  std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE) << std::endl;
 #ifdef USE_FULL_API
-  SaveOptModel(model_align, 1);
+  SaveOptModel(model_path, 1);
 #endif
-  RunLiteModel(model_align, INPUT_SHAPE_ALIGN);
+  RunLiteModel(model_path, INPUT_SHAPE);
 
-  std::cout << std::endl;
-  std::cout << "Model Path is <" << model_eyes << ">" << std::endl;
-  std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_EYES) << std::endl;
-#ifdef USE_FULL_API
-  SaveOptModel(model_eyes, 1);
-#endif
-  RunLiteModel(model_eyes, INPUT_SHAPE_EYES);
+//   std::cout << std::endl;
+//   std::cout << "Model Path is <" << model_eyes << ">" << std::endl;
+//   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_EYES) << std::endl;
+// #ifdef USE_FULL_API
+//   SaveOptModel(model_eyes, 1);
+// #endif
+//   RunLiteModel(model_eyes, INPUT_SHAPE_EYES);
 
-  std::cout << std::endl;
-  std::cout << "Model Path is <" << model_iris << ">" << std::endl;
-  std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_IRIS) << std::endl;
-#ifdef USE_FULL_API
-  SaveOptModel(model_eyes, 1);
-#endif
-  RunLiteModel(model_iris, INPUT_SHAPE_IRIS);
+//   std::cout << std::endl;
+//   std::cout << "Model Path is <" << model_iris << ">" << std::endl;
+//   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_IRIS) << std::endl;
+// #ifdef USE_FULL_API
+//   SaveOptModel(model_eyes, 1);
+// #endif
+//   RunLiteModel(model_iris, INPUT_SHAPE_IRIS);
 
-  std::cout << std::endl;
-  std::cout << "Model Path is <" << model_mouth << ">" << std::endl;
-  std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_MOUTH) << std::endl;
-#ifdef USE_FULL_API
-  SaveOptModel(model_eyes, 1);
-#endif
-  RunLiteModel(model_mouth, INPUT_SHAPE_MOUTH);
+//   std::cout << std::endl;
+//   std::cout << "Model Path is <" << model_mouth << ">" << std::endl;
+//   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_MOUTH) << std::endl;
+// #ifdef USE_FULL_API
+//   SaveOptModel(model_eyes, 1);
+// #endif
+//   RunLiteModel(model_mouth, INPUT_SHAPE_MOUTH);
 
-  std::cout << "==========================================" << std::endl;
-  std::cout << "Total AVG TIME is " << total_time <<  " ms" << std::endl;
+//   std::cout << "==========================================" << std::endl;
+//   std::cout << "Total AVG TIME is " << total_time <<  " ms" << std::endl;
 
   return 0;
 }

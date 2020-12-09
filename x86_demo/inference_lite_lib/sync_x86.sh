@@ -9,8 +9,8 @@ function readlinkf() {
 BUILD_DIR_NAME=build-v2.7-relse-MKL_LIB
 
 # paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../Paddle-Lite)
-PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-release)
+PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 
 # define lib name
 if [[ "$OSTYPE" == "darwin"*  ]]; then
