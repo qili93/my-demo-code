@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <algorithm>
 #include <sys/time.h>
 #include <math.h>
@@ -88,19 +89,21 @@ void read_rawfile(const std::string raw_imgnp_path, float * input_data) {
 }
 
 // save output to raw file
-void write_rawfile(const float * output_data, const int64_t output_size) {
-  std::ofstream output_file("lite-out.raw", std::ios::out | std::ios::trunc );
+void write_rawfile(const float * output_data, const int64_t output_size, const std::string rawfile) {
+  std::ofstream output_file(rawfile, std::ios::out | std::ios::trunc );
   if (!output_file.is_open()) {
-    std::cout << "Failed to open raw output file: lite-out.raw" << std::endl;
+    std::cout << "Failed to open raw output file: " << rawfile << std::endl;
     return;
   }
   output_file.write(reinterpret_cast<const char *>(output_data), output_size * sizeof(float));
   output_file.close();
+}
 
+void compare_rawfile(const float * output_data, const int64_t output_size, const std::string rawfile) {
   float* infer_out = new float[output_size];
-  std::ifstream infer_out_file("infer-out.raw", std::ios::in | std::ios::binary);
+  std::ifstream infer_out_file(rawfile, std::ios::in | std::ios::binary);
   if (!infer_out_file.is_open()) {
-    std::cout << "Failed to open raw input file: infer-out.raw" << std::endl;
+    std::cout << "Failed to open raw input file: " << rawfile << std::endl;
     return;
   }
   infer_out_file.read(reinterpret_cast<char *>(infer_out), output_size * sizeof(float));
@@ -141,7 +144,8 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
     std::cout << "Output Index: <" << i << ">, shape: " << shape_to_string(output_tensor->shape()) << std::endl;
-    write_rawfile(output_data, shape_production(output_tensor->shape()));
+    write_rawfile(output_data, shape_production(output_tensor->shape()), "lite-out-"+std::to_string(i)+".raw");
+    compare_rawfile(output_data, shape_production(output_tensor->shape()), "infer-out-"+std::to_string(i)+".raw");
     // tensor_to_string<float>(output_data, output_tensor->shape());
   }
 

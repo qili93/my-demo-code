@@ -29,9 +29,13 @@ def infer_model(model_path=MODEL_PATH):
                     fetch_list=fetch_targets,
                     return_numpy=False)
 
-    output = np.array(landmark_out)
-    with open("infer-out.raw", "wb") as f:
-        output.tofile(f)
+    output1 = np.array(landmark_out)
+    with open("infer-out-0.raw", "wb") as f:
+        output1.tofile(f)
+
+    output2 = np.array(face_score)
+    with open("infer-out-1.raw", "wb") as f:
+        output2.tofile(f)
 
 if __name__ == '__main__':
     infer_model(model_path='../assets/models/align150-fp32')
