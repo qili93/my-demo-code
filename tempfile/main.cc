@@ -3,13 +3,37 @@
 #include <sstream>
 #include <string>
 
-std::string readTextFile(const char* filename) {
-  std::fstream shaderFile(filename, std::ios::in);
+// std::string readTextFile(const char* filename) {
+//   std::fstream shaderFile(filename, std::ios::in);
 
-  std::stringstream buffer;
-  buffer << shaderFile.rdbuf();
+//   std::stringstream buffer;
+//   buffer << shaderFile.rdbuf();
 
-  return buffer.str();
+//   return buffer.str();
+// }
+
+char * ReadFileToBuff(std::string filename, int64_t& file_size) {
+  FILE *file = fopen(filename.c_str(), "rb");
+  if (file == nullptr) {
+    std::cout << "Failed to open file: " << filename << std::endl;
+    return nullptr;
+  }
+  fseek(file, 0, SEEK_END);
+  int64_t size = ftell(file);
+  if (size == 0) {
+    std::cout << "File should not be empty: " << size << std::endl;
+    return nullptr;
+  }
+  rewind(file);
+  char * data = new char[size];
+  size_t bytes_read = fread(data, 1, size, file);
+  if (bytes_read != size) {
+    std::cout << "Read binary file bytes do not match with fseek: " << bytes_read << std::endl;
+    return nullptr;
+  }
+  fclose(file);
+  file_size = size;
+  return data;
 }
 
 
@@ -21,13 +45,19 @@ int main(int argc, char **argv) {
   std::string file_path = argv[1];
   std::cout << "File Path is <" << file_path << ">" << std::endl;
 
-  std::string model_buffer = readTextFile(file_path.c_str());
+  int64_t file_size;
+  char * file_data = ReadFileToBuff(file_path, file_size);
+  std::cout << "file size " << file_size << std::endl;
+
+  std::string mystring(file_data, file_size);
+
+  // std::string model_buffer = readTextFile(file_path.c_str());
 
   // std::ifstream ifs(file_path.c_str());
   // std::string content((std::istreambuf_iterator<char>(ifs)),
   //                     (std::istreambuf_iterator<char>()));
 
-  std::cout << "model_buffer length is " << model_buffer.length() << std::endl;
+  std::cout << "string length is " << mystring.length() << std::endl;
 
   return 0;
 }
