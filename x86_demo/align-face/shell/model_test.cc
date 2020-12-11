@@ -30,21 +30,30 @@ const std::vector<int64_t> INPUT_SHAPE_EYES = {1, 3, 32, 32};
 const std::vector<int64_t> INPUT_SHAPE_IRIS = {1, 3, 24, 24};
 const std::vector<int64_t> INPUT_SHAPE_MOUTH = {1, 3, 48, 48};
 
-static double total_time = 0; 
+static double total_time = 0;
 
-// read buffer from file
-static std::string ReadFile(const std::string& filename) {
-  std::ifstream ifile(filename.c_str());
-  if (!ifile.is_open()) {
-    std::cout << "Open file: [" << filename << "] failed." << std::endl;
+static std::string read_file(std::string filename) {
+  FILE *file = fopen(filename.c_str(), "rb");
+  if (file == nullptr) {
+    std::cout << "Failed to open file: " << filename << std::endl;
+    return nullptr;
   }
-  std::ostringstream buf;
-  char ch;
-  while (buf && ifile.get(ch)) buf.put(ch);
-  ifile.close();
-
-  std::string model_buf = buf.str();
-  return model_buf;
+  fseek(file, 0, SEEK_END);
+  int64_t size = ftell(file);
+  if (size == 0) {
+    std::cout << "File should not be empty: " << size << std::endl;
+    return nullptr;
+  }
+  rewind(file);
+  char * data = new char[size];
+  size_t bytes_read = fread(data, 1, size, file);
+  if (bytes_read != size) {
+    std::cout << "Read binary file bytes do not match with fseek: " << bytes_read << std::endl;
+    return nullptr;
+  }
+  fclose(file);
+  std::string file_data(data, size);
+  return file_data;
 }
 
 int64_t shape_production(const std::vector<int64_t>& shape) {
@@ -151,7 +160,7 @@ void RunLiteModel(const std::string model_path, const std::vector<int64_t> INPUT
   paddle::lite_api::MobileConfig mobile_config;
   // mobile_config.set_model_from_file(model_path+".nb");
   // Load model from buffer
-  std::string model_buffer = ReadFile(model_path+".nb");
+  std::string model_buffer = read_file(model_path+".nb");
   std::cout << "model_buffer length is " << model_buffer.length() << std::endl;
   mobile_config.set_model_from_buffer(model_buffer);
   mobile_config.set_threads(CPU_THREAD_NUM);
