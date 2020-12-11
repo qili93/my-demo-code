@@ -30,23 +30,10 @@ const std::vector<int64_t> INPUT_SHAPE_MOUTH = {1, 3, 48, 48};
 
 static double total_time = 0; 
 
-static bool ReadFile(const std::string& filename, std::vector<char>* contents) {
-  FILE* fp = fopen(filename.c_str(), "rb");
-  if (!fp) return false;
-  fseek(fp, 0, SEEK_END);
-  size_t size = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-  contents->clear();
-  contents->resize(size);
-  size_t offset = 0;
-  char* ptr = reinterpret_cast<char*>(&(contents->at(0)));
-  while (offset < size) {
-    size_t already_read = fread(ptr, 1, size - offset, fp);
-    offset += already_read;
-    ptr += already_read;
-  }
-  fclose(fp);
-  return true;
+std::string read_file(std::string filename) {
+  std::ifstream file(filename);
+  return std::string((std::istreambuf_iterator<char>(file)),
+                     std::istreambuf_iterator<char>());
 }
 
 int64_t shape_production(const std::vector<int64_t>& shape) {
@@ -153,7 +140,7 @@ void RunLiteModel(const std::string model_path, const std::vector<int64_t> INPUT
   paddle::lite_api::MobileConfig mobile_config;
   // mobile_config.set_model_from_file(model_path+".nb");
   // Load model from buffer
-  std::string model_buffer = ReadFile(model_path+".nb");
+  std::string model_buffer = read_file(model_path+".nb");
   mobile_config.set_model_from_buffer(model_buffer);
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(paddle::lite_api::PowerMode::LITE_POWER_HIGH);
