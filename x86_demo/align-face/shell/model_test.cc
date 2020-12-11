@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iterator>
 #include <math.h>
 #include <float.h>
 #include <paddle_api.h>
@@ -187,8 +188,8 @@ void SaveOptModel(const std::string model_path, const int model_type = 0) {
   predictor->SaveOptimizedModel(model_path, paddle::lite_api::LiteModelType::kNaiveBuffer);
   std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
-  predictor->SaveOptimizedModel(model_path+"_opt", paddle::lite_api::LiteModelType::kProtobuf);
-  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+  // predictor->SaveOptimizedModel(model_path+"_opt", paddle::lite_api::LiteModelType::kProtobuf);
+  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 

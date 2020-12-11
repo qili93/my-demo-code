@@ -2,7 +2,6 @@
 .DS_Store
 .vscode
 # ignore dirs
-models/
 build/
 kernel_meta/
 include/
@@ -19,3 +18,7 @@ core*
 # not ignore
 !*.sh
 !*.py
+# ignore all files under models except .nb
+!/**/models/
+**/models/*
+!/**/*.nb
