@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <math.h>
 #include <float.h>
 #include <paddle_api.h>
@@ -141,6 +142,7 @@ void RunLiteModel(const std::string model_path, const std::vector<int64_t> INPUT
   // mobile_config.set_model_from_file(model_path+".nb");
   // Load model from buffer
   std::string model_buffer = read_file(model_path+".nb");
+  std::cout << "model_buffer length is " << model_buffer.length() << std::endl;
   mobile_config.set_model_from_buffer(model_buffer);
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(paddle::lite_api::PowerMode::LITE_POWER_HIGH);
