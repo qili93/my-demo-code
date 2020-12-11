@@ -42,7 +42,9 @@ static std::string ReadFile(const std::string& filename) {
   char ch;
   while (buf && ifile.get(ch)) buf.put(ch);
   ifile.close();
-  return buf.str();
+
+  std::string model_buf = buf.str();
+  return model_buf;
 }
 
 int64_t shape_production(const std::vector<int64_t>& shape) {
