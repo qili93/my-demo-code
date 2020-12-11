@@ -12,7 +12,7 @@
 //   return buffer.str();
 // }
 
-char * ReadFileToBuff(std::string filename, int64_t& file_size) {
+static std::string ReadFileToBuff(std::string filename) {
   FILE *file = fopen(filename.c_str(), "rb");
   if (file == nullptr) {
     std::cout << "Failed to open file: " << filename << std::endl;
@@ -32,8 +32,8 @@ char * ReadFileToBuff(std::string filename, int64_t& file_size) {
     return nullptr;
   }
   fclose(file);
-  file_size = size;
-  return data;
+  std::string file_data(data, size);
+  return file_data;
 }
 
 
@@ -45,17 +45,20 @@ int main(int argc, char **argv) {
   std::string file_path = argv[1];
   std::cout << "File Path is <" << file_path << ">" << std::endl;
 
-  int64_t file_size;
-  char * file_data = ReadFileToBuff(file_path, file_size);
-  std::cout << "file size " << file_size << std::endl;
+  // int64_t file_size;
+  // char * file_data = ReadFileToBuff(file_path, file_size);
 
-  std::string mystring(file_data, file_size);
+  // std::cout << "file size " << file_size << std::endl;
+
+  // std::string mystring(file_data, file_size);
 
   // std::string model_buffer = readTextFile(file_path.c_str());
 
   // std::ifstream ifs(file_path.c_str());
   // std::string content((std::istreambuf_iterator<char>(ifs)),
   //                     (std::istreambuf_iterator<char>()));
+
+  std::string mystring = ReadFileToBuff(file_path);
 
   std::cout << "string length is " << mystring.length() << std::endl;
 
