@@ -1,6 +1,17 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
+
+std::string readTextFile(const char* filename) {
+  std::fstream shaderFile(filename, std::ios::in);
+
+  std::stringstream buffer;
+  buffer << shaderFile.rdbuf();
+
+  return buffer.str();
+}
+
 
 int main(int argc, char **argv) {
   if (argc < 2) {
@@ -10,11 +21,13 @@ int main(int argc, char **argv) {
   std::string file_path = argv[1];
   std::cout << "File Path is <" << file_path << ">" << std::endl;
 
-  std::ifstream ifs(file_path.c_str());
-  std::string content((std::istreambuf_iterator<char>(ifs)),
-                      (std::istreambuf_iterator<char>()));
+  std::string model_buffer = readTextFile(file_path.c_str());
 
-  std::cout << "content length is " << content.length() << std::endl;
+  // std::ifstream ifs(file_path.c_str());
+  // std::string content((std::istreambuf_iterator<char>(ifs)),
+  //                     (std::istreambuf_iterator<char>()));
+
+  std::cout << "model_buffer length is " << model_buffer.length() << std::endl;
 
   return 0;
 }
