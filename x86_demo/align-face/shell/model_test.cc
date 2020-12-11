@@ -32,10 +32,17 @@ const std::vector<int64_t> INPUT_SHAPE_MOUTH = {1, 3, 48, 48};
 
 static double total_time = 0; 
 
-std::string read_file(std::string filename) {
-  std::ifstream file(filename);
-  return std::string((std::istreambuf_iterator<char>(file)),
-                     std::istreambuf_iterator<char>());
+// read buffer from file
+static std::string ReadFile(const std::string& filename) {
+  std::ifstream ifile(filename.c_str());
+  if (!ifile.is_open()) {
+    std::cout << "Open file: [" << filename << "] failed." << std::endl;
+  }
+  std::ostringstream buf;
+  char ch;
+  while (buf && ifile.get(ch)) buf.put(ch);
+  ifile.close();
+  return buf.str();
 }
 
 int64_t shape_production(const std::vector<int64_t>& shape) {
@@ -142,7 +149,7 @@ void RunLiteModel(const std::string model_path, const std::vector<int64_t> INPUT
   paddle::lite_api::MobileConfig mobile_config;
   // mobile_config.set_model_from_file(model_path+".nb");
   // Load model from buffer
-  std::string model_buffer = read_file(model_path+".nb");
+  std::string model_buffer = ReadFile(model_path+".nb");
   std::cout << "model_buffer length is " << model_buffer.length() << std::endl;
   mobile_config.set_model_from_buffer(model_buffer);
   mobile_config.set_threads(CPU_THREAD_NUM);
