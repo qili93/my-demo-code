@@ -8,7 +8,7 @@ REM Set Win32 or x64 platform
 REM set BUILD_PLATFORM=Win32
 set BUILD_PLATFORM=x64
 REM Set /MT (ON) or /MD (OFF)
-set MSVC_STATIC_CRT=OFF
+@REM set MSVC_STATIC_CRT=OFF
 @REM set WITH_STATIC_MKL=ON
 REM set USE_FULL_API=ON
 @REM set USE_FULL_API=OFF
@@ -24,7 +24,7 @@ echo "--------------------------------------------------------------------------
 @REM echo "|  PADDLE_LITE_DIR=%PADDLE_LITE_DIR%                                                                  |"
 echo "|  BUILD_PLATFORM=%BUILD_PLATFORM%                                                                    |"
 @REM echo "|  WITH_STATIC_MKL=%WITH_STATIC_MKL%                                                                  |"
-echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
+@REM echo "|  MSVC_STATIC_CRT=%MSVC_STATIC_CRT%                                                                  |"
 @REM echo "|  USE_FULL_API=%USE_FULL_API%                                                                        |"
 @REM echo "|  USE_SHARED_API=%USE_SHARED_API%                                                                    |"
 echo "------------------------------------------------------------------------------------------------------|"
@@ -37,8 +37,8 @@ if EXIST "%build_directory%" (
 
 md "%build_directory%"
 cd "%build_directory%"
-cmake %workspace%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM% ^
-            -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT%
+cmake %workspace%  -G "Visual Studio 14 2015" -A %BUILD_PLATFORM%
+            @REM -DMSVC_STATIC_CRT=%MSVC_STATIC_CRT%
             @REM -DWITH_STATIC_MKL=%WITH_STATIC_MKL% ^
             @REM -DUSE_SHARED_API=%USE_SHARED_API% ^
             @REM -DPADDLE_LITE_DIR=%PADDLE_LITE_DIR% ^

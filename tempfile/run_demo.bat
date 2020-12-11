@@ -18,7 +18,7 @@ setlocal enabledelayedexpansion
 @REM echo "------------------------------------------------------------------------------------------------------|"
 
 @REM set GLOG_v=5
-build\Release\main.exe
+build\Release\main.exe align150-fp32.nb.bak
 goto:eof
 
 @REM :getabsolute
