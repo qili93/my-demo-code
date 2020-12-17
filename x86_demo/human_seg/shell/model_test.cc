@@ -1,25 +1,72 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <algorithm>
-#include <memory>
+#include <string>
+#include <iterator>
 #include <math.h>
+#include <float.h>
 #include <paddle_api.h>
 
 #if !defined(_WIN32)
 #include <sys/time.h>
-#include <algorithm>  // std::accumulate
 #else
 #define NOMINMAX  // msvc max/min macro conflict with std::min/max
 #include <windows.h>
 #include<sys/timeb.h>
 #endif
 
-const int FLAGS_warmup = 1;
-const int FLAGS_repeats = 1;
+const int FLAGS_warmup = 5;
+const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
+const std::string model_path = "../assets/models/pc-seg-float-model";
 const std::vector<int64_t> INPUT_SHAPE = {1, 4, 192, 256};
+
+// static double total_time = 0;
+
+static std::string read_file(std::string filename) {
+  FILE *file = fopen(filename.c_str(), "rb");
+  if (file == nullptr) {
+    std::cout << "Failed to open file: " << filename << std::endl;
+    return nullptr;
+  }
+  fseek(file, 0, SEEK_END);
+  int64_t size = ftell(file);
+  if (size == 0) {
+    std::cout << "File should not be empty: " << size << std::endl;
+    return nullptr;
+  }
+  rewind(file);
+  char * data = new char[size];
+  size_t bytes_read = fread(data, 1, size, file);
+  if (bytes_read != size) {
+    std::cout << "Read binary file bytes do not match with fseek: " << bytes_read << std::endl;
+    return nullptr;
+  }
+  fclose(file);
+  std::string file_data(data, size);
+  return file_data;
+}
+
+int64_t shape_production(const std::vector<int64_t>& shape) {
+  int64_t res = 1;
+  for (auto i : shape) res *= i;
+  return res;
+}
+
+#if !defined(_WIN32)
+double get_current_us() {
+  struct timeval time;
+  gettimeofday(&time, NULL);
+  return 1e+6 * time.tv_sec + time.tv_usec;
+}
+#else
+double get_current_us() {
+  struct timeb cur_time;
+  ftime(&cur_time);
+  return (cur_time.time * 1e+6) + cur_time.millitm * 1e+3;
+}
+#endif
 
 template <typename T>
 static std::string data_to_string(const T* data, const int64_t size) {
@@ -46,63 +93,24 @@ static std::string shape_to_string(const std::vector<int64_t>& shape) {
   return ss.str();
 }
 
-int64_t shape_production(const std::vector<int64_t>& shape) {
-  int64_t res = 1;
-  for (auto i : shape) res *= i;
-  return res;
-}
-
-#if !defined(_WIN32)
-double get_current_us() {
-  struct timeval time;
-  gettimeofday(&time, NULL);
-  return 1e+6 * time.tv_sec + time.tv_usec;
-}
-#else
-double get_current_us() {
-  struct timeb cur_time;
-  ftime(&cur_time);
-  return (cur_time.time * 1e+6) + cur_time.millitm * 1e+3;
-}
-#endif
-
-void read_rawfile(const std::string raw_imgnp_path, float * input_data) {
-  std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
-  if (!raw_imgnp_file) {
-    std::cout << "Failed to load raw image file: " <<  raw_imgnp_path << std::endl;
-    return;
+void speed_report(const std::vector<double>& costs) {
+  double max = 0, min = FLT_MAX, sum = 0, avg;
+  for (auto v : costs) {
+      max = fmax(max, v);
+      min = fmin(min, v);
+      sum += v;
   }
-  int64_t raw_imgnp_size = shape_production(INPUT_SHAPE);
-  raw_imgnp_file.read(reinterpret_cast<char *>(input_data), raw_imgnp_size * sizeof(float));
-  raw_imgnp_file.close();
+  avg = costs.size() > 0 ? sum / costs.size() : 0;
+  std::cout << "================== Speed Report ==================" << std::endl;
+  std::cout << "[ - ]  warmup: " << FLAGS_warmup 
+            << ", repeats: " << FLAGS_repeats 
+            << ", max=" << max << " ms, min=" << min
+            << "ms, avg=" << avg << "ms" << std::endl;
+  // get total avg time
+  // total_time += avg;
 }
 
-// save output to raw file
-void write_file(const float * output_data, const int64_t output_size) {
-  std::ofstream output_file("lite-out.raw", std::ios::out | std::ios::trunc );
-  if (!output_file.is_open()) {
-    std::cout << "Failed to open raw output file: lite-out.raw" << std::endl;
-    return;
-  }
-
-  output_file.write(reinterpret_cast<const char *>(output_data), output_size * sizeof(float));
-  output_file.close();
-
-  float* infer_out = new float[output_size];
-  std::ifstream infer_out_file("infer-out.raw", std::ios::in | std::ios::binary);
-  if (!infer_out_file.is_open()) {
-    std::cout << "Failed to open raw input file: infer-out.raw" << std::endl;
-    return;
-  }
-  infer_out_file.read(reinterpret_cast<char *>(infer_out), output_size * sizeof(float));
-  for (int i = 0; i < output_size; ++i) {
-    if (fabs(output_data[i] - infer_out[i]) > 0.002) {
-      std::cout << "abs error exceeded: index " << i << ", infer res is " << infer_out[i] << ", lite res is " << output_data[i] << std::endl;
-    }
-  }
-}
-
-void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
+void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> INPUT_SHAPE) {
   // 1. Prepare input data
   std::unique_ptr<paddle::lite_api::Tensor> input_tensor(std::move(predictor->GetInput(0)));
   input_tensor->Resize(INPUT_SHAPE);
@@ -110,84 +118,61 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor) {
   for (size_t i = 0; i < shape_production(INPUT_SHAPE); ++i) {
     input_data[i] = 1.0f;
   }
-  // read_rawfile(IMAGE_DATA_FILE, input_data);
 
   // 2. Warmup Run
   for (int i = 0; i < FLAGS_warmup; ++i) {
     predictor->Run();
   }
   // 3. Repeat Run
-  auto start_time = get_current_us();
+  std::vector<double> costs;
   for (int i = 0; i < FLAGS_repeats; ++i) {
+    auto start_time = get_current_us();
     predictor->Run();
+    auto end_time = get_current_us();
+    costs.push_back((end_time - start_time) / 1000.0);
   }
-  auto end_time = get_current_us();
-  // 4. Speed Report
-  std::cout << "================== Speed Report ===================" << std::endl;
-  std::cout << "Warmup: " << FLAGS_warmup
-            << ", repeats: " << FLAGS_repeats << ", spend "
-            << (end_time - start_time) / FLAGS_repeats / 1000.0
-            << " ms in average." << std::endl;
-  // 5. Get output 0
-  std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(0)));
-  const float *output_data = output_tensor->data<float>();
-  const int64_t ouput_size = shape_production(output_tensor->shape());
-  std::cout << "Printing Output Index: <0>, shape is " << shape_to_string(output_tensor->shape()) << std::endl;
-  write_file(output_data, ouput_size);
-  // std::cout << "Printing Output Index: <0>, data is " << data_to_string(output_data, ouput_size) << std::endl;
+
+  // 5. Get all output
+  int output_num = static_cast<int>(predictor->GetOutputNames().size());
+  for (int i = 0; i < output_num; ++i) {
+    std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(i)));
+    const float *output_data = output_tensor->data<float>();
+    const int64_t ouput_size = shape_production(output_tensor->shape());
+    std::cout << "Output Index: <" << i << ">, shape: " << shape_to_string(output_tensor->shape()) << std::endl;
+    // LOG(INFO) << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape())) << std::endl;
+  }
+
+  // 5. speed report
+  speed_report(costs);
 }
 
-void RunLiteModel(const std::string model_path) {
+void RunLiteModel(const std::string model_path, const std::vector<int64_t> INPUT_SHAPE) {
   // 1. Create MobileConfig
   auto start_time = get_current_us();
   paddle::lite_api::MobileConfig mobile_config;
   mobile_config.set_model_from_file(model_path+".nb");
   // Load model from buffer
-  // std::string model_buffer = ReadFile(model_path+".nb");
+  // std::string model_buffer = read_file(model_path+".nb");
+  // std::cout << "model_buffer length is " << model_buffer.length() << std::endl;
   // mobile_config.set_model_from_buffer(model_buffer);
   mobile_config.set_threads(CPU_THREAD_NUM);
   mobile_config.set_power_mode(paddle::lite_api::PowerMode::LITE_POWER_HIGH);
   // 2. Create PaddlePredictor by MobileConfig
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
-  // 2. Create PaddlePredictor by MobileConfig
   try {
     predictor = paddle::lite_api::CreatePaddlePredictor<paddle::lite_api::MobileConfig>(mobile_config);
-    std::cout << "==============MobileConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    // std::cout << "MobileConfig Predictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(mobile config)." << std::endl;
   }
   auto end_time = get_current_us();
-
   // 3. Run model
-  process(predictor);
+  process(predictor, INPUT_SHAPE);
   std::cout << "MobileConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
 }
 
 #ifdef USE_FULL_API
-void RunFullModel(const std::string model_path) {
-  // 1. Create CxxConfig
-  auto start_time = get_current_us();
-  paddle::lite_api::CxxConfig cxx_config;
-  cxx_config.set_model_file(model_path + "_opt/model");
-  cxx_config.set_param_file(model_path + "_opt/params");
-  cxx_config.set_valid_places({paddle::lite_api::Place{TARGET(kX86), PRECISION(kFloat)},
-                               paddle::lite_api::Place{TARGET(kHost), PRECISION(kFloat)}});
-  // 2. Create PaddlePredictor by MobileConfig
-  std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
-  // 2. Create PaddlePredictor by MobileConfig
-  try {
-    predictor = paddle::lite_api::CreatePaddlePredictor<paddle::lite_api::CxxConfig>(cxx_config);
-    std::cout << "==============CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
-  } catch (std::exception e) {
-    std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
-  }
-  auto end_time = get_current_us();
-  // 3. Run model
-  process(predictor);
-  std::cout << "CXXConfig preprosss: " << (end_time - start_time) / 1000.0 << " ms." << std::endl;
-}
-
-void SaveModel(const std::string model_path, const int model_type) {
+void SaveOptModel(const std::string model_path, const int model_type = 0) {
   // 1. Create CxxConfig
   paddle::lite_api::CxxConfig cxx_config;
   if (model_type) { // combined model
@@ -204,7 +189,7 @@ void SaveModel(const std::string model_path, const int model_type) {
   std::shared_ptr<paddle::lite_api::PaddlePredictor> predictor = nullptr;
   try {
     predictor = paddle::lite_api::CreatePaddlePredictor<paddle::lite_api::CxxConfig>(cxx_config);
-    std::cout << "============== CxxConfig Predictor Version: " << predictor->GetVersion() << " ==============" << std::endl;
+    std::cout << "CxxConfig Predictor Version: " << predictor->GetVersion() << std::endl;
   } catch (std::exception e) {
     std::cout << "An internal error occurred in PaddleLite(cxx config)." << std::endl;
   }
@@ -213,28 +198,25 @@ void SaveModel(const std::string model_path, const int model_type) {
   predictor->SaveOptimizedModel(model_path, paddle::lite_api::LiteModelType::kNaiveBuffer);
   std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
-  predictor->SaveOptimizedModel(model_path+"_opt", paddle::lite_api::LiteModelType::kProtobuf);
-  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+  // predictor->SaveOptimizedModel(model_path+"_opt", paddle::lite_api::LiteModelType::kProtobuf);
+  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 
 int main(int argc, char **argv) {
-  if (argc < 2) {
-    std::cerr << "[ERROR] usage: ./" << argv[0] << "model_path\n";
-    exit(1);
-  }
-  std::string model_path = argv[1];
   std::cout << "Model Path is <" << model_path << ">" << std::endl;
-
-  // 0 for uncombined, 1 for combined model
-  int model_type = 1;
-
+  std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE) << std::endl;
+  
 #ifdef USE_FULL_API
-  SaveModel(model_path, model_type);
-  RunFullModel(model_path);
+  SaveOptModel(model_path, 1);
 #endif
 
-  RunLiteModel(model_path);
+  // auto start_time = get_current_us();
+  RunLiteModel(model_path, INPUT_SHAPE);
+  // auto end_time = get_current_us();
+
+  // std::cout << "==========================================" << std::endl;
+  // std::cout << "Total AVG TIME is " << (end_time - start_time) / 1000.0 <<  " ms" << std::endl;
 
   return 0;
 }

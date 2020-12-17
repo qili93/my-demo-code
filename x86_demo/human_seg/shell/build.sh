@@ -10,29 +10,36 @@ function readlinkf() {
 #######################################
 
 # # paddle repo dir
-BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite)
-BUILD_DIR_NAME=build-v2.7-debug
-PADDLE_LITE_DIR=${BASE_REPO_PATH}/${BUILD_DIR_NAME}/build.lite.x86/inference_lite_lib
+# BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/build-v2.7-release)
+# # BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-release)
+# # BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-debuging)
+# # BASE_REPO_PATH=$(readlinkf ../../../../Paddle-Lite/conv_fix_v27-profile)
+# PADDLE_LITE_DIR=${BASE_REPO_PATH}/build.lite.x86/inference_lite_lib
 
 # local sync lib dir
-# PADDLE_LITE_DIR=$(readlinkf ../../x86_lite_libs)
+PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
-# USE_FULL_API=TRUE
-USE_FULL_API=FALSE
-USE_STATIC_API=FALSE
-# USE_STATIC_API=TRUE
+USE_FULL_API=TRUE
+# USE_FULL_API=FALSE
+USE_SHARED_API=TRUE
+# USE_SHARED_API=FALSE
 #######################################
 # Build commands, do not change them
 #######################################
-
 build_dir=$cur_dir/build
 rm -rf $build_dir
 mkdir -p $build_dir
 cd $build_dir
 
-cmake .. -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
+# export LDFLAGS="-L/usr/local/opt/opencv@2/lib"
+# export CPPFLAGS="-I/usr/local/opt/opencv@2/include"
+# export PKG_CONFIG_PATH="/usr/local/opt/opencv@2/lib/pkgconfig"
+
+cmake .. -DWITH_MKL=ON \
+      -DWITH_STATIC_MKL=ON \
+      -DPADDLE_LITE_DIR=${PADDLE_LITE_DIR} \
       -DUSE_FULL_API=${USE_FULL_API} \
-      -DUSE_STATIC_API=${USE_STATIC_API} \
+      -DUSE_SHARED_API=${USE_SHARED_API}
       -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -DCMAKE_BUILD_TYPE=Release
 
