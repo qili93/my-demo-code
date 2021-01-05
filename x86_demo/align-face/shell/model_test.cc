@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <iomanip>
 #include <iterator>
 #include <math.h>
 #include <float.h>
@@ -77,13 +78,15 @@ double get_current_us() {
 #endif
 
 template <typename T>
-static std::string data_to_string(const T* data, const int64_t size) {
-  std::stringstream ss;
-  ss << "{";
+std::string data_to_string(const T* data, const int64_t size) {
+  std::ostringstream ss;
+  ss << "[";
   for (int64_t i = 0; i < size - 1; ++i) {
-    ss << data[i] << ",";
+    ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
+       << std::fixed << data[i] << ", ";
   }
-  ss << data[size - 1] << "}";
+  ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
+     << std::fixed << data[size - 1] << "]";
   return ss.str();
 }
 
@@ -147,7 +150,9 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     const float *output_data = output_tensor->data<float>();
     const int64_t ouput_size = shape_production(output_tensor->shape());
     std::cout << "Output Index: <" << i << ">, shape: " << shape_to_string(output_tensor->shape()) << std::endl;
-    // LOG(INFO) << data_to_string<float>(output_data, ShapeProduction(output_tensor->shape())) << std::endl;
+    for (int j = 0; j < ouput_size; ++j) {
+      std::cout << std::setprecision(3) << std::setw(10) << std::setfill(' ')  << std::fixed << output_data[i] << std::endl;
+    }
   }
 
   // 5. speed report

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <iomanip>
 #include <sys/time.h>
 #include <math.h>
 #include <float.h>
@@ -12,16 +13,14 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-const std::string model_path = "../assets/models/align150-fp32"; // {1, 3, 128, 128}
-// const std::string model_eyes = "../assets/models/eyes_position-fp32"; // {1, 3, 32, 32}
-// const std::string model_iris = "../assets/models/iris_position-fp32"; // {1, 3, 24, 24}
-// const std::string model_mouth = "../assets/models/mouth_position-fp32"; // {1, 3, 48, 48}
+// const std::string model_path = "../assets/models/align150-fp32"; // {1, 3, 128, 128}
+// const std::string model_path = "../assets/models/align150-fp32-dst"; //  {1, 8, 64, 64}
+// const std::string model_path = "../assets/models/inference_model"; // {1, 3, 128, 128}
+const std::string model_path = "../assets/models/dconv08"; // {1, 3, 128, 128}
 
 // MODEL_NAME=align150-fp32
-const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
-// const std::vector<int64_t> INPUT_SHAPE_EYES = {1, 3, 32, 32};
-// const std::vector<int64_t> INPUT_SHAPE_IRIS = {1, 3, 24, 24};
-// const std::vector<int64_t> INPUT_SHAPE_MOUTH = {1, 3, 48, 48};
+const std::vector<int64_t> INPUT_SHAPE = {1, 8, 64, 64};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 8, 4, 4};
 
 // static double total_time = 0; 
 
@@ -37,28 +36,58 @@ double get_current_us() {
   return 1e+6 * time.tv_sec + time.tv_usec;
 }
 
-static std::string shape_to_string(const std::vector<int64_t>& shape) {
-  std::stringstream ss;
+template <typename T>
+std::string data_to_string(const T* data, const int64_t size) {
+  std::ostringstream ss;
+  ss << "[";
+  for (int64_t i = 0; i < size - 1; ++i) {
+    ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
+       << std::fixed << data[i] << ", ";
+  }
+  ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
+     << std::fixed << data[size - 1] << "]";
+  // ss << data[size - 1] << "]";
+  return ss.str();
+}
+
+std::string shape_to_string(const std::vector<int64_t>& shape) {
+  std::ostringstream ss;
   if (shape.empty()) {
     ss << "{}";
     return ss.str();
   }
   ss << "{";
   for (size_t i = 0; i < shape.size() - 1; ++i) {
-    ss << shape[i] << ",";
+    ss << shape[i] << ", ";
   }
   ss << shape[shape.size() - 1] << "}";
   return ss.str();
 }
 
+// template <typename T>
+// std::string tensor_to_string(const T* data, const std::vector<int64_t>& shape) {
+//   std::ostringstream ss;
+//   ss << "Shape: " << shape_to_string(shape) << std::endl;
+//   const int64_t stride = shape.back();
+//   const int64_t split = shape.size() > 2 ? shape[shape.size() - 2] : 0;
+//   const int64_t length = static_cast<int64_t>(shape_production(shape) / stride);
+//   for (size_t i = 0; i < length; ++i) {
+//     const T * data_start = data + i * stride;
+//     ss << data_to_string<T>(data_start, stride) << std::endl;
+//     if (split != 0 && ((i + 1) % split) == 0) {
+//       ss <<  std::endl;
+//     }
+//   }
+//   return ss.str();
+// }
+
 template <typename T>
-static std::string data_to_string(const T* data, const int64_t size) {
-  std::stringstream ss;
-  ss << "{";
-  for (int64_t i = 0; i < size - 1; ++i) {
-    ss << data[i] << ",";
+std::string tensor_to_string(const T* data, const int64_t size) {
+  std::ostringstream ss;
+  for (size_t i = 0; i < size; ++i) {
+    ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
+       << std::fixed << data[i] << std::endl;
   }
-  ss << data[size - 1] << "}";
   return ss.str();
 }
 
@@ -137,16 +166,18 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
   }
 
   // 4. Get all output
-  // std::cout << std::endl << "Input Index: <0>" << std::endl;
-  // tensor_to_string<float>(input_data, input_tensor->shape());
+  std::cout << "Input Index: <0>, shape: " << shape_to_string(INPUT_SHAPE) << std::endl;
+  // std::cout << tensor_to_string(input_data, INPUT_SHAPE) << std::endl;
   int output_num = static_cast<int>(predictor->GetOutputNames().size());
   for (int i = 0; i < output_num; ++i) {
     std::unique_ptr<const paddle::lite_api::Tensor> output_tensor(std::move(predictor->GetOutput(i)));
     const float *output_data = output_tensor->data<float>();
+    const int64_t ouput_size = shape_production(output_tensor->shape());
     std::cout << "Output Index: <" << i << ">, shape: " << shape_to_string(output_tensor->shape()) << std::endl;
-    write_rawfile(output_data, shape_production(output_tensor->shape()), "lite-out-"+std::to_string(i)+".raw");
-    compare_rawfile(output_data, shape_production(output_tensor->shape()), "infer-out-"+std::to_string(i)+".raw");
-    // tensor_to_string<float>(output_data, output_tensor->shape());
+    // std::cout << tensor_to_string(output_data, output_tensor->shape()) << std::endl;
+    std::ofstream lite_out("lite-out-"+std::to_string(i)+".txt");
+    lite_out << tensor_to_string(output_data, ouput_size);
+    lite_out.close();
   }
 
   // 5. speed report
@@ -217,33 +248,6 @@ int main(int argc, char **argv) {
   SaveOptModel(model_path, 1);
 #endif
   RunLiteModel(model_path, INPUT_SHAPE);
-
-//   std::cout << std::endl;
-//   std::cout << "Model Path is <" << model_eyes << ">" << std::endl;
-//   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_EYES) << std::endl;
-// #ifdef USE_FULL_API
-//   SaveOptModel(model_eyes, 1);
-// #endif
-//   RunLiteModel(model_eyes, INPUT_SHAPE_EYES);
-
-//   std::cout << std::endl;
-//   std::cout << "Model Path is <" << model_iris << ">" << std::endl;
-//   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_IRIS) << std::endl;
-// #ifdef USE_FULL_API
-//   SaveOptModel(model_eyes, 1);
-// #endif
-//   RunLiteModel(model_iris, INPUT_SHAPE_IRIS);
-
-//   std::cout << std::endl;
-//   std::cout << "Model Path is <" << model_mouth << ">" << std::endl;
-//   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE_MOUTH) << std::endl;
-// #ifdef USE_FULL_API
-//   SaveOptModel(model_eyes, 1);
-// #endif
-//   RunLiteModel(model_mouth, INPUT_SHAPE_MOUTH);
-
-//   std::cout << "==========================================" << std::endl;
-//   std::cout << "Total AVG TIME is " << total_time <<  " ms" << std::endl;
 
   return 0;
 }

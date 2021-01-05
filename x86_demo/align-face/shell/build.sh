@@ -19,8 +19,8 @@ function readlinkf() {
 # local sync lib dir
 PADDLE_LITE_DIR=$(readlinkf ../../inference_lite_lib)
 
-# USE_FULL_API=TRUE
-USE_FULL_API=FALSE
+USE_FULL_API=TRUE
+# USE_FULL_API=FALSE
 USE_SHARED_API=TRUE
 # USE_SHARED_API=FALSE
 #######################################
