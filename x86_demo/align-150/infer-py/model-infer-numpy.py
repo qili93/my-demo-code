@@ -3,12 +3,12 @@ from __future__ import print_function
 import paddle
 import paddle.fluid as fluid
 import numpy as np
-import cv2
-import math
+
+paddle.enable_static()
 
 MODEL_PATH="../assets/models/align150-fp32"
 
-paddle.enable_static()
+# paddle.enable_static()
 
 def infer_model(model_path):
     if model_path is None:
@@ -33,14 +33,14 @@ def infer_model(model_path):
     output1 = np.array(out1)
     print(model_name+" output 1 shape is : "+str(output1.shape))
     np.savetxt(model_name+"-out1.txt", output1.flatten(), fmt='%10.3f')
-    with open(model_name+"-out1.raw", "wb") as f:
-        output1.tofile(f)
+    # with open(model_name+"-out1.raw", "wb") as f:
+    #     output1.tofile(f)
 
     output2 = np.array(out2)
     print(model_name+" output 2 shape is : "+str(output2.shape))
-    np.savetxt(model_name+"-out2.txt", output1.flatten(), fmt='%10.3f')
-    with open(model_name+"-out2.raw", "wb") as f:
-        output1.tofile(f)
+    np.savetxt(model_name+"-out2.txt", output2.flatten(), fmt='%10.3f')
+    # with open(model_name+"-out2.raw", "wb") as f:
+    #     output1.tofile(f)
 
 if __name__ == '__main__':
     infer_model(model_path=MODEL_PATH)

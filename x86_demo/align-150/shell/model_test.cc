@@ -14,15 +14,12 @@ const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
 // const std::string model_path = "../assets/models/align150-fp32"; // {1, 3, 128, 128}
-// const std::string model_path = "../assets/models/align150-fp32-dst"; //  {1, 8, 64, 64}
-// const std::string model_path = "../assets/models/inference_model"; // {1, 3, 128, 128}
-const std::string model_path = "../assets/models/dconv08"; // {1, 3, 128, 128}
+// const std::string model_path = "../assets/models/dconv08";
+const std::string model_path = "../assets/models/align150";
 
 // MODEL_NAME=align150-fp32
 const std::vector<int64_t> INPUT_SHAPE = {1, 8, 64, 64};
-// const std::vector<int64_t> INPUT_SHAPE = {1, 8, 4, 4};
-
-// static double total_time = 0; 
+// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
 
 int64_t shape_production(const std::vector<int64_t>& shape) {
   int64_t res = 1;
@@ -34,20 +31,6 @@ double get_current_us() {
   struct timeval time;
   gettimeofday(&time, NULL);
   return 1e+6 * time.tv_sec + time.tv_usec;
-}
-
-template <typename T>
-std::string data_to_string(const T* data, const int64_t size) {
-  std::ostringstream ss;
-  ss << "[";
-  for (int64_t i = 0; i < size - 1; ++i) {
-    ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
-       << std::fixed << data[i] << ", ";
-  }
-  ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
-     << std::fixed << data[size - 1] << "]";
-  // ss << data[size - 1] << "]";
-  return ss.str();
 }
 
 std::string shape_to_string(const std::vector<int64_t>& shape) {
@@ -64,25 +47,8 @@ std::string shape_to_string(const std::vector<int64_t>& shape) {
   return ss.str();
 }
 
-// template <typename T>
-// std::string tensor_to_string(const T* data, const std::vector<int64_t>& shape) {
-//   std::ostringstream ss;
-//   ss << "Shape: " << shape_to_string(shape) << std::endl;
-//   const int64_t stride = shape.back();
-//   const int64_t split = shape.size() > 2 ? shape[shape.size() - 2] : 0;
-//   const int64_t length = static_cast<int64_t>(shape_production(shape) / stride);
-//   for (size_t i = 0; i < length; ++i) {
-//     const T * data_start = data + i * stride;
-//     ss << data_to_string<T>(data_start, stride) << std::endl;
-//     if (split != 0 && ((i + 1) % split) == 0) {
-//       ss <<  std::endl;
-//     }
-//   }
-//   return ss.str();
-// }
-
 template <typename T>
-std::string tensor_to_string(const T* data, const int64_t size) {
+std::string data_to_string(const T* data, const int64_t size) {
   std::ostringstream ss;
   for (size_t i = 0; i < size; ++i) {
     ss << std::setprecision(3) << std::setw(10) << std::setfill(' ') 
@@ -104,43 +70,6 @@ void speed_report(const std::vector<float>& costs) {
             << ", repeats: " << FLAGS_repeats 
             << ", max=" << max << " ms, min=" << min
             << "ms, avg=" << avg << "ms" << std::endl;
-}
-
-void read_rawfile(const std::string raw_imgnp_path, float * input_data) {
-  std::ifstream raw_imgnp_file(raw_imgnp_path, std::ios::in | std::ios::binary);
-  if (!raw_imgnp_file) {
-    std::cout << "Failed to load raw image file: " <<  raw_imgnp_path << std::endl;
-    return;
-  }
-  int64_t raw_imgnp_size = shape_production(INPUT_SHAPE);
-  raw_imgnp_file.read(reinterpret_cast<char *>(input_data), raw_imgnp_size * sizeof(float));
-  raw_imgnp_file.close();
-}
-
-// save output to raw file
-void write_rawfile(const float * output_data, const int64_t output_size, const std::string rawfile) {
-  std::ofstream output_file(rawfile, std::ios::out | std::ios::trunc );
-  if (!output_file.is_open()) {
-    std::cout << "Failed to open raw output file: " << rawfile << std::endl;
-    return;
-  }
-  output_file.write(reinterpret_cast<const char *>(output_data), output_size * sizeof(float));
-  output_file.close();
-}
-
-void compare_rawfile(const float * output_data, const int64_t output_size, const std::string rawfile) {
-  float* infer_out = new float[output_size];
-  std::ifstream infer_out_file(rawfile, std::ios::in | std::ios::binary);
-  if (!infer_out_file.is_open()) {
-    std::cout << "Failed to open raw input file: " << rawfile << std::endl;
-    return;
-  }
-  infer_out_file.read(reinterpret_cast<char *>(infer_out), output_size * sizeof(float));
-  for (int i = 0; i < output_size; ++i) {
-    if (fabs(output_data[i] - infer_out[i]) > 0.002) {
-      std::cout << "abs error exceeded: index " << i << ", infer res is " << infer_out[i] << ", lite res is " << output_data[i] << std::endl;
-    }
-  }
 }
 
 void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, const std::vector<int64_t> INPUT_SHAPE) {
@@ -176,7 +105,7 @@ void process(std::shared_ptr<paddle::lite_api::PaddlePredictor> &predictor, cons
     std::cout << "Output Index: <" << i << ">, shape: " << shape_to_string(output_tensor->shape()) << std::endl;
     // std::cout << tensor_to_string(output_data, output_tensor->shape()) << std::endl;
     std::ofstream lite_out("lite-out-"+std::to_string(i)+".txt");
-    lite_out << tensor_to_string(output_data, ouput_size);
+    lite_out << data_to_string(output_data, ouput_size);
     lite_out.close();
   }
 
@@ -235,8 +164,8 @@ void SaveOptModel(const std::string model_path, const int model_type = 0) {
   predictor->SaveOptimizedModel(model_path, paddle::lite_api::LiteModelType::kNaiveBuffer);
   std::cout << "Save optimized model to " << (model_path+".nb") << std::endl;
 
-  predictor->SaveOptimizedModel(model_path+"_opt", paddle::lite_api::LiteModelType::kProtobuf);
-  std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
+  // predictor->SaveOptimizedModel(model_path+"_opt", paddle::lite_api::LiteModelType::kProtobuf);
+  // std::cout << "Save optimized model to " << (model_path+"_opt") << std::endl;
 }
 #endif
 
@@ -245,7 +174,7 @@ int main(int argc, char **argv) {
   std::cout << "Model Path is <" << model_path << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE) << std::endl;
 #ifdef USE_FULL_API
-  SaveOptModel(model_path, 1);
+  SaveOptModel(model_path, 0);
 #endif
   RunLiteModel(model_path, INPUT_SHAPE);
 
