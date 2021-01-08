@@ -13,13 +13,12 @@ const int FLAGS_warmup = 5;
 const int FLAGS_repeats = 10;
 const int CPU_THREAD_NUM = 1;
 
-// const std::string model_path = "../assets/models/align150-fp32"; // {1, 3, 128, 128}
-// const std::string model_path = "../assets/models/dconv08";
-const std::string model_path = "../assets/models/align150";
+const std::string model_path = "../assets/models/align150-fp32"; // {1, 3, 128, 128}
+// const std::string model_path = "/workspace/Github-qili93/my-lite-demo/x86_demo/align-150/assets/models/dconv08";
 
 // MODEL_NAME=align150-fp32
-const std::vector<int64_t> INPUT_SHAPE = {1, 8, 64, 64};
-// const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
+// const std::vector<int64_t> INPUT_SHAPE = {1, 8, 2, 2};
+const std::vector<int64_t> INPUT_SHAPE = {1, 3, 128, 128};
 
 int64_t shape_production(const std::vector<int64_t>& shape) {
   int64_t res = 1;
@@ -174,7 +173,7 @@ int main(int argc, char **argv) {
   std::cout << "Model Path is <" << model_path << ">" << std::endl;
   std::cout << "Input Shape is " << shape_to_string(INPUT_SHAPE) << std::endl;
 #ifdef USE_FULL_API
-  SaveOptModel(model_path, 0);
+  SaveOptModel(model_path, 1);
 #endif
   RunLiteModel(model_path, INPUT_SHAPE);
 

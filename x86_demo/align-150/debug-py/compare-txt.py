@@ -3,7 +3,8 @@ from __future__ import print_function
 import numpy as np
 
 
-INFER_OUT_PATH="../train-py/dconv08-out.txt"
+# INFER_OUT_PATH="../train-py/dconv08-out.txt"
+INFER_OUT_PATH="../infer-py/align150-fp32-out1.txt"
 LITE_OUT_PATH="../shell/lite-out-0.txt"
 
 def compare_output():
