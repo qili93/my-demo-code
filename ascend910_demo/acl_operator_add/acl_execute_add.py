@@ -104,6 +104,8 @@ class Operator():
                              .format(self.shape, self.factor_b.shape))
         self.shape = list(self.shape)
         self.data_type = str(self.factor_a.dtype)
+        print("self.shape = ", self.shape)
+        print("self.data_type = ", self.data_type)
         if str(self.factor_b.dtype) != self.data_type:
             raise ValueError("factor_a:{} factor_b:{} isn't same dtype!!!"
                              .format(self.factor_a.dtype, self.factor_b.dtype))
