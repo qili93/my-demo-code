@@ -64,7 +64,7 @@ int main() {
   ACL_CALL(aclrtCreateStream(&stream));
 
   // run operator
-  std::cout << "aclopCompileAndExecute :" << op_type << std::endl;
+  std::cout << "aclopCompileAndExecute : " << op_type << std::endl;
   ACL_CALL(aclopCompileAndExecute(op_type.c_str(), 
             input_descs.size(), input_descs.data(), input_buffers.data(), 
             output_descs.size(), output_descs.data(), output_buffers.data(), 

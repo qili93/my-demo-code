@@ -12,17 +12,17 @@ int main() {
   ACL_CALL(aclInit(nullptr));
   ACL_CALL(aclrtSetDevice(0));
 
+  // Get Run Mode - ACL_HOST
+  aclrtRunMode runMode;
+  ACL_CALL(aclrtGetRunMode(&runMode));
+  std::string run_mode_str = (runMode == ACL_DEVICE) ? "ACL_DEVICE" : "ACL_HOST";
+  std::cout << "aclrtRunMode is : " << run_mode_str << std::endl;
+
   // op type
   const std::string op_type = "Resize";
   // input - x
   const std::vector<int64_t> x_dims{1, 1, 2, 3};
   const std::vector<float> x{1, 2, 3, 4, 5, 6};
-  // // input - roi
-  // const std::vector<int64_t> roi_dims{};
-  // const std::vector<float> roi{};
-  // // input - scales
-  // const std::vector<int64_t> scales_dims{};
-  // const std::vector<float> scales{};
   // input - sizes
   const std::vector<int64_t> sizes_dims{2};
   const std::vector<int64_t> sizes{3, 3};
@@ -39,17 +39,20 @@ int main() {
   auto x_buffer = aclCreateDataBuffer(x_device_ptr, x_size);
   // input - roi
   auto roi_desc = aclCreateTensorDesc(ACL_DT_UNDEFINED, 0, nullptr, ACL_FORMAT_UNDEFINED);
+  ACL_CALL(aclSetTensorPlaceMent(roi_desc, ACL_MEMTYPE_HOST));
   auto roi_buffer = aclCreateDataBuffer(nullptr, 0);
   // input - scales
   auto scales_desc = aclCreateTensorDesc(ACL_DT_UNDEFINED, 0, nullptr, ACL_FORMAT_UNDEFINED);
+  ACL_CALL(aclSetTensorPlaceMent(scales_desc, ACL_MEMTYPE_HOST));
   auto scales_buffer = aclCreateDataBuffer(nullptr, 0);
   // input - sizes
   auto sizes_desc = aclCreateTensorDesc(ACL_INT64, sizes_dims.size(), sizes_dims.data(), ACL_FORMAT_ND);
+  ACL_CALL(aclSetTensorPlaceMent(sizes_desc, ACL_MEMTYPE_HOST));
   auto sizes_size = aclGetTensorDescSize(sizes_desc);
-  void* sizes_device_ptr;
-  ACL_CALL(aclrtMalloc(&sizes_device_ptr, sizes_size, ACL_MEM_MALLOC_NORMAL_ONLY));
-  ACL_CALL(aclrtMemcpy(sizes_device_ptr, sizes_size, sizes.data(), sizes_size, ACL_MEMCPY_HOST_TO_DEVICE));
-  auto sizes_buffer = aclCreateDataBuffer(sizes_device_ptr, sizes_size);
+  void* sizes_host_ptr;
+  ACL_CALL(aclrtMallocHost(&sizes_host_ptr, sizes_size));
+  ACL_CALL(aclrtMemcpy(sizes_host_ptr, sizes_size, sizes.data(), sizes_size, ACL_MEMCPY_HOST_TO_HOST));
+  auto sizes_buffer = aclCreateDataBuffer(sizes_host_ptr, sizes_size);
   // inputs
   std::vector<aclTensorDesc *> input_descs;
   std::vector<aclDataBuffer *> input_buffers;
@@ -84,8 +87,8 @@ int main() {
   ACL_CALL(aclopSetAttrString(attr, "mode", "nearest"));
   ACL_CALL(aclopSetAttrString(attr, "nearest_mode", "round_prefer_floor"));
 
-  std::cout << "aclopCompileAndExecute :" << op_type << std::endl;
-  
+  std::cout << "aclopCompileAndExecute : " << op_type << std::endl;
+
   // create stream
   aclrtStream stream = nullptr;
   ACL_CALL(aclrtCreateStream(&stream));
@@ -118,7 +121,7 @@ int main() {
   ACL_CALL(aclDestroyDataBuffer(y_buffer));
 
   ACL_CALL(aclrtFree(x_device_ptr));
-  ACL_CALL(aclrtFree(sizes_device_ptr));
+  ACL_CALL(aclrtFreeHost(sizes_host_ptr));
   ACL_CALL(aclrtFree(y_device_ptr));
 
   // release

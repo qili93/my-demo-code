@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TARGET_EXE=${1:-ResizeNearestNeighborV2}
+TARGET_EXE=${1:-ResizeD}
 
 echo "----------- buiding target : ${TARGET_EXE} --------------"
 
@@ -12,6 +12,7 @@ fi
 # update TARGET_EXE for the operator
 # TARGET_EXE=Add
 # TARGET_EXE=Resize
+# TARGET_EXE=ResizeD
 # TARGET_EXE=ResizeNearestNeighborV2
 
 # build
