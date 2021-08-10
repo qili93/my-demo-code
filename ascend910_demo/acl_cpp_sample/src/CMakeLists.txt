@@ -35,8 +35,7 @@ link_directories(
 add_executable(${CUSTOM_OBJECT_NAME}
         operator_desc.cpp
         op_runner.cpp
-        main.cpp
-        common.cpp)
+        main.cpp)
 
 target_link_libraries(${CUSTOM_OBJECT_NAME}
         ascendcl

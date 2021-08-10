@@ -4,7 +4,8 @@ cmake_minimum_required(VERSION 3.5.1)
 # project information
 project(ascend_demo_native)
 
-set(TARGET_EXE main)
+# set(TARGET_EXE resize)
+message(STATUS "Building target TARGET_EXE=${TARGET_EXE}")
 
 # 1. path to Ascend Path
 if(DEFINED ENV{ASCEND_CUSTOM_PATH})
@@ -87,6 +88,6 @@ SET_PROPERTY(TARGET acl_op_compiler PROPERTY IMPORTED_LOCATION ${acl_op_compiler
 set(extern_ascend_cl ascendcl acl_op_compiler CACHE INTERNAL "acltoolkit libs")
 
 # 5. Final target
-add_executable(${TARGET_EXE} ${TARGET_EXE}.cc)
+add_executable(${TARGET_EXE} ${TARGET_EXE}.cc logging.cc)
 target_link_libraries(${TARGET_EXE} ${extern_ascend} ${extern_ascend_cl})
 

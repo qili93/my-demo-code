@@ -166,13 +166,41 @@ class Operator():
             ret = acl.op.set_attr_bool(self.op_attr, key, value)
             check_ret("acl.op.set_attr_int", ret)
 
+
+    def _infer_shape(self):
+        print("infer shape stage: ", len(self.output_desc))
+        ret = acl.op.infer_shape(
+            self.op_type,
+            self._inputs_desc, 
+            self._inputs_device_buffer,
+            len(self.output_desc),
+            self.output_desc,
+            self.op_attr)
+        tensor_dims = []
+        for i in range(len(self.output_desc)):
+            dim_nums = acl.get_tensor_desc_num_dims(self.output_desc[i])
+            dim_size = []
+            for j in range(dim_nums):
+                dim, ret = acl.get_tensor_desc_dim_v2(self.output_desc[i], j)
+                print("0: dim = ", dim)
+                if dim == -1:
+                    dim_range, ret = acl.get_tensor_desc_dim_range(self.output_desc[i], j, 2)
+                    dim = dim_range[1]
+                print("1: dim = ", dim)
+                dim_size.append(dim)
+            tensor_dims.append(dim_size)
+        print(tensor_dims)
+
+
     def run(self):
         self._gen_input_tensor()
         self._gen_output_tensor()
         self._gen_operator_attr()
+        self._infer_shape()
         self._forward()
         result = self._get_operator_result()
         return result
+
 
     def _forward(self):
         print('execute stage:')
