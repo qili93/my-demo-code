@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TARGET_EXE=${1:-ResizeD}
+TARGET_EXE=${1:-BroadcastToD}
 
 echo "----------- buiding target : ${TARGET_EXE} --------------"
 
@@ -14,6 +14,8 @@ fi
 # TARGET_EXE=Resize
 # TARGET_EXE=ResizeD
 # TARGET_EXE=ResizeNearestNeighborV2
+# TARGET_EXE=BroadcastTo
+# TARGET_EXE=BroadcastToD
 
 # build
 mkdir build && cd build
