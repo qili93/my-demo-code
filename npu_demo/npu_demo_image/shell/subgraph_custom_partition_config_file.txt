@@ -1,2 +1,0 @@
-conv2d:image,conv1_weights,conv1_bn_offset:batch_norm_0.tmp_3
-softmax

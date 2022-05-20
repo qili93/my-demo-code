@@ -1,21 +1,17 @@
-### Demo运行说明：
+# README
 
-1. 修改每个demo文件夹下的shell/build.sh文件中的`ANDROID_NDK`路径，指向本机的NDK路径
+Demo 代码集合，目录如下：
 
-   ```bash
-   ANDROID_NDK=/Users/<username>/Library/android-ndk-r17c # Mac OS
-   ```
+**功能Demo代码：**
 
-2. 运行如下编译命令，生成模型可执行文件
+- 自定义硬件接入 - [FakeCPU](func/custom-cpu/README.md)
 
-   ```bash
-   bash build.sh --arm_abi=armv8 --with_log=ON full_build
-   ```
+**训练硬件Demo：**
 
-3. 运行脚本，得到模型运行结果
+- GraphcoreIPU - [MNIST Sample](train/GraphcoreIPU/mnist_sample/README.md)
 
-   ```bash
-   bash run_demo.sh --arm_abi=armv8 --with_log=ON full_demo
-   ```
+**推理硬件Demo：**
 
-> 运行脚本需注意：build.sh/run_demo.sh的输入参数必须一致；在with_log=OFF tiny_build/tiny_demo下性能损耗最小。
+
+**模型Demo代码：**
+
