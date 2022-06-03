@@ -24,8 +24,8 @@ int main(int argc, char* argv[])
     device_id = atoi(argv[1]);
   }
   if (device_id < 0 || device_id > count - 1) {
-    device_id = 0;
     std::cout << "Invalid device_id: " << device_id << ", force device_id to <0>" << std::endl;
+    device_id = 0;
   }
   // Set Device to device_id
   HIP_SUCCESS(hipSetDevice(device_id));
