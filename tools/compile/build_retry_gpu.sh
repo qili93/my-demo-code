@@ -5,12 +5,21 @@ set -ex
 export http_proxy=http://172.19.57.45:3128
 export https_proxy=http://172.19.57.45:3128
 export ftp_proxy=http://172.19.57.45:3128
-export no_proxy=bcebos.com,gitee.com
+export no_proxy=bcebos.com
+
+export http_proxy=http://172.19.56.199:3128
+export https_proxy=http://172.19.56.199:3128
+export ftp_proxy=http://172.19.56.199:3128
+export no_proxy=bcebos.com
 
 cd /workspace/Paddle
 
 # save all changes to stash 
 git stash save -u "$(date)"
+git stash list
+
+# checkout to develop branch
+git checkout develop
 
 # pull develop branch - retry 3 times
 for i in {1..3}
