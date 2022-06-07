@@ -1,0 +1,12 @@
+
+# list crontab
+crontab -l
+
+# edit crontab
+crontab -e
+
+# compile 23:50 every day
+50 23 * * * /bin/bash -x /workspace/crontab/daily_build_cuda.sh > /workspace/crontab/daily_build_cuda.log 2>&1
+
+# compile 03:50 every day
+50 3 * * * /bin/bash -x /workspace/crontab/daily_build_rocm.sh > /workspace/crontab/daily_build_rocm.log 2>&1
