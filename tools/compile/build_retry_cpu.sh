@@ -15,7 +15,7 @@ export no_proxy=bcebos.com
 cd /workspace/Paddle
 
 # save all changes to stash 
-git stash save -u "$(date)"
+git stash save -u "$(date +'%Y-%m-%d-%H-%M-%S')"
 git stash list
 
 # checkout to develop branch
