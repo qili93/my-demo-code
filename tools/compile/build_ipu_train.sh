@@ -2,10 +2,10 @@
 
 set -ex
 
-export http_proxy=http://172.19.57.45:3128
-export https_proxy=http://172.19.57.45:3128
-export ftp_proxy=http://172.19.57.45:3128
-export no_proxy=bcebos.com
+#export http_proxy=http://172.19.57.45:3128
+#export https_proxy=http://172.19.57.45:3128
+#export ftp_proxy=http://172.19.57.45:3128
+#export no_proxy=bcebos.com
 
 export http_proxy=http://172.19.56.199:3128
 export https_proxy=http://172.19.56.199:3128
@@ -41,7 +41,7 @@ fi
 # cmake
 cd ${BUILD_DIR}
 cmake .. -DPY_VERSION=3.7 -DWITH_IPU=ON -DPOPLAR_DIR=/opt/poplar -DPOPART_DIR=/opt/popart \
-         -DON_INFER=OFF -DWITH_TESTING=ON -DWITH_DISTRIBUTE=ON \
+         -DON_INFER=OFF -DWITH_TESTING=ON \
          -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_VERBOSE_MAKEFILE=OFF; cmake_error=$?
 
 if [ "$cmake_error" != 0 ];then
