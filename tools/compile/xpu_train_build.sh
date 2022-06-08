@@ -2,15 +2,29 @@
 
 set -ex
 
-export http_proxy=http://172.19.57.45:3128
-export https_proxy=http://172.19.57.45:3128
-export ftp_proxy=http://172.19.57.45:3128
-export no_proxy=bcebos.com
-
-# export http_proxy=http://172.19.56.199:3128
-# export https_proxy=http://172.19.56.199:3128
-# export ftp_proxy=http://172.19.56.199:3128
+# export http_proxy=http://172.19.57.45:3128
+# export https_proxy=http://172.19.57.45:3128
+# export ftp_proxy=http://172.19.57.45:3128
 # export no_proxy=bcebos.com
+
+setproxy () {
+    export http_proxy=http://172.19.56.199:3128
+    export https_proxy=http://172.19.56.199:3128
+    export ftp_proxy=http://172.19.56.199:3128
+    export no_proxy=bcebos.com
+    echo "Adding proxy $(env | grep proxy)"
+}
+
+unsetproxy () {
+    unset http_proxy
+    unset https_proxy
+    unset ftp_proxy
+    unset no_proxy
+    echo "Delete proxy $(env | grep proxy)"
+}
+
+setproxy
+FLAG_PROXY=ON
 
 arch=$(uname -i)
 if [[ $arch == x86_64* ]]; then
@@ -60,6 +74,13 @@ fi
 # retry 3 times
 for i in {1..3}
 do
+    if [ "$FLAG_PROXY" == "ON" ];then
+        unsetproxy
+        FLAG_PROXY=OFF
+    else
+        setproxy
+        FLAG_PROXY=ON
+    fi
     if [ "$WITH_ARM" == "ON" ];then
         make TARGET=ARMV8 -j  && make_error=0 && break || make_error=$? && sleep 15
     else

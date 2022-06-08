@@ -41,7 +41,7 @@ if [ $pull_error -ne 0 ]; then
 fi
 
 # prepare build directory
-BUILD_DIR="/workspace/Paddle/build_cuda"
+BUILD_DIR="/workspace/Paddle/build_cuda_train"
 if [ ! -d ${BUILD_DIR} ];then
     mkdir -p ${BUILD_DIR}
 fi
