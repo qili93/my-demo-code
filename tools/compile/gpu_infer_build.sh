@@ -41,16 +41,15 @@ if [ $pull_error -ne 0 ]; then
 fi
 
 # prepare build directory
-BUILD_DIR="/workspace/Paddle/build_npu_infer"
+BUILD_DIR="/workspace/Paddle/build_cuda"
 if [ ! -d ${BUILD_DIR} ];then
     mkdir -p ${BUILD_DIR}
 fi
 
 # cmake
 cd ${BUILD_DIR}
-cmake .. -DPY_VERSION=3.7 -DON_INFER=OFF -DWITH_DISTRIBUTE=ON -DWITH_ARM=${WITH_ARM} \
-         -DWITH_ASCEND=OFF -DWITH_ASCEND_CL=ON -DWITH_ASCEND_INT64=ON -DWITH_ASCEND_CXX11=ON \
-         -DWITH_TESTING=OFF -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wno-error -w" \
+cmake .. -DPY_VERSION=3.7 -DON_INFER=ON -DWITH_DISTRIBUTE=OFF -DWITH_ARM=${WITH_ARM} \
+         -DWITH_GPU=ON -DWITH_TESTING=OFF -DCMAKE_BUILD_TYPE=Release \
          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_VERBOSE_MAKEFILE=OFF; cmake_error=$?
 
 if [ "$cmake_error" != 0 ];then

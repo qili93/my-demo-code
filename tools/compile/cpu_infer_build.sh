@@ -7,10 +7,18 @@ export https_proxy=http://172.19.57.45:3128
 export ftp_proxy=http://172.19.57.45:3128
 export no_proxy=bcebos.com
 
-export http_proxy=http://172.19.56.199:3128
-export https_proxy=http://172.19.56.199:3128
-export ftp_proxy=http://172.19.56.199:3128
-export no_proxy=bcebos.com
+# export http_proxy=http://172.19.56.199:3128
+# export https_proxy=http://172.19.56.199:3128
+# export ftp_proxy=http://172.19.56.199:3128
+# export no_proxy=bcebos.com
+
+arch=$(uname -i)
+if [[ $arch == x86_64* ]]; then
+    WITH_ARM=OFF
+elif  [[ $arch == aarch64* ]]; then
+    WITH_ARM=ON
+fi
+echo "Compiling with WITH_ARM=${WITH_ARM}"
 
 cd /workspace/Paddle
 
@@ -33,15 +41,16 @@ if [ $pull_error -ne 0 ]; then
 fi
 
 # prepare build directory
-BUILD_DIR="/workspace/Paddle/build_cuda"
+BUILD_DIR="/workspace/Paddle/build_cpu"
 if [ ! -d ${BUILD_DIR} ];then
     mkdir -p ${BUILD_DIR}
 fi
 
 # cmake
 cd ${BUILD_DIR}
-cmake .. -DPY_VERSION=3.7 -DWITH_GPU=ON -DON_INFER=ON -DWITH_TESTING=OFF -DWITH_XBYAK=OFF \
-         -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_VERBOSE_MAKEFILE=OFF; cmake_error=$?
+cmake .. -DPY_VERSION=3.7 -DON_INFER=ON -DWITH_DISTRIBUTE=OFF -DWITH_ARM=${WITH_ARM} \
+         -DWITH_GPU=OFF -DWITH_TESTING=OFF -DCMAKE_BUILD_TYPE=Release \
+         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_VERBOSE_MAKEFILE=OFF; cmake_error=$?
 
 if [ "$cmake_error" != 0 ];then
     echo "Fail to generate cmake"
@@ -51,9 +60,12 @@ fi
 # retry 3 times
 for i in {1..3}
 do
-    make -j8 && make_error=0 && break || make_error=$? && sleep 15
+    if [ "$WITH_ARM" == "ON" ];then
+        make TARGET=ARMV8 -j  && make_error=0 && break || make_error=$? && sleep 15
+    else
+        make -j8 && make_error=0 && break || make_error=$? && sleep 15
+    fi
 done
-
 
 if [ "$make_error" != 0 ];then
     echo "Fail to compile after retry 5 times"
