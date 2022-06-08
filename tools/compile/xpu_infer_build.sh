@@ -2,15 +2,15 @@
 
 set -ex
 
-export http_proxy=http://172.19.57.45:3128
-export https_proxy=http://172.19.57.45:3128
-export ftp_proxy=http://172.19.57.45:3128
-export no_proxy=bcebos.com
+#export http_proxy=http://172.19.57.45:3128
+#export https_proxy=http://172.19.57.45:3128
+#export ftp_proxy=http://172.19.57.45:3128
+#export no_proxy=bcebos.com
 
-# export http_proxy=http://172.19.56.199:3128
-# export https_proxy=http://172.19.56.199:3128
-# export ftp_proxy=http://172.19.56.199:3128
-# export no_proxy=bcebos.com
+export http_proxy=http://172.19.56.199:3128
+export https_proxy=http://172.19.56.199:3128
+export ftp_proxy=http://172.19.56.199:3128
+export no_proxy=bcebos.com
 
 arch=$(uname -i)
 if [[ $arch == x86_64* ]]; then
