@@ -19,10 +19,10 @@ def get_data(file_name):
 
 
 if __name__ == '__main__':
-    start1, end1 = get_data(sys.argv[1])
+    start, end = get_data(sys.argv[1])
 
-    start_time = datetime.datetime.strptime(start1, "%m/%d/%Y %H:%M:%S")
-    end_time = datetime.datetime.strptime(end1, "%m/%d/%Y %H:%M:%S")
+    start_time = datetime.datetime.strptime(start, "%m/%d/%Y %H:%M:%S")
+    end_time = datetime.datetime.strptime(end, "%m/%d/%Y %H:%M:%S")
     spend_time = end_time - start_time
 
     print("time cost (min): ", spend_time)
