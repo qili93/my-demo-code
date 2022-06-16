@@ -1,5 +1,7 @@
 #!/bin/bash
 
+docker rmi nvcr.io/nvidia/paddlepaddle:22.05-py3 
+
 FLOG="ngc-speed-$(date +'%Y-%m-%d-%H-%M-%S').log"
 echo "Start Time is: $(date +'%m/%d/%Y %T')" > ${FLOG}
 docker pull nvcr.io/nvidia/paddlepaddle:22.05-py3 >> ${FLOG} 2>&1
