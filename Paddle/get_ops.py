@@ -18,7 +18,7 @@ kernel_dict = paddle.fluid.core._get_all_register_op_kernels()
 for op_name in kernel_dict:
     kernel_list = kernel_dict[op_name]
     for item in kernel_list:
-        # print(f"op_name = {op_name}, item = {item}")
+        print(f"op_name = {op_name}, item = {item}")
         if item.find(target_place) != -1:
             if op_name not in op_support_list:
                 op_support_list.append(op_name)
