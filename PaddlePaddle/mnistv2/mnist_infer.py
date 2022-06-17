@@ -28,7 +28,7 @@ def infer_mnist(saved_model, image_path):
     config = Config(saved_model+'.pdmodel', saved_model+'.pdiparams')
 
     # enable custom device
-    config.enable_custom_device("custom_cpu")
+    # config.enable_custom_device("custom_cpu")
     
     # create predictor
     predictor = create_predictor(config)
