@@ -1,4 +1,4 @@
-#   Copyright (c) 2020 PaddlePaddle Authors. All Rights Reserved.
+#   Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,14 +52,13 @@ def test_mnist(test_reader, mnist_model):
     avg_loss_set = []
 
     for batch_id, data in enumerate(test_reader()):
-        dy_x_data = np.array(
-            [x[0].reshape(1, 28, 28) for x in data]).astype('float32')
+        x_data = np.array([x[0].reshape(1, 28, 28) for x in data]).astype('float32')
         y_data = np.array([x[1] for x in data]).astype('int64').reshape(-1, 1)
 
-        img = fluid.dygraph.base.to_variable(dy_x_data)
+        image = fluid.dygraph.base.to_variable(x_data)
         label = fluid.dygraph.base.to_variable(y_data)
 
-        prediction, acc = mnist_model(img, label)
+        prediction, acc = mnist_model(image, label)
 
         loss = fluid.layers.cross_entropy(input=prediction, label=label)
         avg_loss = fluid.layers.mean(loss)
@@ -74,13 +73,13 @@ def test_mnist(test_reader, mnist_model):
 
 
 def train_mnist(num_epochs, save_dirname):
-    place = fluid.CUDAPlace(0) if fluid.core.is_compiled_with_cuda() else fluid.CPUPlace()
+    # place = fluid.CUDAPlace(0) if fluid.core.is_compiled_with_cuda() else fluid.CPUPlace()
+    place = fluid.CPUPlace()
 
     with fluid.dygraph.guard(place):
         mnist = MNIST()
 
-        adam = fluid.optimizer.AdamOptimizer(
-            learning_rate=0.001, parameter_list=mnist.parameters())
+        adam = fluid.optimizer.AdamOptimizer(learning_rate=0.001, parameter_list=mnist.parameters())
 
         train_reader = paddle.batch(
             paddle.dataset.mnist.train(), batch_size=BATCH_SIZE, drop_last=True)
@@ -89,12 +88,12 @@ def train_mnist(num_epochs, save_dirname):
 
         for epoch in range(num_epochs):
             for batch_id, data in enumerate(train_reader()):
-                dy_x_data = np.array([x[0].reshape(1, 28, 28) for x in data]).astype('float32')
+                x_data = np.array([x[0].reshape(1, 28, 28) for x in data]).astype('float32')
                 y_data = np.array([x[1] for x in data]).astype('int64').reshape(-1, 1)
 
-                img = fluid.dygraph.base.to_variable(dy_x_data)
+                image = fluid.dygraph.base.to_variable(x_data)
                 label = fluid.dygraph.base.to_variable(y_data)
-                cost, acc = mnist(img, label)
+                cost, acc = mnist(image, label)
 
                 loss = fluid.layers.cross_entropy(cost, label)
                 avg_loss = fluid.layers.mean(loss)
@@ -130,4 +129,4 @@ def train_mnist(num_epochs, save_dirname):
 
 if __name__ == '__main__':
     BATCH_SIZE = 64
-    train_mnist(num_epochs=1, save_dirname='../models/mnist_model')
+    train_mnist(num_epochs=1, save_dirname='assets/mnist')
