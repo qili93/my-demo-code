@@ -16,7 +16,6 @@ from __future__ import print_function
 
 import os
 import shutil
-# import pathlib
 import numpy as np
 import paddle
 from paddle import nn
@@ -61,7 +60,6 @@ class MNIST(nn.Layer):
                     stride=1,
                     padding=0,
                     num_groups=1)
-
         self.conv1 = ConvBNLayer(
                     num_channels=4,
                     num_filters=4,
@@ -69,7 +67,6 @@ class MNIST(nn.Layer):
                     stride=1,
                     padding=0,
                     num_groups=1)
-
         self.max_pool = nn.MaxPool2D(kernel_size=4, stride=4, padding=0)
         self.fc = nn.Linear(in_features=144, out_features=10)
 
@@ -107,7 +104,6 @@ def test_mnist(test_reader, mnist_model):
         label = paddle.to_tensor(y_data)
 
         prediction, acc = mnist_model(image, label)
-
         loss = F.cross_entropy(input=prediction, label=label)
         avg_loss = paddle.mean(loss)
 
@@ -116,12 +112,11 @@ def test_mnist(test_reader, mnist_model):
 
     acc_val_mean = np.array(acc_set).mean()
     avg_loss_val_mean = np.array(avg_loss_set).mean()
-
     return avg_loss_val_mean, acc_val_mean
 
 
 def train_mnist(num_epochs, save_dirname):
-    place = paddle.CPUPlace()
+    paddle.set_device('cpu')
 
     mnist = MNIST()
     adam = paddle.optimizer.Adam(learning_rate=0.001, parameters=mnist.parameters())
@@ -136,14 +131,13 @@ def train_mnist(num_epochs, save_dirname):
 
             image = paddle.to_tensor(x_data)
             label = paddle.to_tensor(y_data)
-            cost, acc = mnist(image, label)
 
+            cost, acc = mnist(image, label)
             loss = F.cross_entropy(cost, label)
             avg_loss = paddle.mean(loss)
 
             avg_loss.backward()
             adam.minimize(avg_loss)
-
             mnist.clear_gradients()
 
             if batch_id % 100 == 0:
