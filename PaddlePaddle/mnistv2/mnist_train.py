@@ -70,7 +70,6 @@ class MNIST(nn.Layer):
         self.max_pool = nn.MaxPool2D(kernel_size=4, stride=4, padding=0)
         self.fc = nn.Linear(in_features=144, out_features=10)
 
-    @paddle.jit.to_static()
     def forward(self, inputs, label=None):
         # [-1, 1, 28, 28]
         x = self.conv0(inputs)
@@ -85,16 +84,18 @@ class MNIST(nn.Layer):
         # [-1, 144]
         x = self.fc(x)
         # [-1, 10]
-        out = F.softmax(x)
+        pred = F.softmax(x)
         if label is not None:
             acc = paddle.metric.accuracy(input=x, label=label)
-            return out, acc
+            loss = F.cross_entropy(pred, label)
+            loss = paddle.mean(loss)
+            return pred, acc, loss
         else:
-            return out
+            return pred
 
 def test_mnist(test_reader, mnist_model):
     acc_set = []
-    avg_loss_set = []
+    loss_set = []
 
     for batch_id, data in enumerate(test_reader()):
         x_data = np.array([x[0].reshape(1, 28, 28) for x in data]).astype('float32')
@@ -103,16 +104,14 @@ def test_mnist(test_reader, mnist_model):
         image = paddle.to_tensor(x_data)
         label = paddle.to_tensor(y_data)
 
-        prediction, acc = mnist_model(image, label)
-        loss = F.cross_entropy(input=prediction, label=label)
-        avg_loss = paddle.mean(loss)
+        pred, acc, loss = mnist_model(image, label)
 
         acc_set.append(float(acc.numpy()))
-        avg_loss_set.append(float(avg_loss.numpy()))
+        loss_set.append(float(loss.numpy()))
 
-    acc_val_mean = np.array(acc_set).mean()
-    avg_loss_val_mean = np.array(avg_loss_set).mean()
-    return avg_loss_val_mean, acc_val_mean
+    acc_mean = np.array(acc_set).mean()
+    loss_mean = np.array(loss_set).mean()
+    return acc_mean, loss_mean
 
 
 def train_mnist(num_epochs, save_dirname):
@@ -132,21 +131,19 @@ def train_mnist(num_epochs, save_dirname):
             image = paddle.to_tensor(x_data)
             label = paddle.to_tensor(y_data)
 
-            cost, acc = mnist(image, label)
-            loss = F.cross_entropy(cost, label)
-            avg_loss = paddle.mean(loss)
+            pred, acc, loss = mnist(image, label)
 
-            avg_loss.backward()
-            adam.minimize(avg_loss)
+            loss.backward()
+            adam.minimize(loss)
             mnist.clear_gradients()
 
             if batch_id % 100 == 0:
-                print("Loss at epoch {} step {}: {:}".format(epoch, batch_id, avg_loss.numpy()))
+                print("Loss at epoch {} step {}: {:}".format(epoch, batch_id, loss.numpy()))
 
         mnist.eval()
-        test_cost, test_acc = test_mnist(test_reader, mnist)
+        test_acc, test_loss = test_mnist(test_reader, mnist)
         mnist.train()
-        print("Loss at epoch {} , Test avg_loss is: {}, acc is: {}".format(epoch, test_cost, test_acc))
+        print("Loss at epoch {} , Test loss is: {}, acc is: {}".format(epoch, test_loss, test_acc))
 
     # save inference model
     if save_dirname is None:

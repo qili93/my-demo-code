@@ -46,7 +46,7 @@ checkout_develop () {
 # checkout_develop
 
 # prepare build directory
-COMMIT_DATE=$(git show -s --date=format:'%Y%m%d' --format=%cd)
+COMMIT_DATE=$(git show -s --date=format:'%m%d' --format=%cd)
 BUILD_DIR="/workspace/Paddle/build_cuda_train_${COMMIT_DATE}"
 if [ ! -d ${BUILD_DIR} ];then
     mkdir -p ${BUILD_DIR}
@@ -54,6 +54,7 @@ fi
 
 # cmake
 cd ${BUILD_DIR}
+export PADDLE_VERSION=0.0.0.dev${COMMIT_DATE}
 cmake .. -DPY_VERSION=3.7 -DON_INFER=OFF -DWITH_DISTRIBUTE=ON -DWITH_ARM=${WITH_ARM} \
          -DWITH_GPU=ON -DWITH_TESTING=OFF -DCMAKE_BUILD_TYPE=Release \
          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_VERBOSE_MAKEFILE=OFF; cmake_error=$?
