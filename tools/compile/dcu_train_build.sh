@@ -45,7 +45,8 @@ checkout_develop () {
 # checkout_develop
 
 # prepare build directory
-BUILD_DIR="/workspace/Paddle/build_rocm_train_$(date +'%Y_%m_%d')"
+COMMIT_DATE=$(git show -s --date=format:'%Y%m%d' --format=%cd)
+BUILD_DIR="/workspace/Paddle/build_rocm_train_${COMMIT_DATE}"
 if [ ! -d ${BUILD_DIR} ];then
     mkdir -p ${BUILD_DIR}
 fi
