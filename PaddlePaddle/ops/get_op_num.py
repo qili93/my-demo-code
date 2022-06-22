@@ -18,12 +18,14 @@ commit_date = time.strftime("%Y%m%d", time.gmtime(commit.committed_date))
 
 # get target place and output file name
 output_file = f"{sys.argv[1]}_ops_" + commit_date + ".csv"
-# target_place = f"place[Place({sys.argv[1]}:0)]"
-# if sys.argv[1] == 'cpu':
-#    target_place = f"place[Place({sys.argv[1]})]"
-target_place = f"place[{sys.argv[1].upper()}Place(0)]"
+target_place = f"place[Place({sys.argv[1]}:0)]"
 if sys.argv[1] == 'cpu':
-   target_place = f"place[{sys.argv[1].upper()}Place]"
+   target_place = f"place[Place({sys.argv[1]})]"
+
+# deprecated since PHI kernel migration
+# target_place = f"place[{sys.argv[1].upper()}Place(0)]"
+# if sys.argv[1] == 'cpu':
+#    target_place = f"place[{sys.argv[1].upper()}Place]"
 
 print(f"---------- Target: {target_place}, Output: {output_file} ----------")
 
