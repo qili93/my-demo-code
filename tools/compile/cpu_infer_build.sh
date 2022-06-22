@@ -22,26 +22,30 @@ echo "Compiling with WITH_ARM=${WITH_ARM}"
 
 cd /workspace/Paddle
 
-# save all changes to stash 
-git stash save -u "$(date +'%Y-%m-%d-%H-%M-%S')"
-git stash list
+checkout_develop () {
+    # save all changes to stash 
+    git stash save -u "$(date +'%Y-%m-%d-%H-%M-%S')"
+    git stash list
 
-# checkout to develop branch
-git checkout develop
+    # checkout to develop branch
+    git checkout develop
 
-# pull develop branch - retry 3 times
-for i in {1..3}
-do
+    # pull develop branch - retry 3 times
+    for i in {1..3}
+    do
     git pull upstream develop && pull_error=0 && break || pull_error=$? && sleep 5
-done
+    done
 
-if [ $pull_error -ne 0 ]; then
+    if [ $pull_error -ne 0 ]; then
     echo "Fail to pull latest code from develop branch after retrying 3 times"
     exit $pull_error
-fi
+    fi
+}
+
+# checkout_develop
 
 # prepare build directory
-BUILD_DIR="/workspace/Paddle/build_cpu_infer"
+BUILD_DIR="/workspace/Paddle/build_cpu_infer_$(date +'%Y_%m_%d')"
 if [ ! -d ${BUILD_DIR} ];then
     mkdir -p ${BUILD_DIR}
 fi

@@ -43,7 +43,6 @@ checkout_develop () {
     fi
 }
 
-
 # checkout_develop
 
 # prepare build directory
