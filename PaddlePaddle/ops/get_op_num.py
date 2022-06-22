@@ -17,7 +17,8 @@ commit = list(repo.iter_commits(paddle_commit, max_count=1))[0]
 commit_date = time.strftime("%Y%m%d", time.gmtime(commit.committed_date))
 
 # get target place and output file name
-output_file = f"{sys.argv[1]}_ops_" + commit_date + ".csv"
+place = "dcu" if paddle.is_compiled_with_rocm() else sys.argv[1]
+output_file = f"{place}_ops_" + commit_date + ".csv"
 target_place = f"place[Place({sys.argv[1]}:0)]"
 if sys.argv[1] == 'cpu':
    target_place = f"place[Place({sys.argv[1]})]"
