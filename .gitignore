@@ -16,6 +16,7 @@ core*
 *.dylib
 *.lib
 *.tar.gz
+*.vsix
 # not ignore
 !*.sh
 !*.py
