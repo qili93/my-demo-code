@@ -21,12 +21,15 @@ set(THIRD_PARTY_PATH  "${CMAKE_BINARY_DIR}/third_party" CACHE STRING
 set(THIRD_PARTY_BUILD_TYPE Release)
 set(third_party_deps)
 
+message("CMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}")
+
 ########################### include third_party ###############################
 include(external/gflags)    # download, build, install gflags
 include(external/glog)      # download, build, install glog
-include(external/boost)     # download boost
-include(external/eigen)     # download eigen3
-list(APPEND third_party_deps extern_gflags extern_glog extern_boost extern_eigen3)
+# include(external/boost)     # download boost
+# include(external/eigen)     # download eigen3
+# list(APPEND third_party_deps extern_gflags extern_glog extern_boost extern_eigen3)
+list(APPEND third_party_deps extern_gflags extern_glog)
 
 if (WITH_TESTING)
     include(external/gtest)     # download, build, install gtest

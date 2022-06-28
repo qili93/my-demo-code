@@ -16,7 +16,7 @@
 
 namespace custom_kernel {
 
-template <typename T>
+template <typename T, typename Context>
 void sgd_dense_param_dense_grad_impl(const phi::DenseTensor& param,
                                      const phi::DenseTensor& learning_rate,
                                      const phi::DenseTensor& grad,
@@ -32,8 +32,8 @@ void sgd_dense_param_dense_grad_impl(const phi::DenseTensor& param,
   }
 }
 
-template <typename T>
-void SGDDenseKernel(const phi::Context& dev_ctx,
+template <typename T, typename Context>
+void SGDDenseKernel(const Context& dev_ctx,
                     const phi::DenseTensor& param,
                     const phi::DenseTensor& learning_rate,
                     const phi::DenseTensor& grad,
@@ -42,7 +42,7 @@ void SGDDenseKernel(const phi::Context& dev_ctx,
                     phi::DenseTensor* param_out,
                     phi::DenseTensor* master_param_out) {
   dev_ctx.template Alloc<T>(param_out);
-  sgd_dense_param_dense_grad_impl<T>(param, learning_rate, grad, param_out);
+  sgd_dense_param_dense_grad_impl<T, Context>(param, learning_rate, grad, param_out);
 }
 }  // namespace custom_kernel
 

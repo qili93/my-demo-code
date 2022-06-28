@@ -12,11 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0)
-project(cpp_inference_demo CXX C)
-option(WITH_MKL        "Compile demo with MKL/OpenBlas support, default use MKL."       ON)
-option(WITH_STATIC_LIB "Compile demo with static/shared library, default don't use static."   OFF)
-
 if(NOT WITH_STATIC_LIB)
   add_definitions("-DPADDLE_WITH_SHARED_LIB")
 else()
@@ -24,16 +19,6 @@ else()
   # Set it to empty in static library mode to avoid compilation issues.
   add_definitions("/DPD_INFER_DECL=")
 endif()
-
-macro(safe_set_static_flag)
-    foreach(flag_var
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      if(${flag_var} MATCHES "/MD")
-        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-      endif(${flag_var} MATCHES "/MD")
-    endforeach(flag_var)
-endmacro()
 
 if(NOT DEFINED PADDLE_LIB)
   message(FATAL_ERROR "please set PADDLE_LIB with -DPADDLE_LIB=/path/paddle/lib")
@@ -80,10 +65,17 @@ elseif()
   set(MATH_LIB ${OPENBLAS_LIB_PATH}/lib/libopenblas${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 
-if(WITH_STATIC_LIB)
-  set(PADDLE_CORE_LIB ${PADDLE_LIB}/paddle/lib/libpaddle_inference${CMAKE_STATIC_LIBRARY_SUFFIX})
+if (WITH_STATIC_LIB)
+    set(paddle_lib_name  libpaddle_inference${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
-  set(PADDLE_CORE_LIB ${PADDLE_LIB}/paddle/lib/libpaddle_inference${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(paddle_lib_name  libpaddle_inference${CMAKE_SHARED_LIBRARY_SUFFIX})
+endif()
+
+find_library(PADDLE_CORE_LIB ${paddle_lib_name} PATHS ${PADDLE_LIB}/paddle/lib)
+if (NOT PADDLE_CORE_LIB)
+    message(FATAL "${paddle_lib_name} NOT found in ${PADDLE_LIB_DIR}")
+else()
+    message(STATUS "Found PADDLE_CORE_LIB: ${PADDLE_CORE_LIB}")
 endif()
 
 set(EXTERNAL_LIB "-lrt -ldl -lpthread")

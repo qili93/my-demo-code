@@ -18,8 +18,10 @@ project(paddle-fake-cpu CXX C)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-option(WITH_TESTING    "compile with unit testing"        OFF)
-option(ON_INFER        "compile with inference c++ lib"   OFF)
+option(WITH_TESTING    "Compile with unit testing"               OFF)
+option(ON_INFER        "Compile with Paddle Inference C++ lib"   OFF)
+option(WITH_MKL        "Compile with MKL/OpenBlas support, default use MKL."      ON)
+option(WITH_STATIC_LIB "Compile with static/shared library, default use shared."  OFF)
 
 set(FAKE_CPU_NAME      "paddle-fake-cpu")
 set(FAKE_CPU_VERSION   "0.0.1")

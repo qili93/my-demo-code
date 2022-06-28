@@ -12,25 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "phi_funcs.h"
+#include "paddle/phi/extension.h"
 
 namespace custom_kernel {
 
-template <typename T>
-void MultiplyRawKernel(const phi::Context& dev_ctx,
-                       const phi::DenseTensor& x,
-                       const phi::DenseTensor& y,
-                       int axis,
-                       phi::DenseTensor* out) {
-  auto x_dims = x.dims();
-  auto y_dims = y.dims();
-  auto dst_dims = phi::BroadcastDims(axis, x_dims, y_dims);
-  phi::DenseTensor tmp_x, tmp_y;
-  phi::BroadcastTo<T>(dev_ctx, x, dst_dims, axis, &tmp_x);
-  phi::BroadcastTo<T>(dev_ctx, y, dst_dims, axis, &tmp_y);
-
-  auto x_data = tmp_x.data<T>();
-  auto y_data = tmp_y.data<T>();
+template <typename T, typename Context>
+void AddKernel(const Context& dev_ctx,
+               const phi::DenseTensor& x,
+               const phi::DenseTensor& y,
+               phi::DenseTensor* out) {
+  auto x_data = x.data<T>();
+  auto y_data = y.data<T>();
   auto out_data = dev_ctx.template Alloc<T>(out);
   auto numel = out->numel();
   for (auto i = 0; i < numel; ++i) {
@@ -38,30 +30,35 @@ void MultiplyRawKernel(const phi::Context& dev_ctx,
   }
 }
 
-template <typename T>
-void MultiplyKernel(const phi::Context& dev_ctx,
-                    const phi::DenseTensor& x,
-                    const phi::DenseTensor& y,
-                    phi::DenseTensor* out) {
-  int axis = -1;
-  MultiplyRawKernel<T>(dev_ctx, x, y, axis, out);
+template <typename T, typename Context>
+void GradAddKernel(const Context& dev_ctx,
+                   const phi::DenseTensor& x,
+                   const phi::DenseTensor& y,
+                   phi::DenseTensor* out) {
+  auto x_data = x.data<T>();
+  auto y_data = y.data<T>();
+  auto out_data = dev_ctx.template Alloc<T>(out);
+  auto numel = out->numel();
+  for (auto i = 0; i < numel; ++i) {
+    out_data[i] = x_data[i] * y_data[i];
+  }
 }
 
 }  // namespace custom_kernel
 
-PD_REGISTER_PLUGIN_KERNEL(multiply_raw,
+PD_REGISTER_PLUGIN_KERNEL(add,
                           custom_cpu,
                           ALL_LAYOUT,
-                          custom_kernel::MultiplyRawKernel,
+                          custom_kernel::AddKernel,
                           int32_t,
                           int64_t,
                           float,
                           double) {}
 
-PD_REGISTER_PLUGIN_KERNEL(multiply,
+PD_REGISTER_PLUGIN_KERNEL(grad_add,
                           custom_cpu,
                           ALL_LAYOUT,
-                          custom_kernel::MultiplyKernel,
+                          custom_kernel::GradAddKernel,
                           int32_t,
                           int64_t,
                           float,
