@@ -31,7 +31,8 @@ cmake .. \
   -DON_INFER=${ON_INFER} \
   -DPADDLE_LIB=${LIB_DIR} \
   -DWITH_TESTING=${WITH_TESTING} \
-  -DWITH_STATIC_LIB=OFF
+  -DWITH_STATIC_LIB=OFF \
+  -DCMAKE_BUILD_TYPE=Debug
 
 # 6. Make command
 if [ "$WITH_ARM" == "ON" ];then
