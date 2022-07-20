@@ -17,6 +17,8 @@ core*
 *.lib
 *.tar.gz
 *.vsix
+*.tar.gz
+*.txt
 # not ignore
 !*.sh
 !*.py
