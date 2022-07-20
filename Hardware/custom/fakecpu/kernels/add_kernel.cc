@@ -26,7 +26,7 @@ void AddKernel(const Context& dev_ctx,
   auto out_data = dev_ctx.template Alloc<T>(out);
   auto numel = out->numel();
   for (auto i = 0; i < numel; ++i) {
-    out_data[i] = x_data[i] * y_data[i];
+    out_data[i] = x_data[i] + y_data[i];
   }
 }
 

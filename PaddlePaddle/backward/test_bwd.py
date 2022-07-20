@@ -17,6 +17,8 @@ print(f"y = {y}")
 print(f"z = {z}")
 print(f"grad_tensor = {grad_tensor}")
 
+# paddle.autograd.backward([z])
+
 paddle.autograd.backward([z], [grad_tensor], False)
 print(f"x.grad={x.grad.numpy()}")
 # print(f"x.grad={x.grad}")

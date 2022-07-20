@@ -12,7 +12,7 @@ x = paddle.to_tensor([[1, 2], [3, 4]], dtype='float32', stop_gradient=False)
 y = paddle.to_tensor([[4, 3], [2, 1]], dtype='float32')
 
 grad = paddle.to_tensor([[1, 1], [1, 1]], dtype='float32')
-z = paddle.add(x, y)
+z = paddle.dot(x, y)
 
 print(f"x = {x}")
 print(f"y = {y}")
