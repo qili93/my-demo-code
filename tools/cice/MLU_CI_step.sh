@@ -45,8 +45,42 @@ docker run  --rm -it --network=host --shm-size=128G \
   -e "PY_VERSION=3.7" \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
-  ${PADDLE_DEV_NAME} /bin/bash 
+  ${PADDLE_DEV_NAME} /bin/bash
 
-bash -x paddle/scripts/paddle_build.sh build_only # compile only
+bash -x paddle/scripts/paddle_build.sh build_only 8 # compile only
+bash -x paddle/scripts/paddle_build.sh test # test only
+
+# 或者输出如下环境变量
+
+export proxy=http://172.19.57.45:3128
+export PADDLE_BRANCH=develop
+export PADDLE_VERSION=0.0.0
+export PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-mlu:neuware
+
+
+export WITH_GPU=OFF
+export WITH_MLU=ON
+export WITH_CNCL=ON
+export WITH_TENSORRT=OFF
+export WITH_COVERAGE=OFF
+export COVERALLS_UPLOAD=OFF
+export CMAKE_BUILD_TYPE=Release
+export WITH_MKL=ON
+export WITH_AVX=ON
+export WITH_CACHE=ON
+export PADDLE_VERSION=${PADDLE_VERSION}
+export PADDLE_BRANCH=${PADDLE_BRANCH}
+export BRANCH=${PADDLE_BRANCH}
+export WITH_TEST=ON
+export RUN_TEST=ON
+export WITH_TESTING=ON
+export WITH_DISTRIBUTE=ON
+export CTEST_PARALLEL_LEVEL=ON
+export PYTHON_ABI=conda-python3.7
+export PY_VERSION=3.7
+export http_proxy=${proxy}
+export https_proxy=${proxy}
+
+bash -x paddle/scripts/paddle_build.sh build_only 8 # compile only
+bash -x paddle/scripts/paddle_build.sh test # test only
 bash -x paddle/scripts/paddle_build.sh gpu_cicheck_py35 # test only
-
