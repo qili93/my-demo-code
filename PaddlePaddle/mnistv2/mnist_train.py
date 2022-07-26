@@ -114,10 +114,14 @@ def test_mnist(test_reader, mnist_model):
     return acc_mean, loss_mean
 
 
-def train_mnist(num_epochs, save_dirname):
+def train_mnist(num_epochs, save_dirname, to_static=False):
     paddle.set_device('cpu')
 
     mnist = MNIST()
+    if to_static: # convert to static model
+        build_strategy = paddle.static.BuildStrategy()
+        build_strategy.debug_graphviz_path = "./graph"
+        mnist = paddle.jit.to_static(mnist, build_strategy=build_strategy)
     adam = paddle.optimizer.Adam(learning_rate=0.001, parameters=mnist.parameters())
 
     train_reader = paddle.batch(paddle.dataset.mnist.train(), batch_size=BATCH_SIZE, drop_last=True)
@@ -154,9 +158,11 @@ def train_mnist(num_epochs, save_dirname):
         os.makedirs(save_dirname)
     # save inference model
     mnist.eval()
-    model = paddle.jit.to_static(mnist, input_spec=[paddle.static.InputSpec([None, 1, 28, 28], 'float32', 'image')])
-    paddle.jit.save(model, save_dirname)
+    if not to_static:
+        mnist = paddle.jit.to_static(mnist, input_spec=[paddle.static.InputSpec([None, 1, 28, 28], 'float32', 'image')])
+        paddle.jit.save(mnist, save_dirname+"_dygraph")
+    paddle.jit.save(mnist, save_dirname+"_static")
 
 if __name__ == '__main__':
     BATCH_SIZE = 64
-    train_mnist(num_epochs=1, save_dirname='assets/mnist')
+    train_mnist(num_epochs=1, save_dirname='assets/mnist', to_static=True)

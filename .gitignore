@@ -19,6 +19,8 @@ core*
 *.vsix
 *.tar.gz
 *.txt
+*.dot
+*.json
 # not ignore
 !*.sh
 !*.py
