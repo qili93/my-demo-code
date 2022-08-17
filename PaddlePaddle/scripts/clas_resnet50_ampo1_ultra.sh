@@ -2,6 +2,10 @@
 
 # git clone https://github.com/PaddlePaddle/PaddleClas.git -b develop
 
+# install dependency
+pip install -r PaddleClas/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install --extra-index-url https://developer.download.nvidia.com/compute/redist --upgrade nvidia-dali-cuda110
+
 # prepare dataset of ILSVRC2012
 cd PaddleClas
 ln -s /datasets/ILSVRC2012 ./dataset/ILSVRC2012

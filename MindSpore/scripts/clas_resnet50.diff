@@ -1,0 +1,45 @@
+diff --git a/official/cv/resnet/config/resnet50_imagenet2012_config.yaml b/official/cv/resnet/config/resnet50_imagenet2012_config.yaml
+index 7b0cedcc..5f97176d 100644
+--- a/official/cv/resnet/config/resnet50_imagenet2012_config.yaml
++++ b/official/cv/resnet/config/resnet50_imagenet2012_config.yaml
+@@ -23,7 +23,7 @@ batch_size: 256
+ loss_scale: 1024
+ momentum: 0.9
+ weight_decay: 0.0001
+-epoch_size: 90
++epoch_size: 10
+ pretrain_epoch_size: 0
+ save_checkpoint: True
+ save_checkpoint_epochs: 5
+@@ -51,7 +51,7 @@ eval_start_epoch: 40
+ eval_interval: 1
+ enable_cache: False
+ cache_session_id: ""
+-mode_name: "GRAPH"
++mode_name: "PYNATIVE"
+ boost_mode: "O0"
+ conv_init: "XavierUniform"
+ dense_init: "TruncatedNormal"
+diff --git a/official/cv/resnet/train.py b/official/cv/resnet/train.py
+index f3527060..10f76958 100644
+--- a/official/cv/resnet/train.py
++++ b/official/cv/resnet/train.py
+@@ -48,6 +48,7 @@ class LossCallBack(LossMonitor):
+     def __init__(self, has_trained_epoch=0):
+         super(LossCallBack, self).__init__()
+         self.has_trained_epoch = has_trained_epoch
++        self._per_print_times = 0
+
+     def step_end(self, run_context):
+         cb_params = run_context.original_args()
+@@ -332,8 +333,10 @@ def train_net():
+     if (config.net_name not in ("resnet18", "resnet34", "resnet50", "resnet101", "resnet152", "se-resnet50")) or \
+         config.parameter_server or target == "CPU":
+         ## fp32 training
++        logger.warning("============ Running FP32 training ============ ")
+         model = ms.Model(net, loss_fn=loss, optimizer=opt, metrics=metrics, eval_network=dist_eval_network)
+     else:
++        logger.warning("============ Running AMP-O2 training ============ ")
+         model = ms.Model(net, loss_fn=loss, optimizer=opt, loss_scale_manager=loss_scale, metrics=metrics,
+                          amp_level="O2", boost_level=config.boost_mode, keep_batchnorm_fp32=False,
+                          eval_network=dist_eval_network,
