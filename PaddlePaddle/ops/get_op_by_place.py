@@ -1,7 +1,7 @@
 # Usage:
 # 1. pip install gitpython
 # 2. Install paddlepaddle-gpu or other whls
-# 3. python get_ops.py cpu/gpu/npu/xpu/mlu
+# 3. python get_ops.py cpu/gpu/npu/xpu/mlu/ascend
 
 import os
 import sys
