@@ -84,11 +84,11 @@ for epoch_id in range(EPOCH_NUM):
         # enable graph mode
         # torch.npu.enable_graph_mode()
 
-        # if batch_id == 400:
-        #     torch.npu.prof_init("./profile_lenet5")
-        #     torch.npu.prof_start()
+        if epoch_id ==4 and batch_id == 4:
+            torch.npu.prof_init("./profile_lenet5_epoch4_iter4")
+            torch.npu.prof_start()
 
-        # if batch_id >= 400:
+        # if epoch_id ==4 and batch_id >= 4 and batch_id <=500:
         #     torch.npu.iteration_start()
         
         #Forward pass
@@ -105,15 +105,15 @@ for epoch_id in range(EPOCH_NUM):
         # if batch_id == 100:
             # torch.npu.synchronize()	
 
-        # if batch_id >= 400:
+        # if epoch_id ==4 and batch_id >= 4 and batch_id <=500:
         #     torch.npu.iteration_end()
 
-        # if batch_id == 500:
-        #     torch.npu.prof_stop()
-        #     torch.npu.prof_finalize()
+        if epoch_id ==4 and batch_id == 4:
+            torch.npu.prof_stop()
+            torch.npu.prof_finalize()
 
-        if (batch_id+1) % 10 == 0:
-            print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch_id+1, EPOCH_NUM, batch_id+1, total_step, loss.item()))
+        #if (batch_id+1) % 10 == 0:
+        print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch_id+1, EPOCH_NUM, batch_id+1, total_step, loss.item()))
 
         # torch.npu.disable_graph_mode()
 

@@ -17,6 +17,7 @@ import numpy as np
 import paddle
 import paddle.nn as nn
 import paddle.vision.transforms as transforms
+import paddle.fluid.profiler as profiler
 
 import time
 
@@ -54,6 +55,7 @@ class LeNet5(nn.Layer):
         return out
 
 # set device
+#paddle.set_device("cpu")
 paddle.set_device("npu:0")
 
 # model
@@ -86,22 +88,34 @@ total_step = len(train_loader)
 for epoch_id in range(EPOCH_NUM):
     epoch_start = time.time()
     for batch_id, (images, labels) in enumerate(train_loader()):
-        # forward pass
-        with paddle.amp.auto_cast(enable=True, custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O2'):
-            outputs = model(images)
-            loss = cost(outputs, labels)
-        
-        scaled = scaler.scale(loss)
-        scaled.backward()
-        scaler.minimize(optimizer, scaled)
-        optimizer.clear_grad()
+        if epoch_id == 4 and batch_id == 4:
+            with profiler.npu_profiler("./profile_lenet5_epoch4_iter4") as npu_prof:
+                # forward pass
+                with paddle.amp.auto_cast(enable=True, custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O2'):
+                    outputs = model(images)
+                    loss = cost(outputs, labels)
+                
+                scaled = scaler.scale(loss)
+                scaled.backward()
+                scaler.minimize(optimizer, scaled)
+                optimizer.clear_grad()
+        else:
+            # forward pass
+            with paddle.amp.auto_cast(enable=True, custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O2'):
+                outputs = model(images)
+                loss = cost(outputs, labels)
+            
+            scaled = scaler.scale(loss)
+            scaled.backward()
+            scaler.minimize(optimizer, scaled)
+            optimizer.clear_grad()
 
         # backward and optimize
         # loss.backward()
         # optimizer.step()
         # optimizer.clear_grad()
 
-        if (batch_id+1) % 100 == 0:
-            print("Epoch [{}/{}], Step [{}/{}], Loss: {}".format(epoch_id+1, EPOCH_NUM, batch_id+1, total_step, loss.numpy()))
+        #if (batch_id+1) % 100 == 0:
+        print("Epoch [{}/{}], Step [{}/{}], Loss: {}".format(epoch_id+1, EPOCH_NUM, batch_id+1, total_step, loss.numpy()))
     epoch_end = time.time()
     print(f"Epoch ID: {epoch_id+1}, Train epoch time: {(epoch_end - epoch_start) * 1000} ms")
