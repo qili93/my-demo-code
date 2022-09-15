@@ -4,11 +4,14 @@ result_files = cmd_output.split("\n")
 
 # =============== get data from log ===============
 def check_status(file_name):
+    success_flag = False
     with open(file_name, 'r') as f:
         for line in f:
             if line.find("Run failed with command") != -1:
                 return False
-    return True
+            if success_flag == False and line.find("Run successfully with command") != -1:
+                success_flag = True
+    return success_flag
 
 result_dict = {}
 for file in result_files:
@@ -25,7 +28,6 @@ with open('check_status.csv', 'w') as f:
     fieldnames = ['model_name', 'status']
     w = csv.DictWriter(f, fieldnames=fieldnames)
     w.writeheader()
-    for item in result_dict:
-        w.writerow({'model_name': item, 'status': result_dict[item]})
-
+    for key in sorted(result_dict):
+        w.writerow({'model_name': key, 'status': result_dict[key]})
 
