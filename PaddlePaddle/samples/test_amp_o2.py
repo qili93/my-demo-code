@@ -1,48 +1,25 @@
-#   Copyright (c) 2022 PaddlePaddle Authors. All Rights Reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-import numpy as np
-
 import paddle
 import paddle.nn as nn
 import paddle.static as static
-import paddle.vision.transforms as transforms
-
+import numpy as np
 import time
 
-EPOCH_NUM = 5
-BATCH_SIZE = 2
+BATCH_SIZE = 16
+BATCH_NUM = 4
+EPOCH_NUM = 4
 
-
-# 定义 Dataloader
-from paddle.io import Dataset
-from paddle.dataset.common import _check_exists_and_download
-
-class RandomDataset(Dataset):
+# define a random dataset
+class RandomDataset(paddle.io.Dataset):
     def __init__(self, num_samples):
         self.num_samples = num_samples
 
     def __getitem__(self, idx):
-        image = numpy.random.random([input_size]).astype('float16')
-        label = numpy.random.random([output_size]).astype('int64')
+        image = np.random.random([1, 32, 32]).astype('float16')
+        label = np.random.randint(0, 9, (1, )).astype('int64')
         return image, label
 
     def __len__(self):
         return self.num_samples
-
-dataset = RandomDataset(nums_batch * batch_size)
-loader = paddle.io.DataLoader(dataset, batch_size=batch_size, shuffle=False, drop_last=True, num_workers=0)
 
 class LeNet5(nn.Layer):
     def __init__(self):
@@ -97,7 +74,6 @@ loss = cost(outputs, labels)
 
 # optimizer and amp
 optimizer = paddle.optimizer.Adam(learning_rate=0.001, parameters=model.parameters())
-# amp_list = paddle.static.amp.CustomOpLists(custom_black_list=None)
 optimizer = paddle.static.amp.decorate(
     optimizer=optimizer,
     init_loss_scaling=1024,
@@ -110,45 +86,13 @@ optimizer.minimize(loss)
 exe = static.Executor(place)
 exe.run(startup_program)
 
-# 2) 利用 `amp_init` 将网络的 FP32 参数转换 FP16 参数.
-optimizer.amp_init(place, scope=paddle.static.global_scope())
+# init global scope
+optimizer.amp_init(place=place, scope=paddle.static.global_scope())
 
-# # data loader
-# def _collate_fn(batch):
-#     print("==========================================")
-#     print(batch)
-#     for image, label in list(zip(*batch)):
-#         print(f"image={type(image)}")
-#         print(f"label={type(label)}")
-#     print("------------------------------------------")
-#     # print(f"batch={type(batch)}") # list
-#     # print(f"batch[0]={type(batch[0])}") # tuple
-#     # print(f"batch[1]={type(batch[1])}") # tuple
-#     # image, label = batch
-#     batch[0] = batch[0].astype('float16')
-#     batch[1] = batch[1].astype('int64')
-#     batch = np.stack(batch, axis=0)
-#     return batch
-
-# def _transform(image):
-#     return image.astype('float16')
-
-transform = transforms.Compose([
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean = (0.1307,), std = (0.3081,))])
-train_dataset = paddle.vision.datasets.MNIST(mode='train', transform=transform, download=True, dtype="float16")
-test_dataset = paddle.vision.datasets.MNIST(mode='test', transform=transform, download=True, dtype="float16")
-train_loader = paddle.io.DataLoader(train_dataset,
-    batch_size=BATCH_SIZE,
-    shuffle=True,
-    drop_last=True,
-    num_workers=2)
-test_loader = paddle.io.DataLoader(test_dataset,
-    batch_size=BATCH_SIZE,
-    shuffle=True,
-    drop_last=True,
-    num_workers=2)
+# create data loader
+dataset = RandomDataset(BATCH_NUM * BATCH_SIZE)
+train_loader = paddle.io.DataLoader(
+    dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=2)
 
 # train
 total_step = len(train_loader)
