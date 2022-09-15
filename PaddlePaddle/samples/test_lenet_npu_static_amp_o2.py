@@ -56,6 +56,7 @@ class LeNet5(nn.Layer):
 
 # set device
 paddle.enable_static()
+place = paddle.NPUPlace(0)
 # paddle.set_device("npu:0")
 
 # program
@@ -86,11 +87,11 @@ optimizer = paddle.static.amp.decorate(
 optimizer.minimize(loss)
 
 # static executor
-exe = static.Executor(paddle.NPUPlace(0))
+exe = static.Executor(place)
 exe.run(startup_program)
 
 # 2) 利用 `amp_init` 将网络的 FP32 参数转换 FP16 参数.
-optimizer.amp_init(paddle.NPUPlace(0), scope=paddle.static.global_scope())
+optimizer.amp_init(place, scope=paddle.static.global_scope())
 
 # data loader
 transform = transforms.Compose([
