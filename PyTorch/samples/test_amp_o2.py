@@ -1,16 +1,16 @@
 import time
 import torch
-import torch.npu
+# import torch.npu
 import torch.nn as nn
-import torchvision
-import torchvision.transforms as transforms
+# import torchvision
+# import torchvision.transforms as transforms
 from apex import amp
 
 BATCH_SIZE = 16
 BATCH_NUM = 4
 EPOCH_NUM = 4
 
-device = torch.device('npu:0')
+device = torch.device('cpu')
 
 # define a random dataset
 class RandomDataset(torch.utils.data.Dataset):
@@ -57,7 +57,7 @@ class LeNet5(nn.Module):
         return out
 
 # set device
-torch.npu.set_device('npu:0')
+# torch.npu.set_device('npu:0')
 # device = torch.device('npu:0')
 
 # model
@@ -70,10 +70,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 model, optimizer = amp.initialize(model, optimizer, opt_level="O2", loss_scale=1024, verbosity=1, combine_grad=False)
 
 # data loader
-transform = transforms.Compose([
-        transforms.Resize((32, 32)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean = (0.1307,), std = (0.3081,))])
+# transform = transforms.Compose([
+#         transforms.Resize((32, 32)),
+#         transforms.ToTensor(),
+#         transforms.Normalize(mean = (0.1307,), std = (0.3081,))])
 
 
 
@@ -104,9 +104,9 @@ for epoch_id in range(EPOCH_NUM):
         # enable graph mode
         # torch.npu.enable_graph_mode()
 
-        if epoch_id ==4 and batch_id == 4:
-            torch.npu.prof_init("./profile_lenet5_epoch4_iter4")
-            torch.npu.prof_start()
+        # if epoch_id ==4 and batch_id == 4:
+        #     torch.npu.prof_init("./profile_lenet5_epoch4_iter4")
+        #     torch.npu.prof_start()
 
         # if epoch_id ==4 and batch_id >= 4 and batch_id <=500:
         #     torch.npu.iteration_start()
@@ -128,9 +128,9 @@ for epoch_id in range(EPOCH_NUM):
         # if epoch_id ==4 and batch_id >= 4 and batch_id <=500:
         #     torch.npu.iteration_end()
 
-        if epoch_id ==4 and batch_id == 4:
-            torch.npu.prof_stop()
-            torch.npu.prof_finalize()
+        # if epoch_id ==4 and batch_id == 4:
+        #     torch.npu.prof_stop()
+        #     torch.npu.prof_finalize()
 
         #if (batch_id+1) % 10 == 0:
         print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch_id+1, EPOCH_NUM, batch_id+1, total_step, loss.item()))
