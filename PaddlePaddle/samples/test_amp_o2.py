@@ -53,8 +53,8 @@ class LeNet5(nn.Layer):
 
 # set device
 paddle.enable_static()
-# place = paddle.NPUPlace(0)
-place = paddle.CUDAPlace(0)
+place = paddle.NPUPlace(0)
+# place = paddle.CUDAPlace(0)
 
 # program
 main_program = paddle.static.default_main_program()
