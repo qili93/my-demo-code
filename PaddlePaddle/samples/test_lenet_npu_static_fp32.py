@@ -56,9 +56,9 @@ class LeNet5(nn.Layer):
 
 # set device
 paddle.enable_static()
+paddle.set_device("ascend")
 # paddle.set_device("npu:0")
 # paddle.set_device("gpu")
-paddle.set_device("ascend")
 
 # program
 main_program = paddle.static.default_main_program()
@@ -78,12 +78,12 @@ loss = cost(outputs, labels)
 
 # optimizer and amp
 optimizer = paddle.optimizer.Adam(learning_rate=0.001, parameters=model.parameters())
-amp_list = paddle.static.amp.CustomOpLists(custom_black_list=["flatten_contiguous_range", "greater_than"])
-optimizer = paddle.static.amp.decorate(
-    optimizer=optimizer,
-    amp_lists=amp_list,
-    init_loss_scaling=1024,
-    use_dynamic_loss_scaling=True)
+# amp_list = paddle.static.amp.CustomOpLists(custom_black_list=["flatten_contiguous_range", "greater_than"])
+# optimizer = paddle.static.amp.decorate(
+#     optimizer=optimizer,
+#     amp_lists=amp_list,
+#     init_loss_scaling=1024,
+#     use_dynamic_loss_scaling=True)
 optimizer.minimize(loss)
 
 # static executor

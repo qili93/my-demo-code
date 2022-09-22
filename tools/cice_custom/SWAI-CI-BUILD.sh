@@ -43,15 +43,15 @@ pip install -U --no-deps --force-reinstall paddlepaddle-*.whl
 
 # download and update swdnn
 rm -rf swdnn*
-wget -q https://paddle-device.bj.bcebos.com/cpu/sunway/swdnn-v1.4.3-rc2.tar.gz
-tar -xf swdnn-v1.4.3-rc2.tar.gz
-mv swdnn-v1.4.3-rc2 swdnn
+wget -q https://paddle-device.bj.bcebos.com/cpu/sunway/swdnn-v1.4.5.tar.gz
+tar -xf swdnn-v1.4.5.tar.gz
+mv swdnn-v1.4.5 swdnn
 
 # download and update tecoblas
 rm -rf tecoblas*
-wget -q https://paddle-device.bj.bcebos.com/cpu/sunway/tecoblas.tar.gz
-tar -xf tecoblas.tar.gz
-mv Tecoblas tecoblas
+wget -q https://paddle-device.bj.bcebos.com/cpu/sunway/tecoblas-v1.1.0-rc2.tar.gz
+tar -xf tecoblas-v1.1.0-rc2.tar.gz
+mv tecoblas-v1.1.0-rc2 tecoblas
 
 # download and update extend_ops
 rm -rf extend_ops*
