@@ -1,10 +1,7 @@
 #!/bin/bash
 set -xe
 
-#### login to qemu environment ####
-sshpass -p 123456 ssh -p 8111 root@127.0.0.1<<EOT
-
-##### global environment #####
+##### global environment, delete from scirpt and add into ci config #####
 
 export proxy=http://172.19.56.199:3128
 
@@ -13,10 +10,12 @@ export CACHE_ROOT=/root/PR-CI-SWAI/.cache/BUILD_CI_ROCM
 
 export PADDLE_BARNCH=develop
 export PADDLE_VERSION=0.0.0
-# export PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-dcu:rocm4.0.1
 
 export whl_package=paddle-device/cpu/sunway/
 export tgz_package=paddle-device/cpu/sunway/
+
+#### login to qemu environment ####
+sshpass -p 123456 ssh -p 8111 root@127.0.0.1<<EOT
 
 ##### local environment #####
 
@@ -76,9 +75,10 @@ git log --pretty=oneline -10
 # build and test
 bash scripts/paddle_ci.sh custom_swai
 
+EOT
+
 EXCODE=$?
 
-set +x
 if [[ $EXCODE -eq 0 ]];then
     echo "Congratulations!  Your PR passed the CI."
 elif [[ $EXCODE -eq 4 ]];then
@@ -96,5 +96,3 @@ else
 fi
 
 exit $EXCODE
-
-EOT

@@ -41,8 +41,24 @@ cd PaddleCustomDevice
 # sync submodule
 git submodule sync
 git submodule update --init --recursive
+# pull pr code
+git fetch origin pull/${AGILE_PULL_ID}/head
+git checkout -b test FETCH_HEAD
+git merge --no-edit develop
 # show git log history
 git log --pretty=oneline -10
+
+# !!!!! SKIP IF NO NPU CHANGE !!!!
+echo "=========== Checking PR Changes If NPU FULL CI Needed ==========="
+change_numbers=$(git diff --name-only remotes/origin/develop | wc -l)
+change_backend=$(git diff --name-only remotes/origin/develop | grep "backends/"| wc -l)
+change_npu_only=$(git diff --name-only remotes/origin/develop | grep "backends/npu"| wc -l)
+if [ $change_numbers -ne $change_backend ]; then
+  echo "Common file changed, continue to run NPU FULL CI test ..."
+elif [ $change_npu_only -eq 0 ] ; then
+  echo "NO NPU backend changes found, skip NPU FULL CI ...."
+  exit 0
+fi
 
 # prepare cache dir
 source_dir="${WORKSPACE}/PaddleCustomDevice"
