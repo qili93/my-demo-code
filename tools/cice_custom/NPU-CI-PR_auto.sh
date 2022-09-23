@@ -33,20 +33,19 @@ sleep 10s
 rm -rf Paddle*
 rm -rf output*
 
-# git clone PaddleCustomDevice
+# PaddleCustomDevice
 git config --global user.name "PaddleCI"
 git config --global user.email "paddle_ci@example.com"
-git clone --depth=200 --recursive https://github.com/PaddlePaddle/PaddleCustomDevice.git
+git clone --depth=200 https://github.com/PaddlePaddle/PaddleCustomDevice.git
 cd PaddleCustomDevice
-# sync submodule
-git submodule sync
-git submodule update --init --recursive
+
 # pull pr code
 git fetch origin pull/${AGILE_PULL_ID}/head
 git checkout -b test FETCH_HEAD
 git merge --no-edit develop
 # show git log history
 git log --pretty=oneline -10
+
 
 # !!!!! SKIP IF NO NPU CHANGE !!!!
 echo "=========== Checking PR Changes If NPU FULL CI Needed ==========="
@@ -59,6 +58,10 @@ elif [ $change_npu_only -eq 0 ] ; then
   echo "NO NPU backend changes found, skip NPU FULL CI ...."
   exit 0
 fi
+
+# sync submodule
+git submodule sync
+git submodule update --init --recursive
 
 # prepare cache dir
 source_dir="${WORKSPACE}/PaddleCustomDevice"

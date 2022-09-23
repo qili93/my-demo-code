@@ -4,7 +4,7 @@
 # ignore dirs
 build/
 _build/
-kernel_meta/
+kernel_meta*/
 include/
 lib/
 paddle_inference/
