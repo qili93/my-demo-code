@@ -4,7 +4,7 @@ import time
 import argparse
 import numpy as np
 import torch
-import torch.npu
+#import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
@@ -37,7 +37,7 @@ class RandomDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
         image = np.random.random([3, 224, 224]).astype('float32')
-        label = np.random.randint(0, 9, (1, )).astype('int64')
+        label = np.random.randint(0, 999, dtype='int64')
         return image, label
 
     def __len__(self):
@@ -50,9 +50,12 @@ def main():
     print(args)
     print('--------------------------------------------------')
 
-    # set device
-    torch.npu.set_device('npu:0')
-    device = torch.device('npu:0')
+    # set device to npu
+    #torch.npu.set_device('npu:0')
+    #device = torch.device('npu:0')
+
+    # set device to cuda
+    device = torch.device("cuda:0")
 
     # model
     # model = LeNet5().to(device)
@@ -61,7 +64,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4)
 
     # conver to amp model
-    model, optimizer = amp.initialize(model, optimizer, opt_level=AMP_LEVEL, loss_scale=1024, verbosity=1, combine_grad=False)
+    model, optimizer = amp.initialize(model, optimizer, opt_level=AMP_LEVEL, loss_scale=1024, verbosity=1)
 
     # create data loader
     dataset = RandomDataset(BATCH_NUM * BATCH_SIZE)
@@ -80,8 +83,11 @@ def main():
             
             #Forward pass
             outputs = model(images)
+            # print(f"images={images.type(), images.size()}") # Float, [256, 3, 224, 224]
+            # print(f"outputs={outputs.type(), outputs.size()}") # Half, [256, 1000]
+            # print(f"labels={labels.type(), labels.size()}") # Long, [256]
             loss = cost(outputs, labels)
-                
+
             # Backward and optimize
             optimizer.zero_grad()
             with amp.scale_loss(loss, optimizer) as scaled_loss:

@@ -3,7 +3,7 @@
 import time
 import argparse
 import torch
-import torch.npu
+# import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
@@ -23,7 +23,7 @@ def parse_args():
     parser.add_argument(
         "--graph",
         action='store_true',
-        default=True,
+        default=False,
         help="Whether to perform graph mode in train")
     return parser.parse_args()
 
@@ -34,8 +34,11 @@ def main():
     print('--------------------------------------------------')
 
     # set device
-    torch.npu.set_device('npu:0')
-    device = torch.device('npu:0')
+    # torch.npu.set_device('npu:0')
+    # device = torch.device('npu:0')
+
+    # set device to cuda
+    device = torch.device("cuda:0")
 
     # model
     # model = LeNet5().to(device)
@@ -43,9 +46,8 @@ def main():
     cost = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4)
 
-
     # conver to amp model
-    model, optimizer = amp.initialize(model, optimizer, opt_level=AMP_LEVEL, loss_scale=1024, verbosity=1, combine_grad=False)
+    model, optimizer = amp.initialize(model, optimizer, opt_level=AMP_LEVEL, loss_scale=1024, verbosity=1)
 
     # Data loading code
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -54,7 +56,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(
         torchvision.datasets.ImageFolder('/datasets/ILSVRC2012/train', 
             transforms.Compose([
-                transforms.RandomSizedCrop(224),
+                transforms.RandomResizedCrop(224),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,
@@ -75,6 +77,9 @@ def main():
             
             #Forward pass
             outputs = model(images)
+            # print(f"images={images.type(), images.size()}") # Float, [256, 3, 224, 224]
+            # print(f"outputs={outputs.type(), outputs.size()}") # Half, [256, 1000]
+            # print(f"labels={labels.type(), labels.size()}") # Long, [256]
             loss = cost(outputs, labels)
                 
             # Backward and optimize
