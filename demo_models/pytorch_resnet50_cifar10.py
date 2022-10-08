@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument(
         "--amp",
         action='store_true',
-        default=False,
+        default=True,
         help="Enable auto mixed precision training.")
     parser.add_argument(
         "--graph",

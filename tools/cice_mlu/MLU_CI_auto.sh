@@ -23,7 +23,6 @@ set -x
 
 mkdir -p ${WORKSPACE}
 mkdir -p ${CACHE_ROOT}
-rm -rf ${WORKSPACE}/output/*
 
 cd ${WORKSPACE}
 sleep 10s
@@ -104,7 +103,6 @@ docker run  --rm -i --network=host --shm-size=128G \
   -e "WITH_TESTING=ON" \
   -e "WITH_DISTRIBUTE=ON" \
   -e "CTEST_PARALLEL_LEVEL=ON" \
-  -e "PYTHON_ABI=conda-python3.7" \
   -e "PY_VERSION=3.7" \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
@@ -129,9 +127,12 @@ fi
 exit $EXCODE
 '
 
+set -ex
+
 mkdir -p ${WORKSPACE}/output
 cp ${PADDLE_DIR}/build/python/dist/paddlepaddle*.whl ${WORKSPACE}/output
 
+cd ${WORKSPACE}
 wget -q --no-proxy -O ${WORKSPACE}/bce_whl.tar.gz  https://paddle-docker-tar.bj.bcebos.com/home/bce_whl.tar.gz --no-check-certificate
 tar xf ${WORKSPACE}/bce_whl.tar.gz -C ${WORKSPACE}/output
 push_file=${WORKSPACE}/output/bce-python-sdk-0.8.27/BosClient.py
@@ -144,10 +145,10 @@ for file_whl in `ls *.whl` ;do
   /home/liqi27/conda/envs/py27env/bin/python ${push_file}  ${file_whl} ${whl_package}
 done
 
-set +x
 # 如果执行成功，并且开启缓存，则本地保存第三方库
 if [ $? -eq 0 ] && [ "${WITH_CACHE}" == "ON" ] && [ "${update_cached_package}" == "ON" ];then
     cd ${PADDLE_DIR}
+    mkdir -p ${tp_cache_dir}
     tar cf ${tp_cache_file_tar} -C build  third_party
     cd ${tp_cache_dir}
     xz -T `nproc` -0 ${tp_cache_file_tar}

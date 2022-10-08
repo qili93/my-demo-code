@@ -3,7 +3,7 @@
 import time
 import argparse
 import torch
-# import torch.npu
+import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
@@ -18,7 +18,7 @@ def parse_args():
     parser.add_argument(
         "--amp",
         action='store_true',
-        default=False,
+        default=True,
         help="Enable auto mixed precision training.")
     parser.add_argument(
         "--graph",
@@ -34,11 +34,11 @@ def main():
     print('--------------------------------------------------')
 
     # set device
-    # torch.npu.set_device('npu:0')
-    # device = torch.device('npu:0')
+    torch.npu.set_device('npu:0')
+    device = torch.device('npu:0')
 
     # set device to cuda
-    device = torch.device("cuda:0")
+    # device = torch.device("cuda:0")
 
     # model
     # model = LeNet5().to(device)
