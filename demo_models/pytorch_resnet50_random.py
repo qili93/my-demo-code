@@ -4,7 +4,7 @@ import time
 import argparse
 import numpy as np
 import torch
-#import torch.npu
+import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
@@ -51,11 +51,11 @@ def main():
     print('--------------------------------------------------')
 
     # set device to npu
-    #torch.npu.set_device('npu:0')
-    #device = torch.device('npu:0')
+    torch.npu.set_device('npu:0')
+    device = torch.device('npu:0')
 
     # set device to cuda
-    device = torch.device("cuda:0")
+    # device = torch.device("cuda:0")
 
     # model
     # model = LeNet5().to(device)

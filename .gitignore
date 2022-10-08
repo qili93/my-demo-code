@@ -5,6 +5,7 @@
 build/
 _build/
 kernel_meta*/
+cache*/
 include/
 lib/
 paddle_inference/
