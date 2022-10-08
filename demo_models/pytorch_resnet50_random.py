@@ -109,4 +109,5 @@ def main():
 
 
 if __name__ == '__main__':
+    print(f"!!!!!!!!!!!!!!! Please do NOT use this sample code for performance as time diffs with imagenet dataset !!!!!!!!!!!!!!!")
     main()

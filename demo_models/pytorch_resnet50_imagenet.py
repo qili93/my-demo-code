@@ -62,15 +62,19 @@ def main():
                 normalize,
         ])),
         batch_size=BATCH_SIZE, shuffle=True,
-        num_workers=4, pin_memory=True)
+        num_workers=32, pin_memory=True, drop_last=True)
 
     # train
-    total_step = len(train_loader)
+    iter_max = len(train_loader)
     for epoch_id in range(EPOCH_NUM):
         epoch_start = time.time()
-        for batch_id, (images, labels) in enumerate(train_loader):
+        tic = time.time()
+        for iter_id, (images, labels) in enumerate(train_loader):
             images = images.to(device)
             labels = labels.to(device)
+
+            # get reader_cost
+            reader_cost = time.time() - tic
 
             if args.graph:
                 torch.npu.enable_graph_mode()
@@ -91,15 +95,25 @@ def main():
             if args.graph:
                 torch.npu.launch_graph()
 
-            if (batch_id+1) % 100 == 0:
-                print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}'.format(epoch_id+1, EPOCH_NUM, batch_id+1, total_step, loss.item()))
+            # batch_cost
+            batch_cost = time.time() - tic
+            # ips
+            ips = BATCH_SIZE / batch_cost
+
+            if (iter_id+1) % 100 == 0:
+                print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, reader_cost: {:.5f} s, batch_cost: {:.5f} s, ips: {:.5f} samples/s'
+                       .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, loss.item(), reader_cost, batch_cost, ips))
+
+            # update tic for each iter
+            tic = time.time()
 
         if args.graph:
             torch.npu.disable_graph_mode()
             torch.npu.synchronize()
         
-        epoch_end = time.time()
-        print(f"Epoch ID: {epoch_id+1}, Train epoch time: {(epoch_end - epoch_start) * 1000} ms")
+        epoch_cost = time.time() - epoch_start
+        avg_ips = iter_max * BATCH_SIZE / epoch_cost
+        print(f"Epoch ID: {epoch_id+1}, Train epoch time: {epoch_cost * 1000} ms, average ips: {avg_ips}")
 
 
 if __name__ == '__main__':
