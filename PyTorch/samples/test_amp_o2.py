@@ -11,7 +11,7 @@ BATCH_SIZE = 16
 BATCH_NUM = 4
 EPOCH_NUM = 4
 
-device = torch.device('cpu')
+# device = torch.device('npu')
 
 # define a random dataset
 class RandomDataset(torch.utils.data.Dataset):
@@ -58,8 +58,8 @@ class LeNet5(nn.Module):
         return out
 
 # set device
-# torch.npu.set_device('npu:0')
-# device = torch.device('npu:0')
+torch.npu.set_device('npu:0')
+device = torch.device('npu:0')
 
 # model
 # model = LeNet5().to(device)
