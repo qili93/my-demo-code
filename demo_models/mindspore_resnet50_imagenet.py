@@ -11,7 +11,6 @@ import mindvision
 import mindspore.dataset as ds
 import mindspore.dataset.vision as vision
 import mindspore.dataset.vision.utils as utils
-from mindvision.engine.callback import LossMonitor
 from mindvision.classification.models import resnet50
 
 EPOCH_NUM = 3
@@ -46,7 +45,6 @@ def main():
     # context.set_context(mode=context.PYNATIVE_MODE, device_target="Ascend")
 
     # model = LeNet5().to(device)
-    # network = mindvision.classification.models.resnet50()
     network = resnet50()
     cost = nn.CrossEntropyLoss()
     optimizer = nn.SGD(network.trainable_params(), learning_rate=0.1, momentum=0.9, weight_decay=1e-4)
@@ -74,51 +72,52 @@ def main():
     model = ms.Model(network, loss_fn=cost, optimizer=optimizer, metrics=None, amp_level="O2")
 
     # start to train
-    model.train(EPOCH_NUM, data_set, sink_size=data_set.get_dataset_size(), dataset_sink_mode=True)
-    # print_callback = PrintCallBack()
-    # model.train(EPOCH_NUM, data_set, callbacks=[print_callback])
+    # model.train(EPOCH_NUM, data_set, sink_size=data_set.get_dataset_size(), dataset_sink_mode=True)
+    print_callback = PrintCallBack()
+    model.train(EPOCH_NUM, data_set, callbacks=[print_callback],
+                sink_size=data_set.get_dataset_size(), dataset_sink_mode=True)
 
 
-# class PrintCallBack(LossMonitor):
-#     """
-#     Monitor the loss in training.
-#     If the loss in NAN or INF terminating training.
-#     """
+class PrintCallBack(ms.Callback):
+    """
+    Print time cost and ips when training in mindspore Model train function
+    Detail refer to list_callback.on_train_epoch_begin(run_context) in source code
+    """
 
-#     def __init__(self, ):
-#         super(PrintCallBack, self).__init__()
-#         self.batch_cost = AverageMeter('batch_cost', ':6.3f')
-#         self.reader_cost = AverageMeter('reader_cost', ':6.3f')
+    def __init__(self, ):
+        super(PrintCallBack, self).__init__()
+        self.batch_cost = AverageMeter('batch_cost', ':6.3f')
+        self.reader_cost = AverageMeter('reader_cost', ':6.3f')
 
-#     def epoch_begin(self, run_context):
-#         self.epoch_time = time.time()
-#         self.tic = time.time()
-#         self.batch_cost.reset()
-#         self.reader_cost.reset()
+    def on_train_epoch_begin(self, run_context):
+        self.epoch_time = time.time()
+        self.tic = time.time()
+        self.batch_cost.reset()
+        self.reader_cost.reset()
 
-#     def epoch_end(self, run_context):
-#         epoch_cost = time.time() - self.epoch_time
+    def on_train_epoch_end(self, run_context):
+        epoch_cost = time.time() - self.epoch_time
 
-#         callback_params = run_context.original_args()
-#         epoch_id = callback_params.cur_epoch_num
-#         iter_max = callback_params.batch_num
-#         avg_ips = iter_max * BATCH_SIZE / epoch_cost
-#         print('Epoch ID: {}, Epoch time: {} ms, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
-#             .format(epoch_id+1, epoch_cost * 1000, self.reader_cost.sum, self.batch_cost.sum, self.reader_cost.sum / self.batch_cost.sum, avg_ips))
+        callback_params = run_context.original_args()
+        epoch_id = callback_params.cur_epoch_num
+        iter_max = callback_params.batch_num
+        avg_ips = iter_max * BATCH_SIZE / epoch_cost
+        print('Epoch ID: {}, Epoch time: {} ms, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
+            .format(epoch_id+1, epoch_cost * 1000, self.reader_cost.sum, self.batch_cost.sum, self.reader_cost.sum / self.batch_cost.sum, avg_ips))
 
-#     def step_begin(self, run_context):
-#         self.reader_cost.update(time.time() - tic)
+    def on_train_step_begin(self, run_context):
+        self.reader_cost.update(time.time() - self.tic)
 
-#     def step_end(self, run_context):
-#         batch_cost.update(time.time() - tic)
-#         tic = time.time()
+    def on_train_step_end(self, run_context):
+        self.atch_cost.update(time.time() - self.tic)
+        self.tic = time.time()
 
-#         callback_params = run_context.original_args()
-#         epoch_id = callback_params.cur_epoch_num
-#         iter_id = callback_params.cur_step_num
-#         iter_max = callback_params.batch_num
-#         if (iter_id+1) % LOG_STEP == 0:
-#                 log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
+        callback_params = run_context.original_args()
+        epoch_id = callback_params.cur_epoch_num
+        iter_id = callback_params.cur_step_num
+        iter_max = callback_params.batch_num
+        if (iter_id+1) % LOG_STEP == 0:
+                log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
 
 class AverageMeter(object):
     """

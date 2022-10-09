@@ -77,8 +77,8 @@ def main():
             reader_cost.update(time.time() - tic)
 
             # turn on non_blocking when pin_memory is true in data loader
-            images = images.to(CALCULATE_DEVICE, non_blocking=True)
-            labels = labels.to(CALCULATE_DEVICE, non_blocking=True)
+            images = images.to(CALCULATE_DEVICE, non_blocking=True) # high performance with pin_memory and non_blocking
+            labels = labels.to(CALCULATE_DEVICE, non_blocking=True) # high performance with pin_memory and non_blocking
 
             if args.graph:
                 torch.npu.enable_graph_mode()
