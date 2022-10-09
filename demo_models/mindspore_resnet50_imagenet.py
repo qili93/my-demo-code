@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument(
         '--amp',
         type=str,
-        choices=['O0', 'O2', 'O3'],
+        choices=['O0', 'O2', 'O3', 'auto'],
         default="O2",
         help="Choose the amp level to run, default is O2.")
     parser.add_argument(
@@ -41,8 +41,10 @@ def main():
     print('--------------------------------------------------')
 
     # set device to npu
-    context.set_context(mode=context.GRAPH_MODE, device_target="Ascend")
-    # context.set_context(mode=context.PYNATIVE_MODE, device_target="Ascend")
+    if args.graph:
+        context.set_context(mode=context.GRAPH_MODE, device_target="Ascend")
+    else:
+        context.set_context(mode=context.PYNATIVE_MODE, device_target="Ascend")
 
     # model = LeNet5().to(device)
     network = resnet50()
@@ -69,7 +71,7 @@ def main():
     data_set = data_set.batch(BATCH_SIZE, drop_remainder=True)
 
     # mindspore model init
-    model = ms.Model(network, loss_fn=cost, optimizer=optimizer, metrics=None, amp_level="O2")
+    model = ms.Model(network, loss_fn=cost, optimizer=optimizer, metrics=None, amp_level=args.amp)
 
     # start to train
     # model.train(EPOCH_NUM, data_set, sink_size=data_set.get_dataset_size(), dataset_sink_mode=True)
@@ -102,14 +104,14 @@ class PrintCallBack(ms.Callback):
         epoch_id = callback_params.cur_epoch_num
         iter_max = callback_params.batch_num
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
-        print('Epoch ID: {}, Epoch time: {} ms, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
-            .format(epoch_id+1, epoch_cost * 1000, self.reader_cost.sum, self.batch_cost.sum, self.reader_cost.sum / self.batch_cost.sum, avg_ips))
+        print('Epoch ID: {}, Epoch time: {} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
+            .format(epoch_id, epoch_cost, self.reader_cost.sum, self.batch_cost.sum, self.reader_cost.sum / self.batch_cost.sum, avg_ips))
 
     def on_train_step_begin(self, run_context):
         self.reader_cost.update(time.time() - self.tic)
 
     def on_train_step_end(self, run_context):
-        self.atch_cost.update(time.time() - self.tic)
+        self.batch_cost.update(time.time() - self.tic)
         self.tic = time.time()
 
         callback_params = run_context.original_args()
@@ -151,7 +153,7 @@ def log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id):
     eta_sec = ((EPOCH_NUM - epoch_id + 1) * iter_max - iter_id) * batch_cost.avg
     eta_msg = "eta: {:s}".format(str(datetime.timedelta(seconds=int(eta_sec))))
     print('Epoch [{}/{}], Iter [{}/{:0>4d}], reader_cost: {:.5f} s, batch_cost: {:.5f} s, ips: {:.5f} samples/s, {}'
-          .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, reader_cost.avg, batch_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
+          .format(epoch_id, EPOCH_NUM, iter_id+1, iter_max, reader_cost.avg, batch_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
 
 
 if __name__ == '__main__':
