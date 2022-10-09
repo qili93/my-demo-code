@@ -14,6 +14,7 @@ EPOCH_NUM = 5
 LOG_STEP = 100
 BATCH_SIZE = 256
 CALCULATE_DEVICE = "npu:0"
+# CALCULATE_DEVICE = "cuda:0"
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -39,10 +40,6 @@ def main():
     # set device to npu
     torch.npu.set_device(CALCULATE_DEVICE)
 
-    # set device to cuda
-    # device = torch.device("cuda:0")
-
-    # model
     # model = LeNet5().to(device)
     model = torchvision.models.resnet50().to(CALCULATE_DEVICE)
     cost = nn.CrossEntropyLoss()
@@ -146,7 +143,7 @@ class AverageMeter(object):
 
 
 def log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id):
-    eta_sec = ((EPOCH_NUM - epoch_id - 1) * iter_max - iter_id) * batch_cost.avg
+    eta_sec = ((EPOCH_NUM - epoch_id) * iter_max - iter_id) * batch_cost.avg
     eta_msg = "eta: {:s}".format(str(datetime.timedelta(seconds=int(eta_sec))))
     print('Epoch [{}/{}], Iter [{}/{:0>4d}], reader_cost: {:.5f} s, batch_cost: {:.5f} s, ips: {:.5f} samples/s, {}'
           .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, reader_cost.avg, batch_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
