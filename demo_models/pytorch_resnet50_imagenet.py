@@ -10,7 +10,7 @@ import torchvision
 import torchvision.transforms as transforms
 from apex import amp
 
-EPOCH_NUM = 3
+EPOCH_NUM = 5
 LOG_STEP = 100
 BATCH_SIZE = 256
 CALCULATE_DEVICE = "npu:0"
@@ -113,8 +113,8 @@ def main():
         
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
-        print('Epoch ID: {}, Epoch time: {} ms, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}'
-            .format(epoch_id+1, epoch_cost * 1000, reader_cost.sum, batch_cost.sum, reader_cost.sum / batch_cost.sum))
+        print('Epoch ID: {}, Epoch time: {} ms, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
+            .format(epoch_id+1, epoch_cost * 1000, reader_cost.sum, batch_cost.sum, reader_cost.sum / batch_cost.sum, avg_ips))
 
 
 class AverageMeter(object):
@@ -146,7 +146,7 @@ class AverageMeter(object):
 
 
 def log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id):
-    eta_sec = ((EPOCH_NUM - epoch_id + 1) * iter_max - iter_id) * batch_cost.avg
+    eta_sec = ((EPOCH_NUM - epoch_id - 1) * iter_max - iter_id) * batch_cost.avg
     eta_msg = "eta: {:s}".format(str(datetime.timedelta(seconds=int(eta_sec))))
     print('Epoch [{}/{}], Iter [{}/{:0>4d}], reader_cost: {:.5f} s, batch_cost: {:.5f} s, ips: {:.5f} samples/s, {}'
           .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, reader_cost.avg, batch_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
