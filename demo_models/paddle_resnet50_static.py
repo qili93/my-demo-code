@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
+import argparse
+import datetime
 import numpy as np
 
 import paddle
 import paddle.nn as nn
 import paddle.static as static
 import paddle.vision.transforms as transforms
-import argparse
-import time
 
 EPOCH_NUM = 3
-BATCH_NUM = 5005
 BATCH_SIZE = 256
 
 def parse_args():
@@ -40,18 +40,18 @@ def parse_args():
         help="Enable auto mixed precision training.")
     return parser.parse_args()
 
-# define a random dataset
-class RandomDataset(paddle.io.Dataset):
-    def __init__(self, num_samples):
-        self.num_samples = num_samples
+# # define a random dataset
+# class RandomDataset(paddle.io.Dataset):
+#     def __init__(self, num_samples):
+#         self.num_samples = num_samples
 
-    def __getitem__(self, idx):
-        image = np.random.random([3, 224, 224]).astype('float32')
-        label = np.random.randint(0, 9, (1, )).astype('int64')
-        return image, label
+#     def __getitem__(self, idx):
+#         image = np.random.random([3, 224, 224]).astype('float32')
+#         label = np.random.randint(0, 9, (1, )).astype('int64')
+#         return image, label
 
-    def __len__(self):
-        return self.num_samples
+#     def __len__(self):
+#         return self.num_samples
 
 def main():
     args = parse_args()
@@ -91,43 +91,86 @@ def main():
                 use_dynamic_loss_scaling=True)
         optimizer.minimize(loss)
 
-    # create data loader
-    dataset = RandomDataset(BATCH_NUM * BATCH_SIZE)
-    train_loader = paddle.io.DataLoader(
-        dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=2)
+    # # create data loader
+    # dataset = RandomDataset(5004 * BATCH_SIZE)
+    # train_loader = paddle.io.DataLoader(
+    #     dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=2)
 
     # Data loading code
-    # normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-    #                                  std=[0.229, 0.224, 0.225])
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
 
-    # train_loader = paddle.io.DataLoader(
-    #     paddle.vision.datasets.ImageFolder(
-    #         root='/datasets/ILSVRC2012/train', 
-    #         transform=transforms.Compose([
-    #             transforms.RandomResizedCrop(224),
-    #             transforms.RandomHorizontalFlip(),
-    #             transforms.ToTensor(),
-    #             normalize,
-    #     ])),
-    #     batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
+    train_loader = paddle.io.DataLoader(
+        paddle.vision.datasets.DatasetFolder(
+            root='/datasets/ILSVRC2012/train', 
+            transform=transforms.Compose([
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize,
+        ])),
+        batch_size=BATCH_SIZE, shuffle=True,
+        num_workers=16, drop_last=True, prefetch_factor=2)
 
     # static executor
     exe = static.Executor()
     exe.run(startup_program)
 
     # train and eval
-    total_step = len(train_loader)
+    iter_max = len(train_loader)
     for epoch_id in range(EPOCH_NUM):
+        batch_cost = AverageMeter('batch_cost', ':6.3f')
+        reader_cost = AverageMeter('reader_cost', ':6.3f')
+
         # train
         epoch_start = time.time()
-        for batch_id, (train_image, train_label) in enumerate(train_loader()):
+        tic = time.time()
+        for iter_id, (train_image, train_label) in enumerate(train_loader()):
+            # reader_cost
+            reader_cost.update(time.time() - tic)
+
             train_loss = exe.run(
                 main_program,
                 feed={images.name: train_image,
                       labels.name: train_label},
                 fetch_list=[loss])
-        epoch_end = time.time()
-        print(f"Epoch ID: {epoch_id+1}, Train time: {(epoch_end - epoch_start) * 1000} ms, Loss: {float(train_loss[0])}")
+
+            # batch_cost and update tic
+            batch_cost.update(time.time() - tic)
+            tic = time.time()
+
+        epoch_cost = time.time() - epoch_start
+        avg_ips = iter_max * BATCH_SIZE / epoch_cost
+        print('Epoch ID: {}, Epoch time: {} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
+            .format(epoch_id+1, epoch_cost, reader_cost.sum, batch_cost.sum, reader_cost.sum / batch_cost.sum, avg_ips))
+
+
+class AverageMeter(object):
+    """
+    Computes and stores the average and current value
+    Code was based on https://github.com/pytorch/examples/blob/master/imagenet/main.py
+    """
+
+    def __init__(self, name='', fmt='f', postfix="", need_avg=True):
+        self.name = name
+        self.fmt = fmt
+        self.postfix = postfix
+        self.need_avg = need_avg
+        self.reset()
+
+    def reset(self):
+        """ reset """
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        """ update """
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
 
 
 if __name__ == '__main__':

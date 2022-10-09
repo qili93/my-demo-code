@@ -110,8 +110,8 @@ def main():
         
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
-        print('Epoch ID: {}, Epoch time: {} ms, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
-            .format(epoch_id+1, epoch_cost * 1000, reader_cost.sum, batch_cost.sum, reader_cost.sum / batch_cost.sum, avg_ips))
+        print('Epoch ID: {}, Epoch time: {} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
+            .format(epoch_id+1, epoch_cost, reader_cost.sum, batch_cost.sum, reader_cost.sum / batch_cost.sum, avg_ips))
 
 
 class AverageMeter(object):
