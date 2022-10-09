@@ -69,9 +69,12 @@ def main():
     data_set = data_set.map(operations=trans_norm, input_columns="image", num_parallel_workers=12)
     data_set = data_set.map(operations=type_cast_op, input_columns="label", num_parallel_workers=12)
     data_set = data_set.batch(BATCH_SIZE, drop_remainder=True)
+    step_size = data_set.get_dataset_size()
 
     # mindspore model init
-    model = ms.Model(network, loss_fn=cost, optimizer=optimizer, metrics=None, amp_level=args.amp)
+    # 1152.60851 ips - no boost_config_dict
+    model = ms.Model(network, loss_fn=cost, optimizer=optimizer, metrics=None, amp_level=args.amp, 
+                     boost_level="O0", boost_config_dict={"grad_freeze": {"total_steps": EPOCH_NUM * step_size}})
 
     # start to train
     # model.train(EPOCH_NUM, data_set, sink_size=data_set.get_dataset_size(), dataset_sink_mode=True)
@@ -119,7 +122,7 @@ class PrintCallBack(ms.Callback):
         iter_id = callback_params.cur_step_num
         iter_max = callback_params.batch_num
         if (iter_id+1) % LOG_STEP == 0:
-                log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
+                log_info(self.reader_cost, self.batch_cost, epoch_id, iter_max, iter_id)
 
 class AverageMeter(object):
     """
