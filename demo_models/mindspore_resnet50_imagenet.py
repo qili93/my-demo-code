@@ -16,8 +16,8 @@ from mindvision.classification.models import resnet50
 EPOCH_NUM = 3
 LOG_STEP = 100
 BATCH_SIZE = 256
-CALCULATE_DEVICE = "npu:0"
-# CALCULATE_DEVICE = "cuda:0"
+
+DEVICE_ID = 1
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -32,6 +32,12 @@ def parse_args():
         action='store_true',
         default=False,
         help="Whether to perform graph mode in train")
+    parser.add_argument(
+        '--device',
+        type=str,
+        choices=['CPU', 'GPU', 'Ascend'],
+        default="Ascend",
+        help="Choose the device to run, it can be: CPU/GPU/Ascend, default is Ascend.")
     return parser.parse_args()
 
 def main():
@@ -42,9 +48,9 @@ def main():
 
     # set device to npu
     if args.graph:
-        context.set_context(mode=context.GRAPH_MODE, device_target="Ascend")
+        context.set_context(mode=context.GRAPH_MODE, device_id=DEVICE_ID, device_target=args.device)
     else:
-        context.set_context(mode=context.PYNATIVE_MODE, device_target="Ascend")
+        context.set_context(mode=context.PYNATIVE_MODE, device_id=DEVICE_ID, device_target=args.device)
 
     # model = LeNet5().to(device)
     network = resnet50()

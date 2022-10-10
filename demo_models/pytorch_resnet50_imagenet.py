@@ -4,7 +4,6 @@ import time
 import argparse
 import datetime
 import torch
-import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
@@ -13,11 +12,17 @@ from apex import amp
 EPOCH_NUM = 3
 LOG_STEP = 100
 BATCH_SIZE = 256
-CALCULATE_DEVICE = "npu:0"
-# CALCULATE_DEVICE = "cuda:0"
+
+DEVICE_ID = 0
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--device',
+        type=str,
+        choices=['CPU', 'GPU', 'Ascend'],
+        default="Ascend",
+        help="Choose the device to run, it can be: CPU/GPU/Ascend, default is Ascend.")
     parser.add_argument(
         '--amp',
         type=str,
@@ -34,11 +39,17 @@ def parse_args():
 def main():
     args = parse_args()
     print('--------------------------------------------------')
+    if args.graph: assert args.device == "Ascend"
     print(args)
     print('--------------------------------------------------')
 
     # set device to npu
-    torch.npu.set_device(CALCULATE_DEVICE)
+    if args.device == "Ascend":
+        CALCULATE_DEVICE = "npu:" + str(DEVICE_ID)
+        import torch.npu
+        torch.npu.set_device(CALCULATE_DEVICE)
+    else:
+        CALCULATE_DEVICE = "cuda:" + str(DEVICE_ID)
 
     # model = LeNet5().to(device)
     model = torchvision.models.resnet50().to(CALCULATE_DEVICE)
