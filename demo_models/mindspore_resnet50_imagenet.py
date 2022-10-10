@@ -1,4 +1,4 @@
-# https://github.com/pytorch/examples/blob/main/imagenet/main.py
+# https://gitee.com/mindspore/models/blob/master/official/cv/resnet/train.py
 
 import time
 import argparse
@@ -72,12 +72,10 @@ def main():
     step_size = data_set.get_dataset_size()
 
     # mindspore model init
-    # 1152.60851 ips - no boost_config_dict
-    model = ms.Model(network, loss_fn=cost, optimizer=optimizer, metrics=None, amp_level=args.amp, 
-                     boost_level="O0", boost_config_dict={"grad_freeze": {"total_steps": EPOCH_NUM * step_size}})
+    model = ms.Model(network, loss_fn=cost, optimizer=optimizer, loss_scale_manager=None, metrics=None, 
+        amp_level=args.amp, boost_level="O0", boost_config_dict={"grad_freeze": {"total_steps": EPOCH_NUM * step_size}})
 
     # start to train
-    # model.train(EPOCH_NUM, data_set, sink_size=data_set.get_dataset_size(), dataset_sink_mode=True)
     print_callback = PrintCallBack()
     model.train(EPOCH_NUM, data_set, callbacks=[print_callback],
                 sink_size=data_set.get_dataset_size(), dataset_sink_mode=True)
@@ -107,7 +105,7 @@ class PrintCallBack(ms.Callback):
         epoch_id = callback_params.cur_epoch_num
         iter_max = callback_params.batch_num
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
-        print('Epoch ID: {}, Epoch time: {} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
+        print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, reader/batch: {:.2%}, average ips: {:.5f} samples/s'
             .format(epoch_id, epoch_cost, self.reader_cost.sum, self.batch_cost.sum, self.reader_cost.sum / self.batch_cost.sum, avg_ips))
 
     def on_train_step_begin(self, run_context):
@@ -119,8 +117,8 @@ class PrintCallBack(ms.Callback):
 
         callback_params = run_context.original_args()
         epoch_id = callback_params.cur_epoch_num
-        iter_id = callback_params.cur_step_num
         iter_max = callback_params.batch_num
+        iter_id = callback_params.cur_step_num % iter_max
         if (iter_id+1) % LOG_STEP == 0:
                 log_info(self.reader_cost, self.batch_cost, epoch_id, iter_max, iter_id)
 
