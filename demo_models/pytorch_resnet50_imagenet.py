@@ -10,7 +10,7 @@ import torchvision
 import torchvision.transforms as transforms
 from apex import amp
 
-EPOCH_NUM = 5
+EPOCH_NUM = 3
 LOG_STEP = 100
 BATCH_SIZE = 256
 CALCULATE_DEVICE = "npu:0"
@@ -46,7 +46,8 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4)
 
     # conver to amp model
-    model, optimizer = amp.initialize(model, optimizer, opt_level=args.amp, loss_scale=1024, verbosity=1)
+    if args.amp == "O1" or args.amp == "O2":
+        model, optimizer = amp.initialize(model, optimizer, opt_level=args.amp, loss_scale=1024, verbosity=1)
 
     # Data loading code
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -87,9 +88,14 @@ def main():
             outputs = model(images)
             loss = cost(outputs, labels)
                 
-            # Backward and optimize
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
+            # Backward
+            if args.amp == "O1" or args.amp == "O2":
+                with amp.scale_loss(loss, optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backward()
+            
+            # Optimize
             optimizer.step()
             optimizer.zero_grad()
 

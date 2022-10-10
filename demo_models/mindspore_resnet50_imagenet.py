@@ -54,19 +54,17 @@ def main():
     # Data loading code
     data_set = ds.ImageFolderDataset('/datasets/ILSVRC2012/train', num_parallel_workers=12, shuffle=True)
 
+    mean = [0.485 * 255, 0.456 * 255, 0.406 * 255]
+    std = [0.229 * 255, 0.224 * 255, 0.225 * 255]
     trans = [
         ds.vision.RandomCropDecodeResize(224, scale=(0.08, 1.0), ratio=(0.75, 1.333)),
-        ds.vision.RandomHorizontalFlip(prob=0.5)
-    ]
-    trans_norm = [
-        ds.vision.Normalize(mean=[0.485 * 255, 0.456 * 255, 0.406 * 255], 
-                            std=[0.229 * 255, 0.224 * 255, 0.225 * 255]),
+        ds.vision.RandomHorizontalFlip(prob=0.5),
+        ds.vision.Normalize(mean=mean, std=std),
         ds.vision.HWC2CHW()
     ]
     type_cast_op = ds.transforms.transforms.TypeCast(ms.int32)
 
     data_set = data_set.map(operations=trans, input_columns="image", num_parallel_workers=24)
-    data_set = data_set.map(operations=trans_norm, input_columns="image", num_parallel_workers=12)
     data_set = data_set.map(operations=type_cast_op, input_columns="label", num_parallel_workers=12)
     data_set = data_set.batch(BATCH_SIZE, drop_remainder=True)
     step_size = data_set.get_dataset_size()
