@@ -14,9 +14,7 @@ import mindspore.dataset.vision.utils as utils
 from mindvision.classification.models import resnet50
 
 EPOCH_NUM = 3
-LOG_STEP = 100
 BATCH_SIZE = 256
-
 DEVICE_ID = 1
 
 def parse_args():
@@ -123,7 +121,7 @@ class PrintCallBack(ms.Callback):
         epoch_id = callback_params.cur_epoch_num
         iter_max = callback_params.batch_num
         iter_id = callback_params.cur_step_num % iter_max
-        if (iter_id+1) % LOG_STEP == 0:
+        if (iter_id+1) % 100 == 0:
                 log_info(self.reader_cost, self.batch_cost, epoch_id, iter_max, iter_id)
 
 class AverageMeter(object):

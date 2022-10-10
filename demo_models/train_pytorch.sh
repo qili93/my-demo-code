@@ -1,7 +1,11 @@
 #!/bin/bash
 set -ex
 
-DEVICE_TARGET=${1:-Ascend} # CPU, GPU, Ascend
+DEVICE_TARGET=${1:-Ascend} # GPU, Ascend
+
+if [ "$DEVICE_TARGET" = "GPU" ];then
+    sed -i "s/import torch.npu/#import torch.npu/g" $FILENAME
+fi
 
 echo "======== Eager Mode ========"
 python3 pytorch_resnet50_imagenet.py --device=${DEVICE_TARGET} --amp=O0 > pytorch_resnet50_imagenet_eager_amp_o0.log 2>&1

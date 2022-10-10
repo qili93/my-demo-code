@@ -4,15 +4,14 @@ import time
 import argparse
 import datetime
 import torch
+import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 from apex import amp
 
 EPOCH_NUM = 3
-LOG_STEP = 100
 BATCH_SIZE = 256
-
 DEVICE_ID = 0
 
 def parse_args():
@@ -46,7 +45,6 @@ def main():
     # set device to npu
     if args.device == "Ascend":
         CALCULATE_DEVICE = "npu:" + str(DEVICE_ID)
-        import torch.npu
         torch.npu.set_device(CALCULATE_DEVICE)
     else:
         CALCULATE_DEVICE = "cuda:" + str(DEVICE_ID)
@@ -117,8 +115,8 @@ def main():
             batch_cost.update(time.time() - tic)
             tic = time.time()
 
-            # logger for each LOG_STEP
-            if (iter_id+1) % LOG_STEP == 0:
+            # logger for each 100
+            if (iter_id+1) % 100 == 0:
                 log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)            
 
         if args.graph:
