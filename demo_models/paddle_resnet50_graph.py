@@ -24,6 +24,7 @@ import paddle.vision.transforms as transforms
 
 EPOCH_NUM = 3
 BATCH_SIZE = 256
+DEVICE_ID = 0
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -53,23 +54,13 @@ def parse_args():
 #     def __len__(self):
 #         return self.num_samples
 
-def main():
-    args = parse_args()
-    print('---------------  Running Arguments ---------------')
-    print(args)
-    print('--------------------------------------------------')
-
-    # enable static and set device
-    paddle.enable_static()
-    paddle.set_device(args.device)
-
+def main(args, place):
     # program
     main_program = paddle.static.default_main_program()
     startup_program = paddle.static.default_startup_program()
 
     with paddle.static.program_guard(main_program, startup_program):
         # model
-        # model = LeNet5()
         model = paddle.vision.models.resnet50()
         cost = nn.CrossEntropyLoss()
         # inputs
@@ -77,6 +68,11 @@ def main():
         labels = static.data(shape=[None, 1], name='label', dtype='int64')
         # foward
         outputs = model(images)
+        # python/paddle/vision/datasets/folder.py:265
+        # import numpy as np
+        # return sample, np.array([target]).astype('int64')
+        # python/paddle/nn/functional/loss.py:2373
+        # label = paddle.unsqueeze(label, axis=axis) # not work in static mode
         loss = cost(outputs, labels)
 
         # optimizer and amp
@@ -89,7 +85,10 @@ def main():
                 amp_lists=amp_list,
                 init_loss_scaling=1024,
                 use_dynamic_loss_scaling=True)
+
         optimizer.minimize(loss)
+        if args.amp:
+            optimizer.amp_init(place, scope=paddle.static.global_scope())
 
     # # create data loader
     # dataset = RandomDataset(5004 * BATCH_SIZE)
@@ -97,9 +96,7 @@ def main():
     #     dataset, batch_size=BATCH_SIZE, shuffle=True, drop_last=True, num_workers=2)
 
     # Data loading code
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
-
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     train_loader = paddle.io.DataLoader(
         paddle.vision.datasets.DatasetFolder(
             root='/datasets/ILSVRC2012/train', 
@@ -110,13 +107,14 @@ def main():
                 normalize,
         ])),
         batch_size=BATCH_SIZE, shuffle=True,
-        num_workers=16, drop_last=True, prefetch_factor=2)
+        num_workers=8, drop_last=True, prefetch_factor=2)
 
     # static executor
     exe = static.Executor()
     exe.run(startup_program)
 
-    # train and eval
+    # switch to train mode
+    model.train()
     iter_max = len(train_loader)
     for epoch_id in range(EPOCH_NUM):
         batch_cost = AverageMeter('batch_cost', ':6.3f')
@@ -138,6 +136,10 @@ def main():
             # batch_cost and update tic
             batch_cost.update(time.time() - tic)
             tic = time.time()
+
+            # logger for each 100
+            if (iter_id+1) % 100 == 0:
+                log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
 
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
@@ -173,5 +175,32 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
+def log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id):
+    eta_sec = ((EPOCH_NUM - epoch_id) * iter_max - iter_id) * batch_cost.avg
+    eta_msg = "eta: {:s}".format(str(datetime.timedelta(seconds=int(eta_sec))))
+    print('Epoch [{}/{}], Iter [{}/{:0>4d}], reader_cost: {:.5f} s, batch_cost: {:.5f} s, ips: {:.5f} samples/s, {}'
+          .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, reader_cost.avg, batch_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
+
+
 if __name__ == '__main__':
-    main()
+    args = parse_args()
+    print('---------------  Running Arguments ---------------')
+    print(args)
+    print('--------------------------------------------------')
+
+    # enable static and set device
+    paddle.enable_static()
+    paddle.set_device(args.device)
+
+    
+    place = None
+    if args.device == "Ascend":
+        place = paddle.CustomPlace("Ascend", DEVICE_ID)
+    elif args.device == "NPU":
+        place = paddle.NPUPlace(DEVICE_ID)
+    elif args.device == "GPU":
+        place = paddle.CUDAPlace(DEVICE_ID)
+    else:
+        place = paddle.CPUPlace()
+    
+    main(args, place)

@@ -23,11 +23,8 @@ import paddle.static as static
 import paddle.vision.transforms as transforms
 
 EPOCH_NUM = 3
-LOG_STEP = 100
 BATCH_SIZE = 256
-
-DEVICE_ID = 1
-
+DEVICE_ID = 0
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -42,6 +39,11 @@ def parse_args():
         action='store_true',
         default=True,
         help="Enable auto mixed precision training.")
+    parser.add_argument(
+        '--to_static',
+        action='store_true',
+        default=False,
+        help='whether to enable dynamic to static or not, true or false')
     return parser.parse_args()
 
 
@@ -63,6 +65,11 @@ def main():
     if args.amp:
         scaler = paddle.amp.GradScaler(init_loss_scaling=1024)
         model, optimizer = paddle.amp.decorate(models=model, optimizers=optimizer, level='O1')
+
+    # convert to static model
+    if args.to_static:
+        build_strategy = paddle.static.BuildStrategy()
+        model = paddle.jit.to_static(model, build_strategy=build_strategy)
 
     # Data loading code
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -86,10 +93,13 @@ def main():
         batch_cost = AverageMeter('batch_cost', ':6.3f')
         reader_cost = AverageMeter('reader_cost', ':6.3f')
 
+        # train
         epoch_start = time.time()
         tic = time.time()
         for iter_id, (images, labels) in enumerate(train_loader()):
-
+            # reader_cost
+            reader_cost.update(time.time() - tic)
+            
             # forward
             with paddle.amp.auto_cast(custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O1'):
                 outputs = model(images)
@@ -105,8 +115,8 @@ def main():
             batch_cost.update(time.time() - tic)
             tic = time.time()
 
-            # logger for each LOG_STEP
-            if (iter_id+1) % LOG_STEP == 0:
+            # logger for each 100 steps
+            if (iter_id+1) % 100 == 0:
                 log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
 
         epoch_cost = time.time() - epoch_start
