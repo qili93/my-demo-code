@@ -35,10 +35,11 @@ def parse_args():
         default="ascend",
         help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
     parser.add_argument(
-        "--amp",
-        action='store_true',
-        default=True,
-        help="Enable auto mixed precision training.")
+        '--amp',
+        type=str,
+        choices=['O0', 'O1', 'O2'],
+        default="O1",
+        help="Choose the amp level to run, default is O1.")
     return parser.parse_args()
 
 # # define a random dataset
@@ -77,7 +78,7 @@ def main(args, place):
 
         # optimizer and amp
         optimizer = paddle.optimizer.SGD(learning_rate=0.1,parameters=model.parameters())
-        if args.amp:
+         if args.amp == "O1":
             amp_list = paddle.static.amp.CustomOpLists(
                 custom_black_list=["flatten_contiguous_range", "greater_than"])
             optimizer = paddle.static.amp.decorate(
@@ -87,7 +88,7 @@ def main(args, place):
                 use_dynamic_loss_scaling=True)
 
         optimizer.minimize(loss)
-        if args.amp:
+        if args.amp == "O1":
             optimizer.amp_init(place, scope=paddle.static.global_scope())
 
     # # create data loader

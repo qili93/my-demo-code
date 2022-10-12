@@ -35,10 +35,11 @@ def parse_args():
         default="ascend",
         help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
     parser.add_argument(
-        "--amp",
-        action='store_true',
-        default=True,
-        help="Enable auto mixed precision training.")
+        '--amp',
+        type=str,
+        choices=['O0', 'O1', 'O2'],
+        default="O1",
+        help="Choose the amp level to run, default is O1.")
     parser.add_argument(
         '--to_static',
         action='store_true',
@@ -62,7 +63,7 @@ def main():
     optimizer = paddle.optimizer.SGD(learning_rate=0.1,parameters=model.parameters())
 
     # convert to ampo1 model
-    if args.amp:
+    if args.amp == "O1":
         scaler = paddle.amp.GradScaler(init_loss_scaling=1024)
         model, optimizer = paddle.amp.decorate(models=model, optimizers=optimizer, level='O1')
 
@@ -101,14 +102,24 @@ def main():
             reader_cost.update(time.time() - tic)
             
             # forward
-            with paddle.amp.auto_cast(custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O1'):
+            if args.amp == "O1":
+                # forward
+                with paddle.amp.auto_cast(custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O1'):
+                    outputs = model(images)
+                    loss = cost(outputs, labels)
+                # backward and optimize
+                scaled = scaler.scale(loss)
+                scaled.backward()
+                scaler.minimize(optimizer, scaled)
+            else:
+                # forward
                 outputs = model(images)
                 loss = cost(outputs, labels)
-            
-            # backward and optimize
-            scaled = scaler.scale(loss)
-            scaled.backward()
-            scaler.minimize(optimizer, scaled)
+                # backward
+                loss.backward()
+                # optimize
+                optimizer.minimize(loss)
+
             optimizer.clear_grad()
 
             # batch_cost and update tic
