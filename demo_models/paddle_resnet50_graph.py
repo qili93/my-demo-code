@@ -78,7 +78,7 @@ def main(args, place):
 
         # optimizer and amp
         optimizer = paddle.optimizer.SGD(learning_rate=0.1,parameters=model.parameters())
-         if args.amp == "O1":
+        if args.amp == "O1":
             amp_list = paddle.static.amp.CustomOpLists(
                 custom_black_list=["flatten_contiguous_range", "greater_than"])
             optimizer = paddle.static.amp.decorate(

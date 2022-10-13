@@ -4,7 +4,7 @@ set -ex
 DEVICE_TARGET=${1:-ascend} # cpu, gpu, npu, ascend
 
 echo "======== Eager Mode ========"
-python3 paddle_resnet50_eager.py --device=${DEVICE_TARGET} --amp=O0> paddle_resnet50_eager_amp_o0.log 2>&1
+python3 paddle_resnet50_eager.py --device=${DEVICE_TARGET} --amp=O0 > paddle_resnet50_eager_amp_o0.log 2>&1
 sleep 10s
 python3 paddle_resnet50_eager.py --device=${DEVICE_TARGET} --amp=O1 > paddle_resnet50_eager_amp_o1.log 2>&1
 sleep 10s
