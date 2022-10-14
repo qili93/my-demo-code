@@ -2,7 +2,7 @@
 set -ex
 
 DEVICE_TARGET=${1:-Ascend} # CPU, GPU, Ascend
-DEVICE_ID = ${2:-0} # device id
+DEVICE_ID=${2:-0} # device id
 
 echo "======== Eager Mode ========"
 python3 mindspore_resnet50_imagenet.py --device=${DEVICE_TARGET} --ids=${DEVICE_ID} --amp=O0> mindspore_resnet50_imagenet_eager_amp_o0.log 2>&1
