@@ -24,7 +24,6 @@ import paddle.vision.transforms as transforms
 
 EPOCH_NUM = 3
 BATCH_SIZE = 256
-DEVICE_ID = 0
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -34,6 +33,11 @@ def parse_args():
         choices=['cpu', 'gpu', 'npu', 'ascend'],
         default="ascend",
         help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
+    parser.add_argument(
+        '--ids',
+        type=int,
+        default=0,
+        help="Choose the device id to run, default is 0.")
     parser.add_argument(
         '--amp',
         type=str,
@@ -108,7 +112,7 @@ def main(args, place):
                 normalize,
         ])),
         batch_size=BATCH_SIZE, shuffle=True,
-        num_workers=8, drop_last=True, prefetch_factor=2)
+        num_workers=32, drop_last=True, prefetch_factor=2)
 
     # static executor
     exe = static.Executor()
@@ -196,11 +200,11 @@ if __name__ == '__main__':
     
     place = None
     if args.device == "Ascend":
-        place = paddle.CustomPlace("Ascend", DEVICE_ID)
+        place = paddle.CustomPlace("Ascend", args.ids)
     elif args.device == "NPU":
-        place = paddle.NPUPlace(DEVICE_ID)
+        place = paddle.NPUPlace(args.ids)
     elif args.device == "GPU":
-        place = paddle.CUDAPlace(DEVICE_ID)
+        place = paddle.CUDAPlace(args.ids)
     else:
         place = paddle.CPUPlace()
     

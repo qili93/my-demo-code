@@ -24,7 +24,6 @@ import paddle.vision.transforms as transforms
 
 EPOCH_NUM = 3
 BATCH_SIZE = 256
-DEVICE_ID = 0
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -34,6 +33,11 @@ def parse_args():
         choices=['cpu', 'gpu', 'npu', 'ascend'],
         default="ascend",
         help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
+    parser.add_argument(
+        '--ids',
+        type=int,
+        default=0,
+        help="Choose the device id to run, default is 0.")
     parser.add_argument(
         '--amp',
         type=str,
@@ -55,7 +59,7 @@ def main():
     print('--------------------------------------------------')
 
     # enable static and set device
-    paddle.set_device(args.device)
+    paddle.set_device("{}:{}".format(args.device, str(args.ids)))
 
     # model
     model = paddle.vision.models.resnet50()
@@ -84,7 +88,7 @@ def main():
                 normalize,
         ])),
         batch_size=BATCH_SIZE, shuffle=True,
-        num_workers=8, drop_last=True, prefetch_factor=2)
+        num_workers=32, drop_last=True, prefetch_factor=2)
 
 
     # switch to train mode

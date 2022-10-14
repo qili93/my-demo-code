@@ -12,7 +12,6 @@ from apex import amp
 
 EPOCH_NUM = 3
 BATCH_SIZE = 256
-DEVICE_ID = 0
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -22,6 +21,11 @@ def parse_args():
         choices=['CPU', 'GPU', 'Ascend'],
         default="Ascend",
         help="Choose the device to run, it can be: CPU/GPU/Ascend, default is Ascend.")
+    parser.add_argument(
+        '--ids',
+        type=int,
+        default=0,
+        help="Choose the device id to run, default is 0.")
     parser.add_argument(
         '--amp',
         type=str,
@@ -44,10 +48,10 @@ def main():
 
     # set device to npu
     if args.device == "Ascend":
-        CALCULATE_DEVICE = "npu:" + str(DEVICE_ID)
+        CALCULATE_DEVICE = "npu:" + str(args.ids)
         torch.npu.set_device(CALCULATE_DEVICE)
     else:
-        CALCULATE_DEVICE = "cuda:" + str(DEVICE_ID)
+        CALCULATE_DEVICE = "cuda:" + str(args.ids)
 
     # model = LeNet5().to(device)
     model = torchvision.models.resnet50().to(CALCULATE_DEVICE)

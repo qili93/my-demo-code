@@ -23,7 +23,6 @@ import time
 EPOCH_NUM = 1
 BATCH_SIZE = 4096
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -32,6 +31,11 @@ def parse_args():
         choices=['cpu', 'gpu', 'npu', 'ascend'],
         default="ascend",
         help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
+    parser.add_argument(
+        '--ids',
+        type=int,
+        default=0,
+        help="Choose the device id to run, default is 0.")
     parser.add_argument(
         '--to_static',
         action='store_true',
@@ -159,15 +163,15 @@ def test_func(epoch_id, test_loader, model, cost):
     )
 
 
-def infer_func(saved_model, device_type=None):
+def infer_func(saved_model, device_type=None, device_id=0):
     # create config
     config = paddle.inference.Config(saved_model + '.pdmodel',
                                      saved_model + '.pdiparams')
     # enable custom device
     if device_type == "ascend":
-        config.enable_custom_device("ascend")
+        config.enable_custom_device("ascend", device_id)
     elif device_type == "gpu":
-        config.enable_use_gpu(100, 0)
+        config.enable_use_gpu(100, device_id)
     else:
         config.disable_gpu()  # use cpu
 
@@ -196,7 +200,7 @@ def main():
     print('--------------------------------------------------------')
     
     # set device
-    paddle.set_device(args.device)
+    paddle.set_device("{}:{}".format(args.device, str(args.ids)))
 
     # model
     model = LeNet5()
@@ -220,8 +224,7 @@ def main():
     # data loader
     transform = transforms.Compose([
         transforms.Resize((32, 32)), transforms.ToTensor(),
-        transforms.Normalize(
-            mean=(0.1307, ), std=(0.3081, ))
+        transforms.Normalize(mean=(0.1307, ), std=(0.3081, ))
     ])
     train_dataset = paddle.vision.datasets.MNIST(
         mode='train', transform=transform, download=True)
@@ -263,7 +266,7 @@ def main():
 
     # inference
     if args.infer:
-        infer_func('build/lenet5', device_type=args.device)
+        infer_func('build/lenet5', device_type=args.device, device_id=args.ids)
 
 
 if __name__ == '__main__':

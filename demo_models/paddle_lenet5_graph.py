@@ -34,6 +34,11 @@ def parse_args():
         default="ascend",
         help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
     parser.add_argument(
+        '--ids',
+        type=int,
+        default=0,
+        help="Choose the device id to run, default is 0.")
+    parser.add_argument(
         "--amp",
         action='store_true',
         default=False,
