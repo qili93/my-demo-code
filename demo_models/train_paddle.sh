@@ -2,7 +2,7 @@
 set -ex
 
 DEVICE_TARGET=${1:-ascend} # cpu, gpu, npu, ascend
-DEVICE_ID = ${2:0} # device id
+DEVICE_ID = ${2:-0} # device id
 
 echo "======== Eager Mode ========"
 python3 paddle_resnet50_eager.py --device=${DEVICE_TARGET} --ids=${DEVICE_ID} --amp=O0 > paddle_resnet50_eager_amp_o0.log 2>&1

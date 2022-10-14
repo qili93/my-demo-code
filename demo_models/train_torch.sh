@@ -2,7 +2,7 @@
 set -ex
 
 DEVICE_TARGET=${1:-Ascend} # GPU, Ascend
-DEVICE_ID = ${2:0} # device id
+DEVICE_ID = ${2:-0} # device id
 
 if [ "$DEVICE_TARGET" = "GPU" ];then
     sed -i "s/import torch.npu/#import torch.npu/g" $FILENAME
