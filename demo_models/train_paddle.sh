@@ -7,7 +7,7 @@ DEVICE_ID=${2:-0} # device id
 echo "======== Eager Mode ========"
 python3 paddle_resnet50_eager.py --device=${DEVICE_TARGET} --ids=${DEVICE_ID} --amp=O0 > paddle_resnet50_eager_amp_o0.log 2>&1
 sleep 10s
-python3 paddle_resnet50_eager.py --device=${DEVICE_TARGET} --ids=${DEVICE_ID} -amp=O1 > paddle_resnet50_eager_amp_o1.log 2>&1
+python3 paddle_resnet50_eager.py --device=${DEVICE_TARGET} --ids=${DEVICE_ID} --amp=O1 > paddle_resnet50_eager_amp_o1.log 2>&1
 sleep 10s
 
 
