@@ -212,6 +212,8 @@ def main():
                 feed={images.name: train_image,
                       labels.name: train_label},
                 fetch_list=[loss])
+            # for debug
+            # break
         epoch_end = time.time()
         print(
             f"Epoch ID: {epoch_id+1}, Train time: {(epoch_end - epoch_start) * 1000} ms, Loss: {float(train_loss[0])}"
