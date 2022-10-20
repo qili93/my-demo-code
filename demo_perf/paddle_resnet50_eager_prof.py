@@ -24,8 +24,8 @@ import paddle.vision.transforms as transforms
 
 from line_profiler import LineProfiler
 
-EPOCH_NUM = 5
-BATCH_SIZE = 4096
+EPOCH_NUM = 3
+BATCH_SIZE = 256
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -59,114 +59,79 @@ def parse_args():
     return parser.parse_args()
 
 
-class LeNet5(nn.Layer):
-    def __init__(self):
-        super(LeNet5, self).__init__()
-        self.layer1 = nn.Sequential(
-            nn.Conv2D(
-                in_channels=1,
-                out_channels=6,
-                kernel_size=5,
-                stride=1,
-                padding=0),
-            nn.BatchNorm2D(num_features=6),
-            nn.ReLU(),
-            nn.MaxPool2D(
-                kernel_size=2, stride=2))
-        self.layer2 = nn.Sequential(
-            nn.Conv2D(
-                in_channels=6,
-                out_channels=16,
-                kernel_size=5,
-                stride=1,
-                padding=0),
-            nn.BatchNorm2D(num_features=16),
-            nn.ReLU(),
-            nn.MaxPool2D(
-                kernel_size=2, stride=2))
-        self.fc = nn.Linear(in_features=400, out_features=120)
-        self.relu = nn.ReLU()
-        self.fc1 = nn.Linear(in_features=120, out_features=84)
-        self.relu1 = nn.ReLU()
-        self.fc2 = nn.Linear(in_features=84, out_features=10)
-
-    def forward(self, x):
-        out = self.layer1(x)
-        out = self.layer2(out)
-        out = paddle.flatten(out, 1)
-        out = self.fc(out)
-        out = self.relu(out)
-        out = self.fc1(out)
-        out = self.relu1(out)
-        out = self.fc2(out)
-        return out
-
-def train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic):
+def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler, reader_cost, batch_cost):
+    tic = time.time()
     for iter_id, (images, labels) in enumerate(train_loader()):
         # reader_cost
         reader_cost.update(time.time() - tic)
         
         # forward
-        # if args.amp == "O1":
-        #     # forward
-        #     with paddle.amp.auto_cast(custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O1'):
-        #         outputs = model(images)
-        #         loss = cost(outputs, labels)
-        #     # backward and optimize
-        #     scaled = scaler.scale(loss)
-        #     scaled.backward()
-        #     scaler.minimize(optimizer, scaled)
-        # else:
-        # forward
-        outputs = model(images)
-        loss = cost(outputs, labels)
-        # backward
-        loss.backward()
+        if args.amp == "O1":
+            # forward
+            with paddle.amp.auto_cast(custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O1'):
+                outputs = model(images)
+                loss = cost(outputs, labels)
+            # backward and optimize
+            scaled = scaler.scale(loss)
+            scaled.backward()
+            scaler.minimize(optimizer, scaled)
+        else:
+            # forward
+            outputs = model(images)
+            loss = cost(outputs, labels)
+            # backward
+            loss.backward()
+            # optimize
+            optimizer.minimize(loss)
 
-        # optimize
-        optimizer.step()
         optimizer.clear_grad()
 
         # batch_cost and update tic
         batch_cost.update(time.time() - tic)
         tic = time.time()
 
-        # logger for each step
-        log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
+        # logger for each 100 steps
+        if (iter_id+1) % 100 == 0:
+            log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
 
-        # if args.debug:
-        #     break
+def main():
+    args = parse_args()
+    print('---------------  Running Arguments ---------------')
+    print(args)
+    print('--------------------------------------------------')
 
+    # enable static and set device
+    paddle.set_device("{}:{}".format(args.device, str(args.ids)))
 
-def main(args):
     # model
-    model = LeNet5()
-
-    # cost and optimizer
+    model = paddle.vision.models.resnet50()
     cost = nn.CrossEntropyLoss()
-    # optimizer = paddle.optimizer.Adam(learning_rate=0.001, parameters=model.parameters())
-    optimizer = paddle.optimizer.SGD(learning_rate=0.1, parameters=model.parameters())
+    optimizer = paddle.optimizer.SGD(learning_rate=0.1,parameters=model.parameters())
 
-    # # convert to ampo1 model
-    # if args.amp == "O1":
-    #     scaler = paddle.amp.GradScaler(init_loss_scaling=1024)
-    #     model, optimizer = paddle.amp.decorate(models=model, optimizers=optimizer, level='O1')
+    # convert to ampo1 model
+    scaler = None
+    if args.amp == "O1":
+        scaler = paddle.amp.GradScaler(init_loss_scaling=1024)
+        model, optimizer = paddle.amp.decorate(models=model, optimizers=optimizer, level='O1')
 
     # convert to static model
     if args.to_static:
         build_strategy = paddle.static.BuildStrategy()
         model = paddle.jit.to_static(model, build_strategy=build_strategy)
 
-    # data loader
-    transform = transforms.Compose([
-        transforms.Resize((32, 32)), 
-        transforms.ToTensor(),
-        transforms.Normalize(mean=(0.1307, ), std=(0.3081, ))
-    ])
+    # Data loading code
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     train_loader = paddle.io.DataLoader(
-        paddle.vision.datasets.MNIST(mode='train', transform=transform, download=True),
+        paddle.vision.datasets.DatasetFolder(
+            root='/datasets/ILSVRC2012/train', 
+            transform=transforms.Compose([
+                transforms.RandomResizedCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normalize,
+        ])),
         batch_size=BATCH_SIZE, shuffle=True,
-        num_workers=32, drop_last=True)
+        num_workers=32, drop_last=True, prefetch_factor=2)
 
 
     # switch to train mode
@@ -178,15 +143,13 @@ def main(args):
 
         # train
         epoch_start = time.time()
-        tic = time.time()
-        
+
         # run with line_profiler
         profile = LineProfiler()
-        func_wrapped = profile(train_func)
-        func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic)
+        func_wrapper = profile(train)
+        func_wrapper(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler, reader_cost, batch_cost)
         profile.print_stats()
 
-        # train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic)
 
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
@@ -225,17 +188,9 @@ class AverageMeter(object):
 def log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id):
     eta_sec = ((EPOCH_NUM - epoch_id) * iter_max - iter_id) * batch_cost.avg
     eta_msg = "eta: {:s}".format(str(datetime.timedelta(seconds=int(eta_sec))))
-    print('Epoch [{}/{}], Iter [{:0>2d}/{}], reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, ips: {:.5f} samples/s, {}'
+    print('Epoch [{}/{}], Iter [{:0>4d}/{}], reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, ips: {:.5f} samples/s, {}'
           .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, reader_cost.avg, batch_cost.avg, batch_cost.avg - reader_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
 
 
 if __name__ == '__main__':
-    args = parse_args()
-    print('---------------  Running Arguments ---------------')
-    print(args)
-    print('--------------------------------------------------')
-
-    # set device
-    paddle.set_device("{}:{}".format(args.device, str(args.ids)))
-    
-    main(args)
+    main()

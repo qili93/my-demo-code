@@ -116,7 +116,8 @@ def main(args, device):
     # model
     model = LeNet5().to(device)
     cost = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4)
 
     # # conver to amp model
     # if args.amp == "O1" or args.amp == "O2":
