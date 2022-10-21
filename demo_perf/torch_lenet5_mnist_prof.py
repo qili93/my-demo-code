@@ -38,6 +38,11 @@ def parse_args():
         action='store_true',
         default=False,
         help="Whether to perform graph mode in train")
+    parser.add_argument(
+        '--profile',
+        action='store_true',
+        default=False,
+        help='whether to run in debug mode, i.e. run one iter only')
     return parser.parse_args()
 
 
@@ -74,43 +79,55 @@ class LeNet5(nn.Module):
 
 
 def train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device):
+    if args.profile and epoch_id == 4:
+        torch.npu.prof_init("./torch_profile")
+        config = torch.npu.profileConfig(ACL_PROF_ACL_API=True, 
+                ACL_PROF_TASK_TIME=True, ACL_PROF_AICORE_METRICS=True,
+                ACL_PROF_AICPU=True, ACL_PROF_L2CACHE=False, ACL_PROF_HCCL_TRACE=True,
+                ACL_PROF_TRAINING_TRACE=False, aiCoreMetricsType=0)
+        torch.npu.prof_start(config)
+
     for iter_id, (images, labels) in enumerate(train_loader):
-            # reader_cost
-            reader_cost.update(time.time() - tic)
+        # reader_cost
+        reader_cost.update(time.time() - tic)
 
-            images = images.to(device, non_blocking=True)
-            labels = labels.to(device, non_blocking=True)
+        images = images.to(device, non_blocking=True)
+        labels = labels.to(device, non_blocking=True)
 
-            # if args.graph:
-            #     torch.npu.enable_graph_mode()
+        # if args.graph:
+        #     torch.npu.enable_graph_mode()
+        
+        #Forward pass
+        outputs = model(images)
+        loss = cost(outputs, labels)
             
-            #Forward pass
-            outputs = model(images)
-            loss = cost(outputs, labels)
-                
-            # # Backward and optimize
-            # if args.amp == "O1" or args.amp == "O2":
-            #     with amp.scale_loss(loss, optimizer) as scaled_loss:
-            #         scaled_loss.backward()
-            # else:
-            loss.backward()
+        # # Backward and optimize
+        # if args.amp == "O1" or args.amp == "O2":
+        #     with amp.scale_loss(loss, optimizer) as scaled_loss:
+        #         scaled_loss.backward()
+        # else:
+        loss.backward()
 
-            # Optimize
-            optimizer.step()
-            optimizer.zero_grad()
+        # Optimize
+        optimizer.step()
+        optimizer.zero_grad()
 
-            # if args.graph:
-            #     torch.npu.launch_graph()
+        # if args.graph:
+        #     torch.npu.launch_graph()
 
-            # batch_cost and update tic
-            batch_cost.update(time.time() - tic)
-            tic = time.time()
+        # batch_cost and update tic
+        batch_cost.update(time.time() - tic)
+        tic = time.time()
 
-            # log for each step
-            log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
+        # log for each step
+        log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
 
-            # for debug
-            # break
+        # for debug
+        # break
+
+    if args.profile and epoch_id == 4:
+        torch.npu.prof_stop()
+        torch.npu.prof_finalize()
 
 def main(args, device):
     # model
@@ -148,12 +165,12 @@ def main(args, device):
 
 
         # run with line_profiler
-        profile = LineProfiler()
-        func_wrapped = profile(train_func)
-        func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device)
-        profile.print_stats()
+        # profile = LineProfiler()
+        # func_wrapped = profile(train_func)
+        # func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device)
+        # profile.print_stats()
 
-        # train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device)
+        train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device)
 
         # if args.graph:
         #     torch.npu.disable_graph_mode()

@@ -21,6 +21,8 @@ import paddle
 import paddle.nn as nn
 import paddle.static as static
 import paddle.vision.transforms as transforms
+import paddle.profiler as profiler
+profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['ascend'])
 
 from line_profiler import LineProfiler
 
@@ -56,6 +58,11 @@ def parse_args():
         action='store_true',
         default=False,
         help='whether to run in debug mode, i.e. run one iter only')
+    parser.add_argument(
+        '--profile',
+        action='store_true',
+        default=False,
+        help='whether to enable ascend profiling or not, true or false')
     return parser.parse_args()
 
 
@@ -101,11 +108,13 @@ class LeNet5(nn.Layer):
         out = self.fc2(out)
         return out
 
-def train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic):
+def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic):
+    if args.profile and epoch_id == 4:
+        profiler.start()
+
     for iter_id, (images, labels) in enumerate(train_loader()):
         # reader_cost
-        reader_cost.update(time.time() - tic)
-        
+        reader_cost.update(time.time() - tic)            
         # forward
         # if args.amp == "O1":
         #     # forward
@@ -134,9 +143,11 @@ def train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, r
         # logger for each step
         log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
 
-        # if args.debug:
-        #     break
+        if args.debug:
+            break
 
+    if args.profile and epoch_id == 4:
+        profiler.stop()
 
 def main(args):
     # model
@@ -180,18 +191,21 @@ def main(args):
         epoch_start = time.time()
         tic = time.time()
         
-        # run with line_profiler
-        profile = LineProfiler()
-        func_wrapped = profile(train_func)
-        func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic)
-        profile.print_stats()
+        # # run with line_profiler
+        # profile = LineProfiler()
+        # func_wrapped = profile(train)
+        # func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic)
+        # profile.print_stats()
 
-        # train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic)
+        train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic)
 
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
         print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, average ips: {:.5f} samples/s'
             .format(epoch_id+1, epoch_cost, reader_cost.sum, batch_cost.sum, batch_cost.sum - reader_cost.sum, avg_ips))
+
+        if args.debug:
+            break
 
 
 class AverageMeter(object):
