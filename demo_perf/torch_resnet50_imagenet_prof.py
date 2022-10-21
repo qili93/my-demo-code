@@ -32,7 +32,7 @@ def parse_args():
         '--amp',
         type=str,
         choices=['O0', 'O1', 'O2'],
-        default="O1",
+        default="O0",
         help="Choose the amp level to run, default is O1.")
     parser.add_argument(
         "--graph",

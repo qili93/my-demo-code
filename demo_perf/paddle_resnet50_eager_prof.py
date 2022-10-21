@@ -74,7 +74,9 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler
             # backward and optimize
             scaled = scaler.scale(loss)
             scaled.backward()
-            scaler.minimize(optimizer, scaled)
+            # scaler.minimize(optimizer, scaled)
+            scaler.step(optimizer)
+            scaler.update()
         else:
             # forward
             outputs = model(images)
@@ -82,7 +84,7 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler
             # backward
             loss.backward()
             # optimize
-            optimizer.minimize(loss)
+            optimizer.step()
 
         optimizer.clear_grad()
 
