@@ -21,6 +21,8 @@ import paddle
 import paddle.nn as nn
 import paddle.static as static
 import paddle.vision.transforms as transforms
+import paddle.profiler as profiler
+profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['ascend'])
 
 from line_profiler import LineProfiler
 
@@ -56,10 +58,18 @@ def parse_args():
         action='store_true',
         default=False,
         help='whether to run in debug mode, i.e. run one iter only')
+    parser.add_argument(
+        '--profile',
+        action='store_true',
+        default=False,
+        help='whether to enable ascend profiling or not, true or false')
     return parser.parse_args()
 
 
 def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler, reader_cost, batch_cost):
+    if args.profile and epoch_id == 2:
+        profiler.start()
+
     tic = time.time()
     for iter_id, (images, labels) in enumerate(train_loader()):
         # reader_cost
@@ -95,6 +105,12 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler
         # logger for each 100 steps
         if (iter_id+1) % 100 == 0:
             log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
+
+        if args.debug:
+            break
+
+    if args.profile and epoch_id == 2:
+        profiler.stop()
 
 def main():
     args = parse_args()
@@ -158,6 +174,8 @@ def main():
         print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, average ips: {:.5f} samples/s'
             .format(epoch_id+1, epoch_cost, reader_cost.sum, batch_cost.sum, batch_cost.sum - reader_cost.sum, avg_ips))
 
+        if args.debug:
+            break
 
 class AverageMeter(object):
     """
