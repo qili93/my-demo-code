@@ -99,7 +99,7 @@ class LeNet5(nn.Layer):
         out = self.fc2(out)
         return out
 
-@profile
+
 def main(args):
     # model
     model = LeNet5()

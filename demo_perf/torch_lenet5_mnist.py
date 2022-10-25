@@ -70,7 +70,7 @@ class LeNet5(nn.Module):
         out = self.fc2(out)
         return out
 
-@profile
+
 def main(args, device):
     # model
     model = LeNet5().to(device)

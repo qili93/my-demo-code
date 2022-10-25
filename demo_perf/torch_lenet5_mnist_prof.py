@@ -39,6 +39,11 @@ def parse_args():
         default=False,
         help="Whether to perform graph mode in train")
     parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False,
+        help='whether to run in debug mode, i.e. run one iter only')
+    parser.add_argument(
         '--profile',
         action='store_true',
         default=False,
@@ -122,8 +127,8 @@ def train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, r
         # log for each step
         log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
 
-        # for debug
-        # break
+        if args.debug:
+            break
 
     if args.profile and epoch_id == 4:
         torch.npu.prof_stop()
@@ -181,6 +186,8 @@ def main(args, device):
         print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, average ips: {:.5f} samples/s'
             .format(epoch_id+1, epoch_cost, reader_cost.sum, batch_cost.sum, batch_cost.sum - reader_cost.sum, avg_ips))
 
+        if args.debug:
+            break
 
 class AverageMeter(object):
     """
