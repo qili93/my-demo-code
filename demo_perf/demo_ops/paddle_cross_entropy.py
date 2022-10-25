@@ -23,7 +23,8 @@ import paddle.static as static
 import paddle.vision.transforms as transforms
 import paddle.profiler as profiler
 # profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['ascend'])
-profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU, profiler.ProfilerTarget.GPU])
+# profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU, profiler.ProfilerTarget.GPU])
+profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU])
 
 EPOCH_NUM = 3
 BATCH_SIZE = 256
@@ -41,6 +42,11 @@ def parse_args():
         type=int,
         default=0,
         help="Choose the device id to run, default is 0.")
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False,
+        help='whether to run in debug mode, i.e. run one iter only')
     parser.add_argument(
         '--profile',
         action='store_true',
@@ -73,7 +79,6 @@ def main(args):
             batch_size=BATCH_SIZE, shuffle=True,
             num_workers=32, drop_last=True, prefetch_factor=2)
 
-
     iter_max = len(train_loader)
     for epoch_id in range(EPOCH_NUM):
         batch_cost = AverageMeter('batch_cost', ':6.3f')
@@ -105,12 +110,18 @@ def main(args):
 
             # logger for each 100 steps
             if (iter_id+1) % 100 == 0:
-                log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
+                log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
+
+            if args.debug:
+                break  
 
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
         print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, average ips: {:.5f} samples/s'
             .format(epoch_id+1, epoch_cost, reader_cost.sum, batch_cost.sum, batch_cost.sum - reader_cost.sum, avg_ips))
+
+        if args.debug:
+            break
 
 
 class AverageMeter(object):
