@@ -23,10 +23,11 @@ import paddle.static as static
 import paddle.vision.transforms as transforms
 import paddle.profiler as profiler
 profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['ascend'])
+# profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU, profiler.ProfilerTarget.GPU])
 
 from line_profiler import LineProfiler
 
-EPOCH_NUM = 3
+EPOCH_NUM = 2
 BATCH_SIZE = 256
 
 def parse_args():
@@ -67,13 +68,13 @@ def parse_args():
 
 
 def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler, reader_cost, batch_cost):
-    if args.profile and epoch_id == 2:
-        profiler.start()
-
     tic = time.time()
     for iter_id, (images, labels) in enumerate(train_loader()):
         # reader_cost
         reader_cost.update(time.time() - tic)
+
+        if args.profile and epoch_id == 1 and iter_id == 2000:
+            profiler.start()
         
         # forward
         if args.amp == "O1":
@@ -89,14 +90,19 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler
             scaler.update()
         else:
             # forward
-            outputs = model(images)
-            loss = cost(outputs, labels)
+            outputs = model(images) # outputs=Tensor(shape=[256, 1000], dtype=float32)
+            loss = cost(outputs, labels) # labels=Tensor(shape=[256], dtype=int64)
             # backward
             loss.backward()
             # optimize
             optimizer.step()
 
         optimizer.clear_grad()
+
+        if args.profile and epoch_id == 1 and iter_id == 2000:
+            profiler.stop()
+            prof.summary()
+            break
 
         # batch_cost and update tic
         batch_cost.update(time.time() - tic)
@@ -109,8 +115,6 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler
         if args.debug:
             break
 
-    if args.profile and epoch_id == 2:
-        profiler.stop()
 
 def main():
     args = parse_args()
@@ -162,12 +166,13 @@ def main():
         # train
         epoch_start = time.time()
 
-        # run with line_profiler
-        profile = LineProfiler()
-        func_wrapper = profile(train)
-        func_wrapper(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler, reader_cost, batch_cost)
-        profile.print_stats()
+        # # run with line_profiler
+        # profile = LineProfiler()
+        # func_wrapper = profile(train)
+        # func_wrapper(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler, reader_cost, batch_cost)
+        # profile.print_stats()
 
+        train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler, reader_cost, batch_cost)
 
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
