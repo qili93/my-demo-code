@@ -22,8 +22,9 @@ import paddle.nn as nn
 import paddle.static as static
 import paddle.vision.transforms as transforms
 import paddle.profiler as profiler
-profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['ascend'])
+# profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['ascend'])
 # profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU, profiler.ProfilerTarget.GPU])
+profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU])
 
 from line_profiler import LineProfiler
 
@@ -101,7 +102,7 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, scaler
 
         if args.profile and epoch_id == 1 and iter_id == 2000:
             profiler.stop()
-            prof.summary()
+            profiler.summary()
             break
 
         # batch_cost and update tic
