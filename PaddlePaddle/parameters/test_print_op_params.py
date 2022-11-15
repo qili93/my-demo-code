@@ -2,7 +2,7 @@ import paddle
 import paddle.nn as nn
 
 paddle.set_device("cpu")
-# paddle.set_device("ascend")
+# paddle.set_device("npu")
 
 batch_norm_2d = nn.BatchNorm2D(6)
 

@@ -31,9 +31,9 @@ def parse_args():
     parser.add_argument(
         '--device',
         type=str,
-        choices=['cpu', 'gpu', 'npu', 'ascend'],
-        default="ascend",
-        help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
+        choices=['cpu', 'gpu', 'npu'],
+        default="npu",
+        help="Choose the device to run, it can be: cpu/gpu/npu, default is npu.")
     parser.add_argument(
         '--ids',
         type=int,

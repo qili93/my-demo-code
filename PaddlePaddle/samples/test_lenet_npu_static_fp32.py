@@ -56,7 +56,7 @@ class LeNet5(nn.Layer):
 
 # set device
 paddle.enable_static()
-paddle.set_device("ascend")
+paddle.set_device("npu")
 # paddle.set_device("npu:0")
 # paddle.set_device("gpu")
 

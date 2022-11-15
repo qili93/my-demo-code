@@ -34,9 +34,9 @@ def parse_args():
     parser.add_argument(
         '--device',
         type=str,
-        choices=['cpu', 'gpu', 'npu', 'ascend'],
-        default="ascend",
-        help="Choose the device to run, it can be: cpu/gpu/npu/ascend, default is ascend.")
+        choices=['cpu', 'gpu', 'npu'],
+        default="npu",
+        help="Choose the device to run, it can be: cpu/gpu/npu, default is npu.")
     parser.add_argument(
         '--ids',
         type=int,
@@ -114,7 +114,7 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader
 
     for iter_id, (images, labels) in enumerate(train_loader()):
         # reader_cost
-        reader_cost.update(time.time() - tic)            
+        reader_cost.update(time.time() - tic)
         # forward
         # if args.amp == "O1":
         #     # forward
