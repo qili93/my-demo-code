@@ -31,7 +31,7 @@ out = conv_2d(x_tensor)
 # InputDesc[1]: [TensorDesc] DataType = 9, Format = 2, StorageFormat = 2, Shape = [4], StorageShape = [4], shapeRange = [], memtype = 1, isConst = 0 
 # OutputDesc[0]: [TensorDesc] DataType = 0, Format = 2, StorageFormat = 2, Shape = [], StorageShape = [], shapeRange = [], memtype = 0, isConst = 0 
 # Attr: {keep_dims = False}
-loss = out.sum()
+loss = out.mean()
 
 # ==== OnesLike ====
 # InputDesc[0]: [TensorDesc] DataType = 0, Format = 2, StorageFormat = -1, Shape = [], StorageShape = [], shapeRange = [], memtype = 0, isConst = 0 
