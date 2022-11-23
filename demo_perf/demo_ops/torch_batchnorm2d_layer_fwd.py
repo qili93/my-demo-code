@@ -19,8 +19,12 @@ import torch.nn as nn
 
 
 # bn = nn.BatchNorm2d(6)
-bn = nn.BatchNorm2d(6).to("npu:0")
+
+layer = nn.BatchNorm2d(6).to("npu:0")
+
 input = torch.ones(4,6,24,24).to("npu:0")
-input.data = input.data.npu_format_cast(3)
-output = bn(input)
-print(output.size())
+input.data = input.data.npu_format_cast(3) # ACL_FORMAT_NC1HWC0
+
+output = layer(input)
+
+print(output)
