@@ -1,5 +1,6 @@
 # https://github.com/pytorch/examples/blob/main/imagenet/main.py
 
+import os
 import time
 import argparse
 import datetime
@@ -12,8 +13,12 @@ from apex import amp
 
 from line_profiler import LineProfiler
 
-EPOCH_NUM = 3
+EPOCH_NUM = 2
 BATCH_SIZE = 256
+
+save_dirname = "./torch_profile_eager_fp32"
+if not os.path.exists(save_dirname):
+    os.makedirs(save_dirname)
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -39,7 +44,13 @@ def parse_args():
         action='store_true',
         default=False,
         help="Whether to perform graph mode in train")
+    parser.add_argument(
+        '--profile',
+        action='store_true',
+        default=False,
+        help='whether to enable ascend profiling or not, true or false')
     return parser.parse_args()
+
 
 def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, CALCULATE_DEVICE):
     tic = time.time()
@@ -54,6 +65,10 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader
         if args.graph:
             torch.npu.enable_graph_mode()
         
+        if args.profile and epoch_id == 1 and iter_id == 2000:
+           torch.npu.prof_init(save_dirname)
+           torch.npu.prof_start()
+
         #Forward pass
         outputs = model(images)
         loss = cost(outputs, labels)
@@ -69,6 +84,11 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader
         optimizer.step()
         optimizer.zero_grad()
 
+        if args.profile and epoch_id == 1 and iter_id == 2000:
+           torch.npu.prof_stop()
+           torch.npu.prof_finalize()
+           break
+
         if args.graph:
             torch.npu.launch_graph()
 
@@ -83,6 +103,7 @@ def train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader
     if args.graph:
         torch.npu.disable_graph_mode()
         torch.npu.synchronize()
+
 
 def main():
     args = parse_args()
@@ -129,14 +150,15 @@ def main():
         batch_cost = AverageMeter('batch_cost', ':6.3f')
         reader_cost = AverageMeter('reader_cost', ':6.3f')
 
-        epoch_start = time.time()
-       
+        epoch_start = time.time()       
 
-        # run with line_profiler
-        profile = LineProfiler()
-        func_wrapped = profile(train)
-        func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, CALCULATE_DEVICE)
-        profile.print_stats()
+        # # run with line_profiler
+        # profile = LineProfiler()
+        # func_wrapped = profile(train)
+        # func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, CALCULATE_DEVICE)
+        # profile.print_stats()
+
+        train(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, CALCULATE_DEVICE)
         
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
