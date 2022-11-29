@@ -26,7 +26,7 @@ profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], cu
 # profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU, profiler.ProfilerTarget.GPU])
 # profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CPU])
 
-from line_profiler import LineProfiler
+#from line_profiler import LineProfiler
 
 EPOCH_NUM = 2
 BATCH_SIZE = 256

@@ -5,13 +5,14 @@ import time
 import argparse
 import datetime
 import torch
+import torch_npu
 import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 from apex import amp
 
-from line_profiler import LineProfiler
+# from line_profiler import LineProfiler
 
 EPOCH_NUM = 2
 BATCH_SIZE = 256

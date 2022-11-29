@@ -42,7 +42,7 @@ cd PaddleCustomDevice
 git submodule sync
 git submodule update --init --recursive
 # show git log history
-git log --pretty=oneline -10
+git log --pretty=oneline -20
 
 # prepare cache dir
 source_dir="${WORKSPACE}/PaddleCustomDevice"
@@ -85,3 +85,19 @@ fi
 exit $EXCODE
 '
 
+
+mkdir -p ${WORKSPACE}/output
+cp ${source_dir}/backends/npu/build/dist/paddle_custom_npu*.whl ${WORKSPACE}/output
+
+wget -q --no-proxy -O ${WORKSPACE}/bce_whl.tar.gz  https://paddle-docker-tar.bj.bcebos.com/home/bce_whl.tar.gz --no-check-certificate
+tar xf ${WORKSPACE}/bce_whl.tar.gz -C ${WORKSPACE}/output
+push_file=${WORKSPACE}/output/bce-python-sdk-0.8.27/BosClient.py
+
+# Install dependency
+/usr/bin/python2 -m pip install pycrypto
+
+# Upload paddlepaddle-rocm whl package to paddle-device/develop/dcu1
+cd ${WORKSPACE}/output
+for file_whl in `ls *.whl` ;do
+  /usr/bin/python2 ${push_file} ${file_whl} ${whl_package}
+done
