@@ -3,8 +3,6 @@ set -xe
 
 ##### global environment, delete from scirpt and add into ci config #####
 
-export proxy=http://172.19.56.199:3128
-
 export WORKSPACE=/root/PR-CI-SWAI
 export CACHE_ROOT=/root/PR-CI-SWAI/.cache/BUILD_CI_ROCM
 

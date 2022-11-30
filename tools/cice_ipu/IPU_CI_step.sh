@@ -1,8 +1,6 @@
 #!/bin/bash
 set -xe
 
-export proxy=http://172.19.57.45:3128
-
 export WORKSPACE=/home/liqi27/develop/ipu
 export CACHE_ROOT=/home/liqi27/develop/ipu/.cache/BUILD_CI_IPU
 
@@ -59,7 +57,6 @@ bash -x paddle/scripts/paddle_build.sh check_ipu_coverage # compile + test
 
 export POPLAR_IPUMODEL=1 # 使用模拟IPU运行, TO BE REMOVED
 
-export proxy=http://172.19.57.45:3128
 export PADDLE_BRANCH=develop
 export PADDLE_VERSION=0.0.0
 export PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-ipu:poplar260

@@ -1,8 +1,6 @@
 #!/bin/bash
 set -xe
 
-export proxy=http://172.19.57.45:3128
-
 export WORKSPACE=/workspace/npu_dev
 export CACHE_ROOT=/workspace/npu_dev/.cache/PR_CI_NPU
 export cache_dir="${CACHE_ROOT}/.cache"
@@ -66,7 +64,6 @@ bash -x paddle/scripts/paddle_build.sh test # test only
 
 # 或者输出如下环境变量
 
-export proxy=http://172.19.57.45:3128
 export PADDLE_BRANCH=develop
 export PADDLE_VERSION=0.0.0
 

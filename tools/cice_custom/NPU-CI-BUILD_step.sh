@@ -2,7 +2,6 @@
 set -xe
 
 ##### global environment #####
-export proxy=http://172.19.57.45:3128
 
 export WORKSPACE=/home/liqi27/
 export CACHE_ROOT=/home/liqi27

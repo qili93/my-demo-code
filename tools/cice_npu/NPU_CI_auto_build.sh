@@ -1,8 +1,6 @@
 #!/bin/bash
 set -xe
 
-export proxy=http://172.19.57.45:3128
-
 export WORKSPACE=/workspace/npu_dev
 export CACHE_ROOT=/workspace/npu_dev/.cache/PR_CI_NPU
 export cache_dir="${CACHE_ROOT}/.cache"

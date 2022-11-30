@@ -2,7 +2,6 @@
 set -xe
 
 ##### global environment #####
-export proxy=http://172.19.57.45:3128
 
 export WORKSPACE=/workspace/rocm-dev
 export CACHE_ROOT=/workspace/rocm-dev/.cache/BUILD_CI_ROCM

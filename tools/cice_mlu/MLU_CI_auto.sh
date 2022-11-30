@@ -2,7 +2,6 @@
 set -xe
 
 ##### global environment #####
-export proxy=http://172.19.57.45:3128
 
 export WORKSPACE=/home/liqi27/develop/mlu
 export CACHE_ROOT=/home/liqi27/develop/mlu/.cache/BUILD_CI_MLU

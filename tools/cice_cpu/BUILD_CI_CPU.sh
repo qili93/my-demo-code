@@ -1,13 +1,7 @@
 #!/bin/bash
 set -xe
 
-##### machine ######
-# yq01-sys-rpm040b2cb.yq01.baidu.com
-# 10.78.101.144
-
 ##### global environment #####
-export proxy=http://172.19.56.199:3128
-
 export WORKSPACE=/workspace/cpu-dev
 export CACHE_ROOT=/workspace/cpu-dev
 

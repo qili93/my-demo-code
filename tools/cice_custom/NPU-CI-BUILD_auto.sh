@@ -3,8 +3,6 @@ set -xe
 
 ##### global environment, delete from scirpt and add into ci config #####
 
-export proxy=http://172.19.57.45:3128
-
 export WORKSPACE=/workspace/custom-device-npu
 export CACHE_ROOT=/workspace/custom-device-npu
 
