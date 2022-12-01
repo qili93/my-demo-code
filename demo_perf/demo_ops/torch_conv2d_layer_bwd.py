@@ -1,6 +1,7 @@
 # reference: https://johnwlambert.github.io/conv-backprop/
 
 import torch
+import torch_npu
 import torch.npu
 import numpy as np
 
