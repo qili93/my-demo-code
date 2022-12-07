@@ -1,7 +1,10 @@
+import os
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
 import numpy as np
+
+os.environ['FLAGS_npu_storage_format'] = "True"
 
 paddle.set_device("npu")
 

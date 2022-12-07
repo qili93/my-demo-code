@@ -32,13 +32,13 @@ bias_attr = paddle.ParamAttr(initializer=nn.initializer.Constant(value=1.0))
 # InputDesc[0]: [TensorDesc] DataType = 0, Format = 0, StorageFormat = 0, Shape = [6], StorageShape = [6], shapeRange = [], memtype = 0, isConst = 0 
 # OutputDesc[0]: [TensorDesc] DataType = 0, Format = 0, StorageFormat = 3, Shape = [6], StorageShape = [1, 1, 1, 1, 16], shapeRange = [], memtype = 0, isConst = 0
 
-layer = nn.BatchNorm2D(num_features=6, weight_attr=weight_attr, bias_attr=bias_attr)
+layer = nn.BatchNorm2D(num_features=6, weight_attr=weight_attr, bias_attr=bias_attr, data_format='NCHW')
 
 # aclopCompileAndExecute, opType = Fills
 # InputDesc[0]: [TensorDesc] DataType = 0, Format = 0, StorageFormat = 0, Shape = [4, 6, 24, 24], StorageShape = [4, 6, 24, 24], shapeRange = [], memtype = 0, isConst = 0 
 # OutputDesc[0]: [TensorDesc] DataType = 0, Format = 0, StorageFormat = 0, Shape = [4, 6, 24, 24], StorageShape = [4, 6, 24, 24], shapeRange = [], memtype = 0, isConst = 0 
 # Attr: {value = 1}
-input = paddle.ones(shape=[4, 6, 24, 24])
+input = paddle.ones(shape=[4, 6, 24, 24], dtype='float16')
 
 # aclopCompileAndExecute, opType = Identity
 # InputDesc[0]: [TensorDesc] DataType = 0, Format = 0, StorageFormat = 0, Shape = [4, 6, 24, 24], StorageShape = [4, 6, 24, 24], shapeRange = [], memtype = 0, isConst = 0 
