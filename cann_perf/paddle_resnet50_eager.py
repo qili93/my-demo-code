@@ -42,7 +42,7 @@ def parse_args():
         '--amp',
         type=str,
         choices=['O0', 'O1', 'O2'],
-        default="O0",
+        default="O1",
         help="Choose the amp level to run, default is O1.")
     parser.add_argument(
         '--to_static',
@@ -108,7 +108,7 @@ def main():
             # forward
             if args.amp == "O1":
                 # forward
-                with paddle.amp.auto_cast(custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O1'):
+                with paddle.amp.auto_cast(custom_black_list={"batch_norm", "greater_than"}, level='O1'):
                     outputs = model(images)
                     loss = cost(outputs, labels)
                 # backward and optimize
