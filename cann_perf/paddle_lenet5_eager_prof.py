@@ -22,7 +22,7 @@ import paddle.nn as nn
 import paddle.static as static
 import paddle.vision.transforms as transforms
 import paddle.profiler as profiler
-profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['ascend'])
+profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['npu'])
 
 from line_profiler import LineProfiler
 

@@ -104,11 +104,11 @@ def main():
         for iter_id, (images, labels) in enumerate(train_loader()):
             # reader_cost
             reader_cost.update(time.time() - tic)
-            
+
             # forward
             if args.amp == "O1":
                 # forward
-                with paddle.amp.auto_cast(custom_black_list={"batch_norm", "greater_than"}, level='O1'):
+                with paddle.amp.auto_cast(custom_black_list={"batch_norm"}, level='O1'):
                     outputs = model(images)
                     loss = cost(outputs, labels)
                 # backward and optimize

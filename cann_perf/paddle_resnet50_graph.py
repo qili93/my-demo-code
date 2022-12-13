@@ -115,7 +115,7 @@ def main(args, place):
         num_workers=32, drop_last=True, prefetch_factor=2)
 
     # static executor
-    exe = static.Executor()
+    exe = static.Executor(place)
     exe.run(startup_program)
 
     # switch to train mode
@@ -199,11 +199,9 @@ if __name__ == '__main__':
 
     
     place = None
-    if args.device == "Ascend":
-        place = paddle.CustomPlace("Ascend", args.ids)
-    elif args.device == "NPU":
-        place = paddle.NPUPlace(args.ids)
-    elif args.device == "GPU":
+    if args.device == "npu":
+        place = paddle.CustomPlace("npu", args.ids)
+    elif args.device == "gpu":
         place = paddle.CUDAPlace(args.ids)
     else:
         place = paddle.CPUPlace()

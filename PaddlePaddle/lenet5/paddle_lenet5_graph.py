@@ -104,8 +104,8 @@ def infer_func(saved_model, device_type=None):
     config = paddle.inference.Config(saved_model + '.pdmodel',
                                      saved_model + '.pdiparams')
     # enable custom device
-    if device_type == "ascend":
-        config.enable_custom_device("ascend")
+    if device_type == "npu":
+        config.enable_custom_device("npu")
     elif device_type == "gpu":
         config.enable_use_gpu(100, 0)
     else:
@@ -198,7 +198,8 @@ def main():
         num_workers=2)
 
     # static executor
-    exe = static.Executor()
+    place = paddle.CustomPlace("npu", 0)
+    exe = static.Executor(place)
     exe.run(startup_program)
 
     # train and eval

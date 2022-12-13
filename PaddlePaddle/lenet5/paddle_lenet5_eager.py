@@ -168,8 +168,8 @@ def infer_func(saved_model, device_type=None, device_id=0):
     config = paddle.inference.Config(saved_model + '.pdmodel',
                                      saved_model + '.pdiparams')
     # enable custom device
-    if device_type == "ascend":
-        config.enable_custom_device("ascend", device_id)
+    if device_type == "npu":
+        config.enable_custom_device("npu", device_id)
     elif device_type == "gpu":
         config.enable_use_gpu(100, device_id)
     else:
