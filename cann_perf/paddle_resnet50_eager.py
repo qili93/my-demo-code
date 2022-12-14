@@ -49,6 +49,16 @@ def parse_args():
         action='store_true',
         default=False,
         help='whether to enable dynamic to static or not, true or false')
+    parser.add_argument(
+        '--profile',
+        action='store_true',
+        default=False,
+        help='whether to enable ascend profiling or not, true or false')
+    parser.add_argument(
+        '--debug',
+        action='store_true',
+        default=False,
+        help='whether to run in debug mode, i.e. run one iter only')
     return parser.parse_args()
 
 
@@ -105,10 +115,13 @@ def main():
             # reader_cost
             reader_cost.update(time.time() - tic)
 
+            if args.profile and epoch_id == 1 and iter_id == 2000:
+                profiler.start()
+
             # forward
             if args.amp == "O1":
                 # forward
-                with paddle.amp.auto_cast(custom_black_list={"batch_norm"}, level='O1'):
+                with paddle.amp.auto_cast(custom_black_list={"flatten_contiguous_range", "greater_than"}, level='O1'):
                     outputs = model(images)
                     loss = cost(outputs, labels)
                 # backward and optimize
@@ -126,6 +139,10 @@ def main():
 
             optimizer.clear_grad()
 
+            if args.profile and epoch_id == 1 and iter_id == 2000:
+                profiler.stop()
+                break
+
             # batch_cost and update tic
             batch_cost.update(time.time() - tic)
             tic = time.time()
@@ -134,11 +151,16 @@ def main():
             if (iter_id+1) % 100 == 0:
                 log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
 
+            if args.debug:
+                break
+
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
         print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, average ips: {:.5f} samples/s'
             .format(epoch_id+1, epoch_cost, reader_cost.sum, batch_cost.sum, batch_cost.sum - reader_cost.sum, avg_ips))
 
+        if args.debug:
+            break
 
 class AverageMeter(object):
     """
