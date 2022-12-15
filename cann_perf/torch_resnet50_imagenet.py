@@ -4,6 +4,7 @@ import time
 import argparse
 import datetime
 import torch
+import torch_npu
 import torch.npu
 import torch.nn as nn
 import torchvision

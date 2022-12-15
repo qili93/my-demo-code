@@ -1,5 +1,5 @@
 import torch
-import torch.npu
+import torch_npu
 import torch.nn.functional as F
 
 # ERROR: RuntimeError: the derivative for 'running_mean' is not implemented
