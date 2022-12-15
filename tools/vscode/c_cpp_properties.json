@@ -6,11 +6,11 @@
                 "${workspaceFolder}/**"
             ],
             "defines": [],
-            "compilerPath": "/opt/compiler/gcc-8.2/bin/gcc",
-            "cStandard": "gnu17",
-            "cppStandard": "gnu++14",
+            "compilerPath": "/opt/compiler/gcc-8.2/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++14",
             "intelliSenseMode": "gcc-x64",
-            "compileCommands": "${workspaceFolder}/build_custom_cpu_infer/compile_commands.json"
+            "compileCommands": "/workspace/PaddleCustomDevice/backends/npu/build/compile_commands.json"
         }
     ],
     "version": 4

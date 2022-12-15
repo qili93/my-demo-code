@@ -3,13 +3,12 @@ import time
 import argparse
 import datetime
 import torch
+import torch_npu
 import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
 from apex import amp
-
-from line_profiler import LineProfiler
 
 EPOCH_NUM = 5
 BATCH_SIZE = 4096
@@ -31,7 +30,7 @@ def parse_args():
         '--amp',
         type=str,
         choices=['O0', 'O1', 'O2'],
-        default="O0",
+        default="O1",
         help="Choose the amp level to run, default is O1.")
     parser.add_argument(
         "--graph",
@@ -40,11 +39,6 @@ def parse_args():
         help="Whether to perform graph mode in train")
     parser.add_argument(
         '--debug',
-        action='store_true',
-        default=False,
-        help='whether to run in debug mode, i.e. run one iter only')
-    parser.add_argument(
-        '--profile',
         action='store_true',
         default=False,
         help='whether to run in debug mode, i.e. run one iter only')
@@ -83,67 +77,15 @@ class LeNet5(nn.Module):
         return out
 
 
-def train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device):
-    if args.profile and epoch_id == 4:
-        torch.npu.prof_init("./torch_profile")
-        config = torch.npu.profileConfig(ACL_PROF_ACL_API=True, 
-                ACL_PROF_TASK_TIME=True, ACL_PROF_AICORE_METRICS=True,
-                ACL_PROF_AICPU=True, ACL_PROF_L2CACHE=False, ACL_PROF_HCCL_TRACE=True,
-                ACL_PROF_TRAINING_TRACE=False, aiCoreMetricsType=0)
-        torch.npu.prof_start(config)
-
-    for iter_id, (images, labels) in enumerate(train_loader):
-        # reader_cost
-        reader_cost.update(time.time() - tic)
-
-        images = images.to(device, non_blocking=True)
-        labels = labels.to(device, non_blocking=True)
-
-        # if args.graph:
-        #     torch.npu.enable_graph_mode()
-        
-        #Forward pass
-        outputs = model(images)
-        loss = cost(outputs, labels)
-            
-        # # Backward and optimize
-        # if args.amp == "O1" or args.amp == "O2":
-        #     with amp.scale_loss(loss, optimizer) as scaled_loss:
-        #         scaled_loss.backward()
-        # else:
-        loss.backward()
-
-        # Optimize
-        optimizer.step()
-        optimizer.zero_grad()
-
-        # if args.graph:
-        #     torch.npu.launch_graph()
-
-        # batch_cost and update tic
-        batch_cost.update(time.time() - tic)
-        tic = time.time()
-
-        # log for each step
-        log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
-
-        if args.debug:
-            break
-
-    if args.profile and epoch_id == 4:
-        torch.npu.prof_stop()
-        torch.npu.prof_finalize()
-
 def main(args, device):
     # model
     model = LeNet5().to(device)
     cost = nn.CrossEntropyLoss()
-    # optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    # # conver to amp model
-    # if args.amp == "O1" or args.amp == "O2":
-    #     model, optimizer = amp.initialize(model, optimizer, opt_level=args.amp, loss_scale=1024, verbosity=1)
+    # conver to amp model
+    if args.amp == "O1" or args.amp == "O2":
+        model, optimizer = amp.initialize(model, optimizer, opt_level=args.amp, loss_scale=1024, verbosity=1)
 
     # data loader
     transform = transforms.Compose([
@@ -167,20 +109,48 @@ def main(args, device):
 
         epoch_start = time.time()
         tic = time.time()
+        for iter_id, (images, labels) in enumerate(train_loader):
+            # reader_cost
+            reader_cost.update(time.time() - tic)
 
+            images = images.to(device, non_blocking=True)
+            labels = labels.to(device, non_blocking=True)
 
-        # run with line_profiler
-        # profile = LineProfiler()
-        # func_wrapped = profile(train_func)
-        # func_wrapped(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device)
-        # profile.print_stats()
+            if args.graph:
+                torch.npu.enable_graph_mode()
+            
+            #Forward pass
+            outputs = model(images)
+            loss = cost(outputs, labels)
+                
+            # Backward and optimize
+            if args.amp == "O1" or args.amp == "O2":
+                with amp.scale_loss(loss, optimizer) as scaled_loss:
+                    scaled_loss.backward()
+            else:
+                loss.backward()
 
-        train_func(args, epoch_id, iter_max, train_loader, model, cost, optimizer, reader_cost, batch_cost, tic, device)
+            # Optimize
+            optimizer.step()
+            optimizer.zero_grad()
 
-        # if args.graph:
-        #     torch.npu.disable_graph_mode()
-        #     torch.npu.synchronize()
-        
+            if args.graph:
+                torch.npu.launch_graph()
+
+            # batch_cost and update tic
+            batch_cost.update(time.time() - tic)
+            tic = time.time()
+
+            # log for each step
+            log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
+
+            if args.graph:
+                torch.npu.disable_graph_mode()
+                torch.npu.synchronize()
+
+            if args.debug:
+                break
+
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
         print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, average ips: {:.5f} samples/s'
@@ -238,11 +208,5 @@ if __name__ == '__main__':
         CALCULATE_DEVICE = "cuda:" + str(args.ids)
     else:
         CALCULATE_DEVICE = "cpu"
-
-    # run with line_profiler
-    # profile = LineProfiler()
-    # func_wrapped = profile(main)
-    # func_wrapped(args, CALCULATE_DEVICE)
-    # profile.print_stats()
-
+    
     main(args, CALCULATE_DEVICE)
