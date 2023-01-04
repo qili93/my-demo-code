@@ -36,7 +36,7 @@ git clone -b ${PADDLE_BRANCH} https://github.com/PaddlePaddle/Paddle.git
 cd Paddle
 # git checkout tags/${PADDLE_TAG}
 # git checkout ${PADDLE_COMMIT}
-# git pull origin pull/48774/head
+# git pull origin pull/48976/head
 git log --oneline -20
 
 export PADDLE_DIR="${WORKSPACE}/Paddle"
@@ -114,7 +114,7 @@ docker run --network=host --rm -i \
   -e "no_proxy=bcebos.com" \
   ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
-paddle/scripts/paddle_build.sh build_only;EXCODE=$?
+bash -x paddle/scripts/paddle_build.sh build_only;EXCODE=$?
 
 if [[ $EXCODE -eq 0 ]];then
     echo "Congratulations!  Your PR passed the CI."
@@ -134,7 +134,7 @@ exit $EXCODE
 '
 
 mkdir -p ${WORKSPACE}/output
-cp ${PADDLE_DIR}/build/python/dist/paddlepaddle*.whl ${WORKSPACE}/output
+cp ${PADDLE_DIR}/dist/paddlepaddle*.whl ${WORKSPACE}/output
 
 wget -q --no-proxy https://xly-devops.bj.bcebos.com/home/bos_new.tar.gz --no-check-certificate
 tar xf bos_new.tar.gz -C ${WORKSPACE}/output

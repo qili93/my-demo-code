@@ -63,7 +63,7 @@ cache_dir="${CACHE_ROOT}/.cache"
 ccache_dir="${CACHE_ROOT}/.ccache"
 
 # start ci test in container
-set +x
+set -ex
 docker pull ${PADDLE_DEV_NAME}
 docker run --rm -i \
   --privileged --pids-limit 409600 --network=host --shm-size=128G \
@@ -79,10 +79,7 @@ docker run --rm -i \
   -e "no_proxy=bcebos.com" \
   ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
-python -c "import paddle; print(paddle.__version__)"
-python -c "import paddle; print(paddle.version.commit)"
-
-bash -x tools/codestyle/pre_commit.sh;EXCODE=$?
+tools/codestyle/pre_commit.sh;EXCODE=$?
 
 echo "ipipe_log_param_EXCODE: $EXCODE"
 

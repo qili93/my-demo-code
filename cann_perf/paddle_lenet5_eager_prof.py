@@ -24,7 +24,7 @@ import paddle.vision.transforms as transforms
 import paddle.profiler as profiler
 profiler = profiler.Profiler(targets=[profiler.ProfilerTarget.CUSTOM_DEVICE], custom_device_types=['npu'])
 
-from line_profiler import LineProfiler
+#from line_profiler import LineProfiler
 
 EPOCH_NUM = 5
 BATCH_SIZE = 4096

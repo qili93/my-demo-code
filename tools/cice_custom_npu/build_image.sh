@@ -50,7 +50,7 @@ fi
 echo "FROM registry.baidubce.com/device/paddle-npu:cann600-$(uname -m)-gcc82"  > Dockerfile.npu
 echo -e "MAINTAINER PaddlePaddle Authors <paddle-dev@baidu.com>\n" >> Dockerfile.npu
 echo "RUN wget -q https://paddle-device.bj.bcebos.com/develop/cpu/paddlepaddle-0.0.0-cp37-cp37m-linux_$(uname -m).whl" >> Dockerfile.npu
-echo "RUN pip install -U --force-reinstall paddlepaddle-0.0.0-cp37-cp37m-linux_$(uname -m).whl" >> Dockerfile.npu
+echo "RUN pip install -U --no-deps --force-reinstall paddlepaddle-0.0.0-cp37-cp37m-linux_$(uname -m).whl" >> Dockerfile.npu
 echo "RUN rm -rf paddlepaddle-0.0.0-cp37-cp37m-linux_$(uname -m).whl" >> Dockerfile.npu
 echo -e "\nEXPOSE 22" >> Dockerfile.npu
 
