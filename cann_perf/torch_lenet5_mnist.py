@@ -3,11 +3,11 @@ import time
 import argparse
 import datetime
 import torch
-import torch.npu
+import torch_npu
+from torch_npu.npu.amp import GradScaler, autocast
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-from apex import amp
 
 EPOCH_NUM = 5
 BATCH_SIZE = 4096
@@ -27,10 +27,9 @@ def parse_args():
         help="Choose the device id to run, default is 0.")
     parser.add_argument(
         '--amp',
-        type=str,
-        choices=['O0', 'O1', 'O2'],
-        default="O1",
-        help="Choose the amp level to run, default is O1.")
+        action='store_false',
+        default=True,
+        help="Whether to enable AMP run, default is True.")
     parser.add_argument(
         "--graph",
         action='store_true',
@@ -73,13 +72,9 @@ class LeNet5(nn.Module):
 
 def main(args, device):
     # model
-    model = LeNet5().to(device)
+    model = LeNet5().to(device=device)
     cost = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-    # conver to amp model
-    if args.amp == "O1" or args.amp == "O2":
-        model, optimizer = amp.initialize(model, optimizer, opt_level=args.amp, loss_scale=1024, verbosity=1)
 
     # data loader
     transform = transforms.Compose([
@@ -93,6 +88,8 @@ def main(args, device):
         batch_size=BATCH_SIZE, shuffle=True,
         num_workers=32, pin_memory=True, drop_last=True)
 
+    # scalar
+    scaler = GradScaler(init_scale=128., growth_factor=2.0, enabled=True, growth_interval=1)
 
     # train
     model.train()
@@ -107,26 +104,32 @@ def main(args, device):
             # reader_cost
             reader_cost.update(time.time() - tic)
 
-            images = images.to(device, non_blocking=True)
-            labels = labels.to(device, non_blocking=True)
+            images = images.to(device=device, non_blocking=True)
+            labels = labels.to(device=device, non_blocking=True)
 
             if args.graph:
                 torch.npu.enable_graph_mode()
-            
-            #Forward pass
-            outputs = model(images)
-            loss = cost(outputs, labels)
-                
-            # Backward and optimize
-            if args.amp == "O1" or args.amp == "O2":
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
 
-            # Optimize
-            optimizer.step()
-            optimizer.zero_grad()
+            if args.amp:
+                #Forward pass with autocast if amp
+                optimizer.zero_grad()
+                with autocast():
+                    outputs = model(images)
+                    loss = cost(outputs, labels)
+                # Scales loss.  Calls backward() on scaled loss to create scaled gradients.
+                scaler.scale(loss).backward()
+                # scaler.step() first unscales gradients of the optimizer's params.
+                # If gradients don't contain infs/NaNs, optimizer.step() is then called,
+                # otherwise, optimizer.step() is skipped.
+                scaler.step(optimizer)
+                # Updates the scale for next iteration.
+                scaler.update()
+            else:
+                optimizer.zero_grad()
+                outputs = model(images)
+                loss = cost(outputs, labels)
+                loss.backward()
+                optimizer.step()
 
             if args.graph:
                 torch.npu.launch_graph()
@@ -195,7 +198,7 @@ if __name__ == '__main__':
     CALCULATE_DEVICE = None
     if args.device == "Ascend":
         CALCULATE_DEVICE = "npu:" + str(args.ids)
-        torch.npu.set_device(CALCULATE_DEVICE)
+        torch_npu.npu.set_device(CALCULATE_DEVICE)
     elif args.device == "GPU":
         CALCULATE_DEVICE = "cuda:" + str(args.ids)
     else:
