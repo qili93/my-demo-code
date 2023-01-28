@@ -148,7 +148,7 @@ def main():
             tic = time.time()
 
             # logger for each 100 steps
-            if (iter_id+1) % 100 == 0:
+            if args.debug or (iter_id+1) % 100 == 0:
                 log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
 
             if args.debug:
