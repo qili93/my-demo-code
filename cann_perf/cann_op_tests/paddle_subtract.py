@@ -3,8 +3,8 @@ import paddle
 paddle.set_device("npu:0")
 # paddle.set_device("cpu")
 
-x = paddle.to_tensor([[1, 2], [7, 8]])
-y = paddle.to_tensor([[5, 6], [3, 4]])
+x = paddle.to_tensor([[1, 2], [7, 8]], dtype="float32")
+y = paddle.to_tensor([[5, 6], [3, 4]], dtype="float32")
 x.stop_gradient = False
 y.stop_gradient = False
 
