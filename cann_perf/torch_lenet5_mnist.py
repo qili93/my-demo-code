@@ -35,6 +35,11 @@ def parse_args():
         action='store_true',
         default=False,
         help="Whether to perform graph mode in train")
+    parser.add_argument(
+        "--debug",
+        action='store_true',
+        default=False,
+        help='whether to run in debug mode, i.e. run one iter only')
     return parser.parse_args()
 
 
@@ -141,13 +146,16 @@ def main(args, device):
             # log for each step
             log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
 
-            # for debug
-            # break
+            if args.debug:
+                break
 
         if args.graph:
             torch.npu.disable_graph_mode()
             torch.npu.synchronize()
         
+        if args.debug:
+            break
+
         epoch_cost = time.time() - epoch_start
         avg_ips = iter_max * BATCH_SIZE / epoch_cost
         print('Epoch ID: {}, Epoch time: {:.5f} s, reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, average ips: {:.5f} samples/s'
