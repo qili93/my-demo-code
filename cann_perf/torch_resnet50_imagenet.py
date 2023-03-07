@@ -9,7 +9,7 @@ import torch.npu
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-from apex import amp
+# from apex import amp
 
 EPOCH_NUM = 3
 BATCH_SIZE = 256
@@ -58,10 +58,11 @@ def main():
     model = torchvision.models.resnet50().to(CALCULATE_DEVICE)
     cost = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9, weight_decay=1e-4)
+    scaler = torch.npu.amp.GradScaler(enabled=True)
 
     # conver to amp model
-    if args.amp == "O1" or args.amp == "O2":
-        model, optimizer = amp.initialize(model, optimizer, opt_level=args.amp, loss_scale=1024, verbosity=1)
+    # if args.amp == "O1" or args.amp == "O2":
+    #     model, optimizer = amp.initialize(model, optimizer, opt_level=args.amp, loss_scale="dynamic", verbosity=1)
 
     # Data loading code
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -99,19 +100,25 @@ def main():
                 torch.npu.enable_graph_mode()
             
             #Forward pass
-            outputs = model(images)
-            loss = cost(outputs, labels)
+            with torch_npu.npu.amp.autocast(enabled=True):
+                outputs = model(images)
+                loss = cost(outputs, labels)
+
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+            optimizer.zero_grad()
                 
             # Backward
-            if args.amp == "O1" or args.amp == "O2":
-                with amp.scale_loss(loss, optimizer) as scaled_loss:
-                    scaled_loss.backward()
-            else:
-                loss.backward()
+            # if args.amp == "O1" or args.amp == "O2":
+            #     with amp.scale_loss(loss, optimizer) as scaled_loss:
+            #         scaled_loss.backward()
+            # else:
+            #     loss.backward()
             
             # Optimize
-            optimizer.step()
-            optimizer.zero_grad()
+            # optimizer.step()
+            # optimizer.zero_grad()
 
             if args.graph:
                 torch.npu.launch_graph()

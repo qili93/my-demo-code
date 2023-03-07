@@ -19,7 +19,6 @@ core*
 *.lib
 *.tar.gz
 *.vsix
-*.tar.gz
 *.txt
 *.dot
 *.json

@@ -146,14 +146,14 @@ def main(args, device):
             # log for each step
             log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)
 
-            if args.debug:
+            if args.debug and iter_id == 1:
                 break
 
         if args.graph:
             torch.npu.disable_graph_mode()
             torch.npu.synchronize()
         
-        if args.debug:
+        if args.debug and epoch_id == 0:
             break
 
         epoch_cost = time.time() - epoch_start
