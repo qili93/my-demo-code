@@ -30,6 +30,8 @@ def kernel_filter(all_kernel_list):
           continue
       if op_name.startswith("fetch"):
           continue
+      if op_name.startswith("c_"):
+          continue
       valid_kernel_list.append(op_name)
   return valid_kernel_list
 
