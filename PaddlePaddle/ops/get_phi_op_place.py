@@ -18,6 +18,8 @@ def kernel_filter(all_kernel_list):
           continue
       if op_name.endswith("_triple_grad"):
           continue
+      if op_name.endswith("_sparse"):
+          continue
       if op_name.startswith("sparse_"):
           continue
       if op_name.startswith("graph_send_"):
@@ -31,6 +33,18 @@ def kernel_filter(all_kernel_list):
       if op_name.startswith("fetch"):
           continue
       if op_name.startswith("c_"):
+          continue
+      if op_name.startswith("run_program"):
+          continue
+      if op_name.startswith("partial_"):
+          continue
+      if op_name.startswith("fake_"):
+          continue
+      if op_name.startswith("quantize_"):
+          continue
+      if op_name.startswith("dequantize_"):
+          continue
+      if "inplace" in op_name:
           continue
       valid_kernel_list.append(op_name)
   return valid_kernel_list
