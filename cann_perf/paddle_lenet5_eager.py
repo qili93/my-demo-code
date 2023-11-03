@@ -170,7 +170,7 @@ def main(args):
             tic = time.time()
 
             # logger for each step
-            log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id)        
+            log_info(loss, reader_cost, batch_cost, epoch_id, iter_max, iter_id)
 
             if args.debug:
                 break
@@ -212,11 +212,11 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
-def log_info(reader_cost, batch_cost, epoch_id, iter_max, iter_id):
+def log_info(loss, reader_cost, batch_cost, epoch_id, iter_max, iter_id):
     eta_sec = ((EPOCH_NUM - epoch_id) * iter_max - iter_id) * batch_cost.avg
     eta_msg = "eta: {:s}".format(str(datetime.timedelta(seconds=int(eta_sec))))
-    print('Epoch [{}/{}], Iter [{:0>2d}/{}], reader_cost: {:.5f} s, batch_cost: {:.5f} s, exec_cost: {:.5f} s, ips: {:.5f} samples/s, {}'
-          .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, reader_cost.avg, batch_cost.avg, batch_cost.avg - reader_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
+    print('Epoch [{}/{}], Iter [{:0>2d}/{}], Loss {:.5f}, reader_cost: {:.2f} s, batch_cost: {:.2f} s, exec_cost: {:.2f} s, ips: {:.2f} samples/s, {}'
+          .format(epoch_id+1, EPOCH_NUM, iter_id+1, iter_max, loss.numpy(), reader_cost.avg, batch_cost.avg, batch_cost.avg - reader_cost.avg, BATCH_SIZE / batch_cost.avg, eta_msg))
 
 
 if __name__ == '__main__':
