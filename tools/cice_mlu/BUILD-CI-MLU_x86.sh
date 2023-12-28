@@ -5,8 +5,8 @@ export proxy=http:xxxxxxx
 
 ##### global environment #####
 
-export WORKSPACE=/workspace/cpu-dev
-export CACHE_ROOT=/workspace/cpu-dev
+export WORKSPACE=/workspace/mlu-dev
+export CACHE_ROOT=/workspace/mlu-dev
 
 export PADDLE_BRANCH=develop
 export PADDLE_VERSION=0.0.0
