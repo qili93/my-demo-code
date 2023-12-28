@@ -1,25 +1,26 @@
 #!/bin/bash
 set -xe
 
+export proxy=http:xxxxxxx
+
 ##### global environment #####
+
 export WORKSPACE=/workspace/cpu-dev
 export CACHE_ROOT=/workspace/cpu-dev
 
 export PADDLE_BRANCH=develop
-export PADDLE_COMMIT=develop
 export PADDLE_VERSION=0.0.0
-export PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-cpu:ubuntu18-aarch64-gcc82
-
-export whl_package=paddle-device/develop/cpu
-export tgz_package=paddle-device/develop/cpu
+export PADDLE_TAG=v0.0.0
+export PADDLE_COMMIT=develop
 
 ##### local environment #####
 
-set -ex
+set +x
 export http_proxy=${proxy}
 export https_proxy=${proxy}
 export ftp_proxy=${proxy}
 export no_proxy=bcebos.com
+set -x
 
 mkdir -p ${WORKSPACE}
 mkdir -p ${CACHE_ROOT}
@@ -33,7 +34,7 @@ git clone -b ${PADDLE_BRANCH} https://github.com/PaddlePaddle/Paddle.git
 cd Paddle
 # git checkout tags/${PADDLE_TAG}
 # git checkout ${PADDLE_COMMIT}
-git pull origin pull/48488/head
+# git pull origin pull/51244/head
 git log --oneline -20
 
 export PADDLE_DIR="${WORKSPACE}/Paddle"
@@ -76,10 +77,9 @@ if [ ! -d "${ccache_dir}" ];then
     mkdir -p "${ccache_dir}"
 fi
 
-docker pull ${PADDLE_DEV_NAME}
+docker pull registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82
 
-# py37
-echo "Start build python37 whl "
+echo "Start build python39 whl "
 set -ex
 docker run --network=host --rm -i \
   -v ${cache_dir}:/root/.cache \
@@ -94,23 +94,24 @@ docker run --network=host --rm -i \
   -e "COVERALLS_UPLOAD=OFF" \
   -e "CMAKE_BUILD_TYPE=Release" \
   -e "WITH_MKL=OFF" \
+  -e "WITH_AVX=OFF" \
   -e "WITH_ARM=ON" \
   -e "WITH_CACHE=ON" \
-  -e "PADDLE_VERSION=${PADDLE_VERSION}" \
-  -e "PADDLE_BRANCH=${PADDLE_BRANCH}" \
-  -e "BRANCH=${PADDLE_BRANCH}" \
   -e "WITH_TEST=OFF" \
   -e "RUN_TEST=OFF" \
   -e "WITH_TESTING=OFF" \
   -e "WITH_DISTRIBUTE=ON" \
+  -e "BRANCH=${PADDLE_BRANCH}" \
+  -e "PADDLE_BRANCH=${PADDLE_BRANCH}" \
+  -e "PADDLE_VERSION=${PADDLE_VERSION}" \
   -e "CMAKE_EXPORT_COMPILE_COMMANDS=ON" \
-  -e "PY_VERSION=3.7" \
+  -e "PY_VERSION=3.9" \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
-  -e "no_proxy=bcebos.com" \
-  ${PADDLE_DEV_NAME} \
+  -e "no_proxy=${no_proxy}" \
+  registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82 \
   /bin/bash -c -x '
-paddle/scripts/paddle_build.sh build_only;EXCODE=$?
+bash -x paddle/scripts/paddle_build.sh build_only;EXCODE=$?
 
 if [[ $EXCODE -eq 0 ]];then
     echo "Congratulations!  Your PR passed the CI."
@@ -130,20 +131,21 @@ exit $EXCODE
 '
 
 mkdir -p ${WORKSPACE}/output
-cp ${PADDLE_DIR}/build/python/dist/paddlepaddle*.whl ${WORKSPACE}/output
+cp ${PADDLE_DIR}/dist/paddlepaddle*.whl ${WORKSPACE}/output
 
-wget -q --no-proxy -O ${WORKSPACE}/bce_whl.tar.gz  https://paddle-docker-tar.bj.bcebos.com/home/bce_whl.tar.gz --no-check-certificate
-tar xf ${WORKSPACE}/bce_whl.tar.gz -C ${WORKSPACE}/output
-push_file=${WORKSPACE}/output/bce-python-sdk-0.8.27/BosClient.py
+wget -q --no-proxy https://xly-devops.bj.bcebos.com/home/bos_new.tar.gz --no-check-certificate
+tar xf bos_new.tar.gz -C ${WORKSPACE}/output
 
 # Install dependency
-/usr/bin/python2 -m pip install pycrypto
+python3 -m pip install bce-python-sdk==0.8.73 -i http://mirror.baidu.com/pypi/simple --trusted-host mirror.baidu.com
 
-# Upload paddlepaddle-rocm whl package to paddle-device/develop/dcu1
+# Upload paddlepaddle whl package to bos
 cd ${WORKSPACE}/output
 for file_whl in `ls *.whl` ;do
-  /usr/bin/python2 ${push_file} ${file_whl} ${whl_package}
+  python3 BosClient.py ${file_whl} paddle-device/${PADDLE_VERSION}/cpu
 done
+
+echo "Successfully uploaded to https://paddle-device.bj.bcebos.com/${PADDLE_VERSION}/cpu/${file_whl}"
 
 set -ex
 # local save third-paty directory if build success

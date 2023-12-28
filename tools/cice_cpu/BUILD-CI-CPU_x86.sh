@@ -1,23 +1,25 @@
 #!/bin/bash
 set -xe
 
+export proxy=http:xxxxxxx
+
 ##### global environment #####
 
-export WORKSPACE=/home/liqi27/develop/mlu
-export CACHE_ROOT=/home/liqi27/develop/mlu/.cache/BUILD_CI_MLU
+export WORKSPACE=/workspace/cpu-dev
+export CACHE_ROOT=/workspace/cpu-dev
 
 export PADDLE_BRANCH=develop
 export PADDLE_VERSION=0.0.0
-export PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-mlu:neuware
-
-export whl_package=paddle-device/develop/mlu
-export tgz_package=paddle-device/develop/mlu
+export PADDLE_TAG=v0.0.0
+export PADDLE_COMMIT=develop
 
 ##### local environment #####
 
 set +x
 export http_proxy=${proxy}
 export https_proxy=${proxy}
+export ftp_proxy=${proxy}
+export no_proxy=bcebos.com
 set -x
 
 mkdir -p ${WORKSPACE}
@@ -31,6 +33,8 @@ rm -rf output*
 git clone -b ${PADDLE_BRANCH} https://github.com/PaddlePaddle/Paddle.git
 cd Paddle
 # git checkout tags/${PADDLE_TAG}
+# git checkout ${PADDLE_COMMIT}
+# git pull origin pull/51244/head
 git log --oneline -20
 
 export PADDLE_DIR="${WORKSPACE}/Paddle"
@@ -73,41 +77,41 @@ if [ ! -d "${ccache_dir}" ];then
     mkdir -p "${ccache_dir}"
 fi
 
-docker pull ${PADDLE_DEV_NAME}
+docker pull registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82
 
-set +x
-docker run  --rm -i --network=host --shm-size=128G \
-  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-  --device=/dev/cambricon_ctl --device=/dev/cambricon_dev0 \
-  -v /usr/bin/cnmon:/usr/bin/cnmon \
+echo "Start build python39 whl "
+set -ex
+docker run --network=host --rm -i \
   -v ${cache_dir}:/root/.cache \
   -v ${ccache_dir}:/root/.ccache \
   -v ${PADDLE_DIR}:/paddle \
   -w /paddle \
+  -e "WITH_DOC=OFF" \
   -e "WITH_GPU=OFF" \
-  -e "WITH_MLU=ON" \
-  -e "WITH_CNCL=ON" \
+  -e "WITH_ROCM=OFF" \
   -e "WITH_TENSORRT=OFF" \
   -e "WITH_COVERAGE=OFF" \
   -e "COVERALLS_UPLOAD=OFF" \
   -e "CMAKE_BUILD_TYPE=Release" \
   -e "WITH_MKL=ON" \
   -e "WITH_AVX=ON" \
+  -e "WITH_ARM=OFF" \
   -e "WITH_CACHE=ON" \
-  -e "PADDLE_VERSION=${PADDLE_VERSION}" \
-  -e "PADDLE_BRANCH=${PADDLE_BRANCH}" \
-  -e "BRANCH=${PADDLE_BRANCH}" \
-  -e "WITH_TEST=ON" \
-  -e "RUN_TEST=ON" \
-  -e "WITH_TESTING=ON" \
+  -e "WITH_TEST=OFF" \
+  -e "RUN_TEST=OFF" \
+  -e "WITH_TESTING=OFF" \
   -e "WITH_DISTRIBUTE=ON" \
-  -e "CTEST_PARALLEL_LEVEL=ON" \
-  -e "PY_VERSION=3.7" \
+  -e "BRANCH=${PADDLE_BRANCH}" \
+  -e "PADDLE_BRANCH=${PADDLE_BRANCH}" \
+  -e "PADDLE_VERSION=${PADDLE_VERSION}" \
+  -e "CMAKE_EXPORT_COMPILE_COMMANDS=ON" \
+  -e "PY_VERSION=3.9" \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
-  ${PADDLE_DEV_NAME} \
+  -e "no_proxy=${no_proxy}" \
+  registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82 \
   /bin/bash -c -x '
-bash paddle/scripts/paddle_build.sh check_mlu_coverage 8;EXCODE=$?
+bash -x paddle/scripts/paddle_build.sh build_only;EXCODE=$?
 
 if [[ $EXCODE -eq 0 ]];then
     echo "Congratulations!  Your PR passed the CI."
@@ -126,28 +130,27 @@ fi
 exit $EXCODE
 '
 
-set -ex
-
 mkdir -p ${WORKSPACE}/output
-cp ${PADDLE_DIR}/build/python/dist/paddlepaddle*.whl ${WORKSPACE}/output
+cp ${PADDLE_DIR}/dist/paddlepaddle*.whl ${WORKSPACE}/output
 
-cd ${WORKSPACE}
-wget -q --no-proxy -O ${WORKSPACE}/bce_whl.tar.gz  https://paddle-docker-tar.bj.bcebos.com/home/bce_whl.tar.gz --no-check-certificate
-tar xf ${WORKSPACE}/bce_whl.tar.gz -C ${WORKSPACE}/output
-push_file=${WORKSPACE}/output/bce-python-sdk-0.8.27/BosClient.py
+wget -q --no-proxy https://xly-devops.bj.bcebos.com/home/bos_new.tar.gz --no-check-certificate
+tar xf bos_new.tar.gz -C ${WORKSPACE}/output
 
-# 安装依赖库
-/home/liqi27/conda/envs/py27env/bin/python -m pip install pycrypto
+# Install dependency
+python3 -m pip install bce-python-sdk==0.8.73 -i http://mirror.baidu.com/pypi/simple --trusted-host mirror.baidu.com
 
+# Upload paddlepaddle whl package to bos
 cd ${WORKSPACE}/output
 for file_whl in `ls *.whl` ;do
-  /home/liqi27/conda/envs/py27env/bin/python ${push_file}  ${file_whl} ${whl_package}
+  python3 BosClient.py ${file_whl} paddle-device/${PADDLE_VERSION}/cpu
 done
 
-# 如果执行成功，并且开启缓存，则本地保存第三方库
+echo "Successfully uploaded to https://paddle-device.bj.bcebos.com/${PADDLE_VERSION}/cpu/${file_whl}"
+
+set -ex
+# local save third-paty directory if build success
 if [ $? -eq 0 ] && [ "${WITH_CACHE}" == "ON" ] && [ "${update_cached_package}" == "ON" ];then
     cd ${PADDLE_DIR}
-    mkdir -p ${tp_cache_dir}
     tar cf ${tp_cache_file_tar} -C build  third_party
     cd ${tp_cache_dir}
     xz -T `nproc` -0 ${tp_cache_file_tar}
