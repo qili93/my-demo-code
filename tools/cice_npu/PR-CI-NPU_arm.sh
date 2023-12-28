@@ -37,11 +37,11 @@ git config --global user.email "paddle_ci@example.com"
 git clone -b ${PADDLE_BRANCH} https://github.com/PaddlePaddle/PaddleCustomDevice.git
 cd PaddleCustomDevice
 
-# pull pr code
+# --- pull request ---
 git fetch origin pull/${AGILE_PULL_ID}/head
 git checkout -b test FETCH_HEAD
 git merge --no-edit ${PADDLE_BRANCH}
-# show git log history
+# --- show history ---
 git log --pretty=oneline -20
 
 # !!!!! SKIP IF NO NPU CHANGE !!!!
@@ -56,7 +56,7 @@ elif [ $change_npu_only -eq 0 ] ; then
   exit 0
 fi
 
-# sync submodule
+# --- submodule ---
 # git submodule sync
 # git submodule update --init --recursive
 

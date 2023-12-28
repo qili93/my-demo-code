@@ -51,14 +51,16 @@ cache_dir="${CACHE_ROOT}/.cache"
 ccache_dir="${CACHE_ROOT}/.ccache"
 
 # start ci test in container
-set -ex
-docker pull registry.baidubce.com/device/paddle-npu:cann601-ubuntu18-$(uname -m)-gcc82
+set +x
+PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-npu:cann601-ubuntu18-$(uname -m)-gcc82
+docker pull ${PADDLE_DEV_NAME}
 docker run --rm -i \
-  --privileged --pids-limit 409600 --network=host --shm-size=128G \
+  --privileged --network=host --shm-size=128G \
   --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
   -v /usr/local/Ascend/driver:/usr/local/Ascend/driver \
   -v /usr/local/bin/npu-smi:/usr/local/bin/npu-smi \
   -v /usr/local/dcmi:/usr/local/dcmi \
+  -e ASCEND_RT_VISIBLE_DEVICES="0,1" \
   -v ${cache_dir}:/root/.cache \
   -v ${ccache_dir}:/root/.ccache \
   -v ${source_dir}:/paddle -w /paddle \
@@ -67,7 +69,7 @@ docker run --rm -i \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
   -e "no_proxy=bcebos.com" \
-  registry.baidubce.com/device/paddle-npu:cann601-ubuntu18-$(uname -m)-gcc82 \
+  ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
 echo "============ CANN Version ============="
 ls -l /usr/local/Ascend/ascend-toolkit/

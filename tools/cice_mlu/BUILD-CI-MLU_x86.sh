@@ -51,10 +51,11 @@ cache_dir="${CACHE_ROOT}/.cache"
 ccache_dir="${CACHE_ROOT}/.ccache"
 
 # start ci test in container
-set -ex
-docker pull registry.baidubce.com/device/paddle-mlu:cntoolkit3.7.2-1-cnnl1.22.0-1-gcc82
+set +x
+PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-mlu:cntoolkit3.7.2-1-cnnl1.22.0-1-gcc82
+docker pull ${PADDLE_DEV_NAME}
 docker run --rm -i \
-  --privileged --pids-limit 409600 --network=host --shm-size=128G \
+  --privileged --network=host --shm-size=128G \
   --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
   -v /usr/bin/cnmon:/usr/bin/cnmon \
   -v ${cache_dir}:/root/.cache \
@@ -65,7 +66,7 @@ docker run --rm -i \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
   -e "no_proxy=bcebos.com" \
-  registry.baidubce.com/device/paddle-mlu:cntoolkit3.7.2-1-cnnl1.22.0-1-gcc82  \
+  ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
 echo "============ Install PaddlePaddle CPU ============="
 wget -q https://paddle-device.bj.bcebos.com/${PADDLE_VERSION}/cpu/paddlepaddle-${PADDLE_VERSION}-cp39-cp39-linux_$(uname -m).whl
