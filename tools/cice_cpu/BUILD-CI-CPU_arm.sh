@@ -24,23 +24,38 @@ set -x
 
 mkdir -p ${WORKSPACE}
 mkdir -p ${CACHE_ROOT}
+rm -rf ${WORKSPACE}/output/*
 
 cd ${WORKSPACE}
 sleep 10s
 rm -rf Paddle*
 rm -rf output*
 
+git config --global user.name "PaddleCI"
+git config --global user.email "paddle_ci@example.com"
 git clone -b ${PADDLE_BRANCH} https://github.com/PaddlePaddle/Paddle.git
 cd Paddle
+# --- release info ---
 # git checkout tags/${PADDLE_TAG}
 # git checkout ${PADDLE_COMMIT}
 # git pull origin pull/51244/head
-git log --oneline -20
+# --- submodule ---
+# git submodule sync
+# git submodule update --init --recursive
+# --- show history ---
+git log --pretty=oneline -20
 
-export PADDLE_DIR="${WORKSPACE}/Paddle"
+# prepare cache dir
+source_dir="${WORKSPACE}/Paddle"
+cache_dir="${CACHE_ROOT}/.cache"
+ccache_dir="${CACHE_ROOT}/.ccache"
+mkdir -p "${cache_dir}"
+mkdir -p "${ccache_dir}"
+
+# cache third_party
 export WITH_CACHE=ON
 export md5_content=$(cat \
-            ${PADDLE_DIR}/cmake/external/*.cmake \
+            ${source_dir}/cmake/external/*.cmake \
             |md5sum | awk '{print $1}')
 tp_cache_dir="${CACHE_ROOT}/third_party"
 tp_cache_file_tar=${tp_cache_dir}/${md5_content}.tar
@@ -67,24 +82,16 @@ if [[ "${WITH_CACHE}" == "ON" ]]; then
   fi
 fi
 
-cache_dir="${CACHE_ROOT}/.cache"
-ccache_dir="${CACHE_ROOT}/.ccache"
-
-if [ ! -d "${cache_dir}" ];then
-    mkdir -p "${cache_dir}"
-fi
-if [ ! -d "${ccache_dir}" ];then
-    mkdir -p "${ccache_dir}"
-fi
-
-docker pull registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82
-
-echo "Start build python39 whl "
-set -ex
-docker run --network=host --rm -i \
+# start ci test in container
+set +x
+PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82
+docker pull ${PADDLE_DEV_NAME}
+docker run --rm -i \
+  --privileged --network=host --shm-size=128G \
+  --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
   -v ${cache_dir}:/root/.cache \
   -v ${ccache_dir}:/root/.ccache \
-  -v ${PADDLE_DIR}:/paddle \
+  -v ${source_dir}:/paddle -w /paddle \
   -w /paddle \
   -e "WITH_DOC=OFF" \
   -e "WITH_GPU=OFF" \
@@ -109,9 +116,9 @@ docker run --network=host --rm -i \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
   -e "no_proxy=${no_proxy}" \
-  registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82 \
+  ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
-bash -x paddle/scripts/paddle_build.sh build_only;EXCODE=$?
+bash paddle/scripts/paddle_build.sh build_only;EXCODE=$?
 
 if [[ $EXCODE -eq 0 ]];then
     echo "Congratulations!  Your PR passed the CI."
@@ -131,7 +138,7 @@ exit $EXCODE
 '
 
 mkdir -p ${WORKSPACE}/output
-cp ${PADDLE_DIR}/dist/paddlepaddle*.whl ${WORKSPACE}/output
+cp ${source_dir}/dist/paddlepaddle*.whl ${WORKSPACE}/output
 
 wget -q --no-proxy https://xly-devops.bj.bcebos.com/home/bos_new.tar.gz --no-check-certificate
 tar xf bos_new.tar.gz -C ${WORKSPACE}/output
@@ -139,7 +146,7 @@ tar xf bos_new.tar.gz -C ${WORKSPACE}/output
 # Install dependency
 python3 -m pip install bce-python-sdk==0.8.73 -i http://mirror.baidu.com/pypi/simple --trusted-host mirror.baidu.com
 
-# Upload paddlepaddle whl package to bos
+# Upload whl package to bos
 cd ${WORKSPACE}/output
 for file_whl in `ls *.whl` ;do
   python3 BosClient.py ${file_whl} paddle-device/${PADDLE_VERSION}/cpu
@@ -150,7 +157,7 @@ echo "Successfully uploaded to https://paddle-device.bj.bcebos.com/${PADDLE_VERS
 set -ex
 # local save third-paty directory if build success
 if [ $? -eq 0 ] && [ "${WITH_CACHE}" == "ON" ] && [ "${update_cached_package}" == "ON" ];then
-    cd ${PADDLE_DIR}
+    cd ${source_dir}
     tar cf ${tp_cache_file_tar} -C build  third_party
     cd ${tp_cache_dir}
     xz -T `nproc` -0 ${tp_cache_file_tar}

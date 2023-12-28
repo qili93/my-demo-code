@@ -64,6 +64,8 @@ fi
 source_dir="${WORKSPACE}/PaddleCustomDevice"
 cache_dir="${CACHE_ROOT}/.cache"
 ccache_dir="${CACHE_ROOT}/.ccache"
+mkdir -p "${cache_dir}"
+mkdir -p "${ccache_dir}"
 
 # start ci test in container
 set +x
@@ -83,7 +85,7 @@ docker run --rm -i \
   -e "PADDLE_VERSION=${PADDLE_VERSION}" \
   -e "http_proxy=${proxy}" \
   -e "https_proxy=${proxy}" \
-  -e "no_proxy=bcebos.com" \
+  -e "no_proxy=${no_proxy}" \
   ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
 echo "============ CANN Version ============="
