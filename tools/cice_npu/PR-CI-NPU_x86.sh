@@ -17,7 +17,6 @@ set -x
 set +x
 export http_proxy=${proxy}
 export https_proxy=${proxy}
-export ftp_proxy=${proxy}
 export no_proxy=bcebos.com
 set -x
 
