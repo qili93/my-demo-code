@@ -18,7 +18,6 @@ export PADDLE_COMMIT=develop
 set +x
 export http_proxy=${proxy}
 export https_proxy=${proxy}
-export ftp_proxy=${proxy}
 export no_proxy=bcebos.com
 set -x
 
@@ -31,6 +30,7 @@ sleep 10s
 rm -rf Paddle*
 rm -rf output*
 
+# Paddle
 git config --global user.name "PaddleCI"
 git config --global user.email "paddle_ci@example.com"
 git clone -b ${PADDLE_BRANCH} https://github.com/PaddlePaddle/Paddle.git
@@ -92,7 +92,6 @@ docker run --rm -i \
   -v ${cache_dir}:/root/.cache \
   -v ${ccache_dir}:/root/.ccache \
   -v ${source_dir}:/paddle -w /paddle \
-  -w /paddle \
   -e "WITH_DOC=OFF" \
   -e "WITH_GPU=OFF" \
   -e "WITH_ROCM=OFF" \
