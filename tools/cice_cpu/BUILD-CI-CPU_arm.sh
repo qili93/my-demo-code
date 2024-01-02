@@ -1,17 +1,16 @@
 #!/bin/bash
 set -xe
 
-export proxy=http:xxxxxxx
-
 ##### global environment #####
 
-export WORKSPACE=/workspace/cpu-dev
-export CACHE_ROOT=/workspace/cpu-dev
-
+set +x
+export proxy=http:xxxxxxx
+export WORKSPACE=/workspace/cpu
 export PADDLE_BRANCH=develop
 export PADDLE_VERSION=0.0.0
 export PADDLE_TAG=v0.0.0
 export PADDLE_COMMIT=develop
+set -x
 
 ##### local environment #####
 
@@ -22,7 +21,6 @@ export no_proxy=bcebos.com
 set -x
 
 mkdir -p ${WORKSPACE}
-mkdir -p ${CACHE_ROOT}
 rm -rf ${WORKSPACE}/output/*
 
 cd ${WORKSPACE}
@@ -47,8 +45,8 @@ git log --pretty=oneline -20
 
 # prepare cache dir
 source_dir="${WORKSPACE}/Paddle"
-cache_dir="${CACHE_ROOT}/.cache"
-ccache_dir="${CACHE_ROOT}/.ccache"
+cache_dir="${WORKSPACE}/.cache"
+ccache_dir="${WORKSPACE}/.ccache"
 mkdir -p "${cache_dir}"
 mkdir -p "${ccache_dir}"
 
@@ -57,7 +55,7 @@ export WITH_CACHE=ON
 export md5_content=$(cat \
             ${source_dir}/cmake/external/*.cmake \
             |md5sum | awk '{print $1}')
-tp_cache_dir="${CACHE_ROOT}/third_party"
+tp_cache_dir="${WORKSPACE}/third_party"
 tp_cache_file_tar=${tp_cache_dir}/${md5_content}.tar
 tp_cache_file=${tp_cache_file_tar}.xz
 
@@ -112,8 +110,8 @@ docker run --rm -i \
   -e "PADDLE_VERSION=${PADDLE_VERSION}" \
   -e "CMAKE_EXPORT_COMPILE_COMMANDS=ON" \
   -e "PY_VERSION=3.9" \
-  -e "http_proxy=${proxy}" \
-  -e "https_proxy=${proxy}" \
+  -e "http_proxy=${http_proxy}" \
+  -e "https_proxy=${https_proxy}" \
   -e "no_proxy=${no_proxy}" \
   ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '

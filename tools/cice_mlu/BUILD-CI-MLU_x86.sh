@@ -1,30 +1,26 @@
 #!/bin/bash
 set -xe
 
-export proxy=http:xxxxxxx
-
 ##### global environment #####
 
-export WORKSPACE=/workspace/mlu-dev
-export CACHE_ROOT=/workspace/mlu-dev
-
+set +x
+export proxy=http:xxxxxxx
+export WORKSPACE=/workspace/mlu
 export PADDLE_BRANCH=develop
 export PADDLE_VERSION=0.0.0
 export PADDLE_TAG=v0.0.0
 export PADDLE_COMMIT=develop
+set -x
 
 ##### local environment #####
 
 set +x
-export proxy=http://agent.baidu.com:8118
-export http_proxy=http://agent.baidu.com:8118
-export https_proxy=http://agent.baidu.com:8118
-export ftp_proxy=http://agent.baidu.com:8118
+export http_proxy=${proxy}
+export https_proxy=${proxy}
 export no_proxy=bcebos.com
 set -x
 
 mkdir -p ${WORKSPACE}
-mkdir -p ${CACHE_ROOT}
 rm -rf ${WORKSPACE}/output/*
 
 cd ${WORKSPACE}
@@ -48,8 +44,8 @@ git log --pretty=oneline -20
 
 # prepare cache dir
 source_dir="${WORKSPACE}/PaddleCustomDevice"
-cache_dir="${CACHE_ROOT}/.cache"
-ccache_dir="${CACHE_ROOT}/.ccache"
+cache_dir="${WORKSPACE}/.cache"
+ccache_dir="${WORKSPACE}/.ccache"
 mkdir -p "${cache_dir}"
 mkdir -p "${ccache_dir}"
 
@@ -66,8 +62,8 @@ docker run --rm -i \
   -v ${source_dir}:/paddle -w /paddle \
   -e "PADDLE_BRANCH=${PADDLE_BRANCH}" \
   -e "PADDLE_VERSION=${PADDLE_VERSION}" \
-  -e "http_proxy=${proxy}" \
-  -e "https_proxy=${proxy}" \
+  -e "http_proxy=${http_proxy}" \
+  -e "https_proxy=${https_proxy}" \
   -e "no_proxy=${no_proxy}" \
   ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
