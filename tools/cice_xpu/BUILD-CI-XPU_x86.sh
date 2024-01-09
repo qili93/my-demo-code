@@ -5,7 +5,7 @@ set -xe
 
 set +x
 export proxy=http:xxxxxxx
-export WORKSPACE=/workspace/cpu
+export WORKSPACE=/workspace/xpu
 export PADDLE_BRANCH=develop
 export PADDLE_VERSION=0.0.0
 export PADDLE_TAG=v0.0.0
@@ -80,7 +80,7 @@ fi
 
 # start ci test in container
 set +x
-PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-cpu:ubuntu18-$(uname -m)-gcc82
+PADDLE_DEV_NAME=registry.baidubce.com/device/paddle-xpu:ubuntu18-$(uname -m)-gcc82
 docker pull ${PADDLE_DEV_NAME}
 docker run --rm -i \
   --privileged --network=host --shm-size=128G \
@@ -91,13 +91,15 @@ docker run --rm -i \
   -e "WITH_DOC=OFF" \
   -e "WITH_GPU=OFF" \
   -e "WITH_ROCM=OFF" \
+  -e "WITH_XPU=ON" \
+  -e "WITH_XPU_BKCL=ON" \
   -e "WITH_TENSORRT=OFF" \
   -e "WITH_COVERAGE=OFF" \
   -e "COVERALLS_UPLOAD=OFF" \
   -e "CMAKE_BUILD_TYPE=Release" \
-  -e "WITH_MKL=OFF" \
-  -e "WITH_AVX=OFF" \
-  -e "WITH_ARM=ON" \
+  -e "WITH_MKL=ON" \
+  -e "WITH_AVX=ON" \
+  -e "WITH_ARM=OFF" \
   -e "WITH_CACHE=ON" \
   -e "WITH_TEST=OFF" \
   -e "RUN_TEST=OFF" \
@@ -113,7 +115,14 @@ docker run --rm -i \
   -e "no_proxy=${no_proxy}" \
   ${PADDLE_DEV_NAME} \
   /bin/bash -c -x '
-bash paddle/scripts/paddle_build.sh build_only;EXCODE=$?
+# bash paddle/scripts/paddle_build.sh build_only;EXCODE=$?
+
+mkdir -p build && cd build
+cmake .. -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+  -DPY_VERSION=3.9 -DPYTHON_EXECUTABLE=`which python3` -DWITH_CUSTOM_DEVICE=OFF \
+  -DWITH_TESTING=OFF -DON_INFER=ON -DWITH_DISTRIBUTE=ON -DWITH_ARM=OFF \
+  -DWITH_XPU=ON -DWITH_XPU_BKCL=ON -DWITH_UBUNTU=ON
+make -j16;EXCODE=$?
 
 if [[ $EXCODE -eq 0 ]];then
     echo "Congratulations!  Your PR passed the CI."
@@ -144,10 +153,10 @@ python3 -m pip install bce-python-sdk==0.8.73 -i http://mirror.baidu.com/pypi/si
 # Upload whl package to bos
 cd ${WORKSPACE}/output
 for file_whl in `ls *.whl` ;do
-  python3 BosClient.py ${file_whl} paddle-device/${PADDLE_VERSION}/cpu
+  python3 BosClient.py ${file_whl} paddle-device/${PADDLE_VERSION}/xpu
 done
 
-echo "Successfully uploaded to https://paddle-device.bj.bcebos.com/${PADDLE_VERSION}/cpu/${file_whl}"
+echo "Successfully uploaded to https://paddle-device.bj.bcebos.com/${PADDLE_VERSION}/xpu/${file_whl}"
 
 set -ex
 # local save third-paty directory if build success

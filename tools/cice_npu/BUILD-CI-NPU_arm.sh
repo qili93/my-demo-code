@@ -20,8 +20,6 @@ export no_proxy=bcebos.com
 set -x
 
 mkdir -p ${WORKSPACE}
-rm -rf ${WORKSPACE}/output/*
-
 cd ${WORKSPACE}
 sleep 10s
 rm -rf Paddle*
