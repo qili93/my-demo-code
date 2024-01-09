@@ -142,7 +142,7 @@ exit $EXCODE
 '
 
 mkdir -p ${WORKSPACE}/output
-cp ${source_dir}/dist/paddlepaddle*.whl ${WORKSPACE}/output
+cp ${source_dir}/build/python/dist/paddlepaddle*.whl ${WORKSPACE}/output
 
 wget -q --no-proxy https://xly-devops.bj.bcebos.com/home/bos_new.tar.gz --no-check-certificate
 tar xf bos_new.tar.gz -C ${WORKSPACE}/output
